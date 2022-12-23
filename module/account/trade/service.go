@@ -2,8 +2,8 @@ package trade
 
 import (
 	"encoding/json"
-	"github.com/whitebit-exchange/whitebit"
-	order "github.com/whitebit-exchange/whitebit/module/order/spot"
+	"github.com/whitebit-exchange/go-sdk"
+	order "github.com/whitebit-exchange/go-sdk/module/order/spot"
 )
 
 type ExecutedHistoryOptions struct {

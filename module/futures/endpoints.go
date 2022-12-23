@@ -1,6 +1,6 @@
 package futures
 
-import "github.com/whitebit-exchange/whitebit"
+import "github.com/whitebit-exchange/go-sdk"
 
 const futuresEndpointUrl = "/api/v4/public/futures"
 

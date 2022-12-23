@@ -3,8 +3,8 @@ package trade
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/mock"
-	"github.com/whitebit-exchange/whitebit"
-	"github.com/whitebit-exchange/whitebit/module/order/spot"
+	"github.com/whitebit-exchange/go-sdk"
+	"github.com/whitebit-exchange/go-sdk/module/order/spot"
 )
 
 func (s *AccountTestSuite) TestOcoWithResult() {

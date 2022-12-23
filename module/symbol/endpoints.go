@@ -1,6 +1,6 @@
 package symbol
 
-import "github.com/whitebit-exchange/whitebit"
+import "github.com/whitebit-exchange/go-sdk"
 
 const symbolsEndpointUrl = "/api/v1/public/symbols"
 

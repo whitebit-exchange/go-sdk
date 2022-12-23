@@ -3,7 +3,7 @@ package kline
 import (
 	"fmt"
 	"github.com/spf13/cast"
-	go_sdk "github.com/whitebit-exchange/whitebit"
+	go_sdk "github.com/whitebit-exchange/go-sdk"
 	"net/url"
 )
 

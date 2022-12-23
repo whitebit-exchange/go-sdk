@@ -1,7 +1,7 @@
 package collateral
 
 import (
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 const openPositionsEndpointUrl = "/api/v4/collateral-account/positions/open"

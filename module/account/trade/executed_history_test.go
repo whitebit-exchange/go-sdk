@@ -3,7 +3,7 @@ package trade
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/mock"
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 func (s *AccountTestSuite) TestExecutedWithResult() {

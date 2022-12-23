@@ -2,7 +2,7 @@ package depth
 
 import (
 	"encoding/json"
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 type OrderBookOptions struct {

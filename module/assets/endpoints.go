@@ -1,6 +1,6 @@
 package assets
 
-import "github.com/whitebit-exchange/whitebit"
+import "github.com/whitebit-exchange/go-sdk"
 
 const assetsEndpointUrl = "/api/v4/public/assets"
 

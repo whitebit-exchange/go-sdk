@@ -1,6 +1,6 @@
 package server
 
-import "github.com/whitebit-exchange/whitebit"
+import "github.com/whitebit-exchange/go-sdk"
 
 const (
 	timeEndpointUrl = "/api/v4/public/time"

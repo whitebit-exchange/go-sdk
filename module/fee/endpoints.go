@@ -1,6 +1,6 @@
 package fee
 
-import "github.com/whitebit-exchange/whitebit"
+import "github.com/whitebit-exchange/go-sdk"
 
 const (
 	tradingFeeEndpointUrl = "/api/v2/public/fee"

@@ -1,8 +1,8 @@
 package trade
 
 import (
-	"github.com/whitebit-exchange/whitebit"
-	"github.com/whitebit-exchange/whitebit/module/account"
+	"github.com/whitebit-exchange/go-sdk"
+	"github.com/whitebit-exchange/go-sdk/module/account"
 )
 
 const orderEndpointUrl = "/api/v4/trade-account/order"

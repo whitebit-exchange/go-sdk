@@ -2,7 +2,7 @@ package market
 
 import (
 	"encoding/json"
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 type Market struct {

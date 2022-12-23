@@ -2,7 +2,7 @@ package deal
 
 import (
 	"encoding/json"
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 type Deal struct {

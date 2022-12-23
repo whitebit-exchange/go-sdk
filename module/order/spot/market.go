@@ -1,7 +1,7 @@
 package spot
 
 import (
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 const marketOrderEndpointUrl = "/api/v4/order/market"

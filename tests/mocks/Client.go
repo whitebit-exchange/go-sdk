@@ -2,7 +2,7 @@ package mocks
 
 import (
 	"github.com/stretchr/testify/mock"
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 type Client struct {

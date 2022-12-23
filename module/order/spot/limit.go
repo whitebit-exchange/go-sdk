@@ -1,7 +1,7 @@
 package spot
 
 import (
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 const limitEndpointUrl = "/api/v4/order/new"

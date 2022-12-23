@@ -2,7 +2,7 @@ package tickers
 
 import (
 	"fmt"
-	go_sdk "github.com/whitebit-exchange/whitebit"
+	go_sdk "github.com/whitebit-exchange/go-sdk"
 	"net/url"
 )
 

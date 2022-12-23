@@ -1,7 +1,7 @@
 package trade
 
 import (
-	"github.com/whitebit-exchange/whitebit"
+	"github.com/whitebit-exchange/go-sdk"
 )
 
 const balanceEndpointUrl = "/api/v4/trade-account/balance"
