@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/whitebit-exchange/whitebit"
-	"github.com/whitebit-exchange/whitebit/module/order"
-	"github.com/whitebit-exchange/whitebit/module/order/spot"
+	"github.com/whitebit-exchange/go-sdk"
+	"github.com/whitebit-exchange/go-sdk/module/order"
+	"github.com/whitebit-exchange/go-sdk/module/order/spot"
 )
 
 func main() {

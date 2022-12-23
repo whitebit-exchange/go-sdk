@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/whitebit-exchange/whitebit"
-	"github.com/whitebit-exchange/whitebit/module/account/trade"
+	"github.com/whitebit-exchange/go-sdk"
+	"github.com/whitebit-exchange/go-sdk/module/account/trade"
 )
 
 func main() {
