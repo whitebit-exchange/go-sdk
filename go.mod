@@ -14,4 +14,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/whitebit-exchange/go-sdk => github.com/whitebit-exchange/whitebit latest
+replace github.com/whitebit-exchange/whitebit => github.com/whitebit-exchange/go-sdk
