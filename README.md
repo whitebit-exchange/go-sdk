@@ -13,7 +13,7 @@ v4 is the preferred one to use
 
 ### Installation
 ```shell
-go get github.com/whitebit-exchange/whitebit
+go get github.com/whitebit-exchange/go-sdk
 ```
 ### REST API
 
