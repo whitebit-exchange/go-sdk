@@ -11,11 +11,11 @@ type balanceEndpoint struct {
 	Ticker string `json:"ticker,omitempty"`
 }
 
-type MainBalanceResult struct {
+type MainBalance struct {
 	MainBalance string `json:"main_balance"`
 }
 
-type BalanceResult map[string]MainBalanceResult
+type State map[string]MainBalance
 
 func newBalanceEndpoint(ticker string) *balanceEndpoint {
 	return &balanceEndpoint{Ticker: ticker, AuthParams: whitebit.NewAuthParams(balanceEndpointUrl)}

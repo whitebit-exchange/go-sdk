@@ -22,9 +22,9 @@ func NewService(client whitebit.Client) *Service {
 	return &Service{client: client}
 }
 
-func (service *Service) GetMainBalance() (BalanceResult, error) {
+func (service *Service) GetMainBalance() (State, error) {
 	endpoint := newBalanceEndpoint("")
-	response := make(BalanceResult)
+	response := make(State)
 	result, err := service.client.SendRequest(endpoint)
 
 	if err != nil {
@@ -40,9 +40,9 @@ func (service *Service) GetMainBalance() (BalanceResult, error) {
 	return response, nil
 }
 
-func (service *Service) GetMainBalanceTicker(ticker string) (MainBalanceResult, error) {
+func (service *Service) GetAssetBalance(ticker string) (MainBalance, error) {
 	endpoint := newBalanceEndpoint(ticker)
-	var response MainBalanceResult
+	var response MainBalance
 	result, err := service.client.SendRequest(endpoint)
 
 	if err != nil {
@@ -58,10 +58,10 @@ func (service *Service) GetMainBalanceTicker(ticker string) (MainBalanceResult, 
 	return response, nil
 }
 
-func (service *Service) GetFee() ([]FeeResult, error) {
+func (service *Service) GetFee() ([]Fee, error) {
 	endpoint := newFeeEndpoint()
 	result, err := service.client.SendRequest(endpoint)
-	var fee []FeeResult
+	var fee []Fee
 
 	if err != nil {
 		return fee, err
@@ -76,9 +76,9 @@ func (service *Service) GetFee() ([]FeeResult, error) {
 	return fee, nil
 }
 
-func (service *Service) GetHistory(params HistoryParams) (HistoryResult, error) {
+func (service *Service) GetHistory(params HistoryParams) (History, error) {
 	endpoint := newHistoryEndpoint(params)
-	var HistoryData HistoryResult
+	var HistoryData History
 	result, err := service.client.SendRequest(endpoint)
 
 	if err != nil {

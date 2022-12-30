@@ -18,8 +18,8 @@ func (s *MainAccountTestSuite) TestTransferWithResult() {
 	err := s.service.Transfer(TransferParams{
 		Ticker: "BTC",
 		Amount: "0.001",
-		From:   "main",
-		To:     "spot",
+		From:   Main,
+		To:     Collateral,
 	})
 
 	s.Equal(err, error(nil))

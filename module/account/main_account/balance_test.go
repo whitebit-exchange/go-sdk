@@ -6,10 +6,10 @@ import (
 )
 
 func (s *MainAccountTestSuite) TestMainBalanceWithResult() {
-	expectedServerResponse := BalanceResult{
-		"BTC": MainBalanceResult{MainBalance: "476.7151833"},
-		"ETH": MainBalanceResult{MainBalance: "0"},
-		"USD": MainBalanceResult{MainBalance: "0"}}
+	expectedServerResponse := State{
+		"BTC": MainBalance{MainBalance: "476.7151833"},
+		"ETH": MainBalance{MainBalance: "0"},
+		"USD": MainBalance{MainBalance: "0"}}
 
 	endpoint := newBalanceEndpoint("")
 	request, _ := whitebit.CreateRequest(endpoint.Url())
@@ -38,7 +38,7 @@ func (s *MainAccountTestSuite) TestMainBalanceWithResult() {
 }
 
 func (s *MainAccountTestSuite) TestMainBalanceTickerWithResult() {
-	expectedServerResponse := MainBalanceResult{MainBalance: "476.7151833"}
+	expectedServerResponse := MainBalance{MainBalance: "476.7151833"}
 
 	endpoint := newBalanceEndpoint("BTC")
 	request, _ := whitebit.CreateRequest(endpoint.Url())
@@ -49,7 +49,7 @@ func (s *MainAccountTestSuite) TestMainBalanceTickerWithResult() {
 	byteResponse := []byte(`{"main_balance":"476.7151833"}`)
 	s.client.On("SendRequest", mock.Anything).Return(byteResponse, nil).Once()
 
-	responseJson, err := s.service.GetMainBalanceTicker("BTC")
+	responseJson, err := s.service.GetAssetBalance("BTC")
 
 	s.Equal(expectedServerResponse, responseJson)
 	s.Equal(err, error(nil))

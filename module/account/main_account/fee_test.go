@@ -21,7 +21,7 @@ func (s *MainAccountTestSuite) SetupTest() {
 }
 
 func (s *MainAccountTestSuite) TestFeeWithResult() {
-	expectedServerResponse := []FeeResult{{
+	expectedServerResponse := []Fee{{
 		Ticker:      "BSV",
 		Name:        "Bitcoin SV",
 		CanDeposit:  true,

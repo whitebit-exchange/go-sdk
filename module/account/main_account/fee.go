@@ -24,7 +24,7 @@ type Withdraw struct {
 	MaxAmount   string `json:"maxAmount"`
 }
 
-type FeeResult struct {
+type Fee struct {
 	Ticker      string `json:"ticker"`
 	Name        string `json:"name"`
 	CanDeposit  bool   `json:"can_deposit"`

@@ -18,6 +18,12 @@ type TransferParams struct {
 	To     string `json:"to"`
 }
 
+const (
+	Main       = "main"
+	Trade      = "trade"
+	Collateral = "collateral"
+)
+
 func newTransferEndpoint(params TransferParams) *transferEndpoint {
 	return &transferEndpoint{TransferParams: params, AuthParams: whitebit.NewAuthParams(transferEndpointUrl)}
 }

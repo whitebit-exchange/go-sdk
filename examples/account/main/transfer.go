@@ -28,8 +28,8 @@ func main() {
 	err := service.Transfer(main_account.TransferParams{
 		Ticker: "BTC",
 		Amount: "0.001",
-		From:   "main",
-		To:     "spot",
+		From:   main_account.Main,
+		To:     main_account.Trade,
 	})
 
 	if err != nil {

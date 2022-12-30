@@ -33,7 +33,7 @@ type HistoryRecords struct {
 	Centralized     bool        `json:"centralized,omitempty"`
 }
 
-type HistoryResult struct {
+type History struct {
 	Records []HistoryRecords `json:"records"`
 	Offset  int              `json:"offset"`
 	Limit   int              `json:"limit"`

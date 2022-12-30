@@ -6,7 +6,7 @@ import (
 )
 
 func (s *MainAccountTestSuite) TestHistoryWithStatus() {
-	expectedServerResponse := HistoryResult{
+	expectedServerResponse := History{
 		Records: []HistoryRecords{{
 			Address:         "",
 			UniqueId:        "",
@@ -113,7 +113,7 @@ func (s *MainAccountTestSuite) TestHistoryWithStatus() {
 }
 
 func (s *MainAccountTestSuite) TestHistoryWithTicker() {
-	expectedServerResponse := HistoryResult{
+	expectedServerResponse := History{
 		Records: []HistoryRecords{{
 			Address:         "",
 			UniqueId:        "",
