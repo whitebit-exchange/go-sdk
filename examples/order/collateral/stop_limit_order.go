@@ -8,7 +8,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -27,7 +26,6 @@ func main() {
 		Price:           "3000",
 		ActivationPrice: "3300",
 	})
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -31,7 +30,6 @@ func main() {
 		From:   main_account.Main,
 		To:     main_account.Trade,
 	})
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

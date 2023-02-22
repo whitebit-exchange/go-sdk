@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -33,7 +32,6 @@ func main() {
 	fmt.Println("========================= GetOrderBook ========================= ")
 	// Call SDK function GetOrderBook with endpoints options
 	response, err := service.GetOrderBook(options)
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

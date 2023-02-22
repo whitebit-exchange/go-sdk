@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -20,7 +19,6 @@ func main() {
 	fmt.Println("========================= GetOcoOrders ========================= ")
 	// Call SDK function GetOcoOrders
 	response, err := service.GetOcoOrders("BTC_USDT", 100, 0)
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

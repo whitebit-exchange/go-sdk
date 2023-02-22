@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -20,7 +19,6 @@ func main() {
 	fmt.Println("========================= GetAvailableTickers ========================= ")
 	// Call SDK function GetAvailableTickers
 	response, err := service.GetAvailableTickers()
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

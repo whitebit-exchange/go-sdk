@@ -11,6 +11,10 @@ type TimeResponse struct {
 
 type PingResponse []string
 
+type WsTokenResponse struct {
+	WebsocketToken string `json:"websocket_token"`
+}
+
 type Service struct {
 	client whitebit.Client
 }
@@ -54,5 +58,24 @@ func (service *Service) GetTime() (TimeResponse, error) {
 	}
 
 	return result, nil
+
+}
+
+func (service *Service) GetWsToken() (string, error) {
+	endpoint := newWsTokenEndpoint()
+
+	response, err := service.client.SendRequest(endpoint)
+	if err != nil {
+		return "", err
+	}
+
+	var result WsTokenResponse
+	err = json.Unmarshal(response, &result)
+
+	if err != nil {
+		return "", err
+	}
+
+	return result.WebsocketToken, nil
 
 }

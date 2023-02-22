@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -31,7 +30,6 @@ func main() {
 	*/
 
 	response, err := service.GetHistory(trade.HistoryOptions{Market: "BTC_USDT"})
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}
