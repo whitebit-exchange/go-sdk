@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -32,7 +31,6 @@ func main() {
 	fmt.Println("========================= GetKline ========================= ")
 	// Call SDK function GetKline with endpoints options
 	response, err := service.GetKline(options)
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

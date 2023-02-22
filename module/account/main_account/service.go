@@ -104,3 +104,75 @@ func (service *Service) Transfer(params TransferParams) error {
 
 	return nil
 }
+
+func (service *Service) CreateCode(ticker string, amount string, pass string, description string) (Code, error) {
+	endpoint := newCodeEndpoint(ticker, amount, pass, description)
+	var response Code
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+func (service *Service) ApplyCode(code string, pass string) (CodeApply, error) {
+	endpoint := newCodeApplyEndpoint(code, pass)
+	var response CodeApply
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+func (service *Service) GetCodes(limit int64, offset int64) (CodeMy, error) {
+	endpoint := newCodeMyEndpoint(limit, offset)
+	var response CodeMy
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+func (service *Service) GetCodesHistory(limit int64, offset int64) (CodeHistory, error) {
+	endpoint := newCodeMyEndpoint(limit, offset)
+	var response CodeHistory
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}

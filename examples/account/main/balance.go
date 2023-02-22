@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -21,7 +20,6 @@ func main() {
 	// Call SDK function GetBalance for main account
 
 	allBalance, err := service.GetMainBalance()
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -32,7 +30,6 @@ func main() {
 	// Call SDK function GetBalance by ticker
 
 	tickerBalance, err := service.GetAssetBalance("BTC")
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

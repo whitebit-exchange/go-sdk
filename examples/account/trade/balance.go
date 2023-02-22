@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -22,7 +21,6 @@ func main() {
 
 	//If you pass an empty string, then the balance for all currencies will be returned
 	response, err := service.GetBalance("BTC")
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

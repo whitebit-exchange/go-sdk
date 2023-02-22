@@ -7,7 +7,6 @@ import (
 )
 
 func main() {
-
 	// Create a client with your own apiKey and apiSecret
 	client := whitebit.NewClient(
 		"",
@@ -22,7 +21,6 @@ func main() {
 	// Returns an array of objects containing deposit/withdrawal settings for the corresponding currencies.
 	// Zero value in amount fields means that the setting is disabled.
 	response, err := service.GetFee()
-
 	if err != nil {
 		fmt.Println(err.Error())
 	}

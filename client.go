@@ -67,7 +67,7 @@ func (c *Whitebit) SendRequest(endpoint Endpoint) ([]byte, error) {
 		return nil, err
 	}
 
-	if status != http.StatusOK {
+	if status != http.StatusOK && status != http.StatusCreated {
 		var validationError Error
 		_ = json.Unmarshal(response, &validationError)
 		return nil, validationError
