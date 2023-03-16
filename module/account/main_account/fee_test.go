@@ -139,7 +139,7 @@ func (s *MainAccountTestSuite) TestFeeInvalidResponseError() {
 	response, _ := json.Marshal(responseJson)
 
 	expectedError := "invalid character 'T' looking for beginning of value"
-	s.Equal("{}", string(response))
+	s.Equal("null", string(response))
 	s.Equal(expectedError, err.Error())
 
 }

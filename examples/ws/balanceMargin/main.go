@@ -66,6 +66,7 @@ func main() {
 
 	// Send MarginBalance query with handler for result processing
 	streamService.Query(stream.NewMarginBalanceCommand([]string{"BTC", "USDT"}), func(command stream.Command, response []byte) {
+		var result stream.MarginBalance
 		var result map[string]string
 		err = json.Unmarshal(response, &result)
 		if err != nil {

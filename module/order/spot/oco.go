@@ -8,7 +8,6 @@ type OcoOrder struct {
 
 type StopLoss struct {
 	MarketOrder
-	PostOnly            bool    `json:"post_only"`
 	Mtime               float64 `json:"mtime"`
 	Price               string  `json:"price"`
 	ActivationPrice     string  `json:"activation_price"`
@@ -18,9 +17,8 @@ type StopLoss struct {
 
 type TakeProfit struct {
 	MarketOrder
-	PostOnly bool    `json:"post_only"`
-	Mtime    float64 `json:"mtime"`
-	Price    string  `json:"price"`
+	Mtime float64 `json:"mtime"`
+	Price string  `json:"price"`
 }
 
 type OcoOrderParams struct {

@@ -49,8 +49,8 @@ func (s *CancelTestSuite) TestLimitOrderSuccess() {
 				MakerFee:      "0.001",
 				Left:          "100",
 				DealFee:       "0",
+				PostOnly:      false,
 			},
-			PostOnly:            false,
 			Mtime:               1.669375581341061e+09,
 			Price:               "40000",
 			ActivationPrice:     "30300",
@@ -71,10 +71,10 @@ func (s *CancelTestSuite) TestLimitOrderSuccess() {
 				MakerFee:      "0.001",
 				Left:          "100",
 				DealFee:       "0",
+				PostOnly:      false,
 			},
-			PostOnly: false,
-			Mtime:    1.669375581341061e+09,
-			Price:    "2000"},
+			Mtime: 1.669375581341061e+09,
+			Price: "2000"},
 	}
 
 	request, _ := whitebit.CreateRequest(endpoint.Url())

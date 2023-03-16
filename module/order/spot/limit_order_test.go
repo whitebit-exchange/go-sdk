@@ -26,6 +26,8 @@ func (s *OrderTestSuite) TestLimitOrderSuccess() {
 		Amount:        "1",
 		Side:          "buy",
 		Price:         "3000",
+		PostOnly:      false,
+		IOC:           false,
 		ClientOrderId: "23",
 	})
 
@@ -50,6 +52,8 @@ func (s *OrderTestSuite) TestLimitOrderSuccess() {
 		Amount:        "1",
 		Side:          "buy",
 		Price:         "3000",
+		PostOnly:      false,
+		IOC:           false,
 		ClientOrderId: "23",
 	})
 

@@ -8,8 +8,10 @@ Please read [whitebit API document](https://whitebit-exchange.github.io/api-docs
 
 ### API List
 
-- [Private API](https://whitebit-exchange.github.io/api-docs/docs/category/private)
-- [Public API](https://whitebit-exchange.github.io/api-docs/docs/category/public)
+- [Private API](https://whitebit-exchange.github.io/api-docs/private/http-trade-v4/)
+- [Public API](https://whitebit-exchange.github.io/api-docs/public/http-v4/)
+- [Public WebSocket API](https://whitebit-exchange.github.io/api-docs/private/websocket/)
+- [Private WebSocket API](https://whitebit-exchange.github.io/api-docs/private/websocket/)
 
 v4 is the preferred one to use
 
@@ -147,3 +149,66 @@ if err != nil {
 
 fmt.Printf("%#v\n", resp)
 ```
+---
+### Websocket
+Get websocket token from your whitebit account.
+```golang
+// Create a client with your own apiKey and apiSecret (need for authorize websocket connecting)
+client := whitebit.NewClient("publicKey", "secretKey")
+
+// Create new service
+service := server.NewService(client)
+
+// Call SDK function GetWsToken - you can use this token all time
+token, err := service.GetWsToken()
+if err != nil {
+	log.Fatal(err)
+}
+```
+Init websocket stream with error handler.
+```golang
+// Create ctx and cancel for close websocket connect
+ctx, cancel := context.WithCancel(context.Background())
+
+streamService, err := stream.NewStream(ctx, token, func(err error) {
+    fmt.Println(err)
+	switch err.(type) {
+	case *net.OpError:
+		{
+		fmt.Println(err.Error())
+		time.Sleep(time.Second)
+		}
+	}
+})
+```
+Subscribe example
+```golang
+// Create handler for processing websocket LastPriceUpdateEvent
+lastPriceHandler := func(event stream.LastPriceUpdateEvent) {
+	fmt.Printf("%#v\n", event)
+}
+
+// Subscribe on market last price events
+err = streamService.Subscribe(stream.NewLastPriceSubscription(lastPriceHandler, []string{"BTC_USDT"}))
+
+time.Sleep(time.Second * 10)
+// unsubscribe example if you need
+err = streamService.Unsubscribe(stream.NewLastPriceUnsubscribe())
+if err != nil {
+    log.Fatal(err)
+}
+```
+Query example
+```golang
+streamService.Query(stream.NewLastPriceCommand("BTC_USDT"), func(command stream.Command, response []byte) {
+	var result string
+	err = json.Unmarshal(response, &result)
+	if err != nil {
+		print(err.Error())
+		return
+	}
+	fmt.Println(command, result)
+})
+
+```
+

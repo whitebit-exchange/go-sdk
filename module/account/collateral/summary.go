@@ -13,6 +13,7 @@ type Summary struct {
 	UnrealizedFunding string `json:"unrealizedFunding"`
 	Pnl               string `json:"pnl"`
 	Leverage          int    `json:"leverage"`
+	MarginFraction    string `json:"marginFraction"`
 }
 
 type summaryEndpoint struct {
