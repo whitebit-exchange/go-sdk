@@ -176,3 +176,39 @@ func (service *Service) GetCodesHistory(limit int64, offset int64) (CodeHistory,
 
 	return response, nil
 }
+
+func (service *Service) GetMyFeeByMarket(market string) (MyFeeByMarket, error) {
+	endpoint := newMyFeeByMarketEndpoint(market)
+	var response MyFeeByMarket
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+func (service *Service) GetCustomFee() (CustomFee, error) {
+	endpoint := newCustomFeeEndpoint()
+	var response CustomFee
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}

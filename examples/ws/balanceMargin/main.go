@@ -61,13 +61,12 @@ func main() {
 		fmt.Printf("%#v\n", event)
 	}
 
-	// Subscribe on MarginBalance events
+	// Subscribe on MarginBalanceResponse events
 	err = streamService.Subscribe(stream.NewMarginBalanceSubscription(marginHandler, "USDT"))
 
-	// Send MarginBalance query with handler for result processing
+	// Send MarginBalanceResponse query with handler for result processing
 	streamService.Query(stream.NewMarginBalanceCommand([]string{"BTC", "USDT"}), func(command stream.Command, response []byte) {
 		var result stream.MarginBalance
-		var result map[string]string
 		err = json.Unmarshal(response, &result)
 		if err != nil {
 			print(err.Error())
