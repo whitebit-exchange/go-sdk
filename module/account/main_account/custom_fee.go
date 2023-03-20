@@ -7,13 +7,13 @@ import (
 const customFeeEndpointUrl = "/api/v4/market/fee"
 const customFeeByMarketEndpointUrl = "/api/v4/market/fee/single"
 
-type MyFeeByMarket struct {
+type AccountFeeByMarket struct {
 	Error interface{} `json:"error"`
 	Taker string      `json:"taker"`
 	Maker string      `json:"maker"`
 }
 
-type myFeeByMarketEndpoint struct {
+type accountFeeByMarketEndpoint struct {
 	whitebit.AuthParams
 	Market string `json:"market"`
 }
@@ -33,6 +33,6 @@ func newCustomFeeEndpoint() *customFeeEndpoint {
 	return &customFeeEndpoint{AuthParams: whitebit.NewAuthParams(customFeeEndpointUrl)}
 }
 
-func newMyFeeByMarketEndpoint(market string) *myFeeByMarketEndpoint {
-	return &myFeeByMarketEndpoint{AuthParams: whitebit.NewAuthParams(customFeeByMarketEndpointUrl), Market: market}
+func newAccountFeeByMarketEndpoint(market string) *accountFeeByMarketEndpoint {
+	return &accountFeeByMarketEndpoint{AuthParams: whitebit.NewAuthParams(customFeeByMarketEndpointUrl), Market: market}
 }

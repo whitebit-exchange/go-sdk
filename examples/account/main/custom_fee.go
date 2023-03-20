@@ -20,7 +20,7 @@ func main() {
 
 	// Returns an object containing your trading fee for market.
 	// Zero value in amount fields means that the setting is disabled.
-	response, err := service.GetMyFeeByMarket("BTC_USDT")
+	response, err := service.GetAccountFeeByMarket("BTC_USDT")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -29,11 +29,11 @@ func main() {
 
 	// Returns an object containing your personal trading fee and markets with custom fee if there are any
 	// Zero value in amount fields means that the setting is disabled.
-	myFee, err := service.GetCustomFee()
+	accountFee, err := service.GetCustomFee()
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 
-	fmt.Printf("%#v\n", myFee)
+	fmt.Printf("%#v\n", accountFee)
 
 }

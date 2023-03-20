@@ -177,9 +177,9 @@ func (service *Service) GetCodesHistory(limit int64, offset int64) (CodeHistory,
 	return response, nil
 }
 
-func (service *Service) GetMyFeeByMarket(market string) (MyFeeByMarket, error) {
-	endpoint := newMyFeeByMarketEndpoint(market)
-	var response MyFeeByMarket
+func (service *Service) GetAccountFeeByMarket(market string) (AccountFeeByMarket, error) {
+	endpoint := newAccountFeeByMarketEndpoint(market)
+	var response AccountFeeByMarket
 	result, err := service.client.SendRequest(endpoint)
 
 	if err != nil {

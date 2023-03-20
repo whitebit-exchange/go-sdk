@@ -40,10 +40,10 @@ func (s *MainAccountTestSuite) TestCustomFee() {
 
 }
 
-func (s *MainAccountTestSuite) TestMyFeeBYMarketWithResult() {
-	expectedServerResponse := MyFeeByMarket{Error: nil, Taker: "0.002", Maker: "0.001"}
+func (s *MainAccountTestSuite) TestAccountFeeByMarketWithResult() {
+	expectedServerResponse := AccountFeeByMarket{Error: nil, Taker: "0.002", Maker: "0.001"}
 
-	endpoint := newMyFeeByMarketEndpoint("BTC_USDT")
+	endpoint := newAccountFeeByMarketEndpoint("BTC_USDT")
 	request, _ := whitebit.CreateRequest(endpoint.Url())
 	expectedRequest := "/api/v4/market/fee/single"
 
@@ -52,7 +52,7 @@ func (s *MainAccountTestSuite) TestMyFeeBYMarketWithResult() {
 	byteResponse := []byte(`{"error":null,"taker":"0.002","maker":"0.001"}`)
 	s.client.On("SendRequest", mock.Anything).Return(byteResponse, nil).Once()
 
-	responseJson, err := s.service.GetMyFeeByMarket("BTC_USDT")
+	responseJson, err := s.service.GetAccountFeeByMarket("BTC_USDT")
 
 	s.Equal(expectedServerResponse, responseJson)
 	s.Equal(err, error(nil))
