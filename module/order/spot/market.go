@@ -21,7 +21,7 @@ type MarketOrder struct {
 	Left          string  `json:"left"`
 	DealFee       string  `json:"dealFee"`
 	PostOnly      bool    `json:"postOnly"`
-	IOC           bool    `json:"IOC"`
+	IOC           bool    `json:"ioc"`
 }
 
 type MarketOrderParams struct {

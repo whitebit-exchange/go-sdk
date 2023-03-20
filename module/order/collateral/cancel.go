@@ -21,7 +21,7 @@ type CancelOrder struct {
 	Left                string  `json:"left"`
 	DealFee             string  `json:"dealFee"`
 	PostOnly            bool    `json:"postOnly"`
-	IOC                 bool    `json:"IOC"`
+	IOC                 bool    `json:"ioc"`
 	Price               string  `json:"price"`
 	ActivationPrice     string  `json:"activation_price,omitempty"`
 	ActivationCondition string  `json:"activationCondition,omitempty"`
