@@ -40,6 +40,24 @@ func (service *Service) GetCollateralBalance(ticker string) (map[string]string, 
 	return response, nil
 }
 
+func (service *Service) GetCollateralSummaryBalance(ticker string) ([]BalanceSummary, error) {
+	endpoint := newBalanceSummaryEndpoint(ticker)
+	response := make([]BalanceSummary, 0)
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
 func (service *Service) GetSummary() (Summary, error) {
 	endpoint := newSummaryEndpoint()
 	result, err := service.client.SendRequest(endpoint)

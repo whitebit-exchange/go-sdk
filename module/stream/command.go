@@ -186,14 +186,31 @@ func NewSpotBalanceCommand(assets []string) Command {
 	return Command{1, SpotBalanceRequest, assetsAsInterface, WsTypeQuery}
 }
 
-type MarginBalance struct {
+type MarginBalanceResponse struct {
 	Response
 	Result map[string]string
 }
 
 type MarginBalanceUpdateEvent struct {
-	Balances []map[string]string `json:"params"`
+	Balances []MarginBalanceEventInfo `json:"params"`
 }
+
+type MarginBalanceEventInfo struct {
+	Balance                string `json:"B"`
+	Asset                  string `json:"a"`
+	AvailableWithBorrow    string `json:"ab"`
+	AvailableWithoutBorrow string `json:"av"`
+	Borrow                 string `json:"b"`
+}
+
+type MarginBalanceQueryInfo struct {
+	AvailableWithBorrow    string `json:"available_with_borrow"`
+	AvailableWithoutBorrow string `json:"available_without_borrow"`
+	Balance                string `json:"balance"`
+	Borrow                 string `json:"borrow"`
+}
+
+type MarginBalance map[string]MarginBalanceQueryInfo
 
 func NewMarginBalanceSubscription(handle func(event MarginBalanceUpdateEvent), assets ...string) *Subscription {
 	params := make([]interface{}, len(assets))
@@ -231,6 +248,7 @@ type OrdersRecords struct {
 	Type          int     `json:"type"`
 	Side          int     `json:"side"`
 	PostOnly      bool    `json:"post_only"`
+	IOC           bool    `json:"ioc"`
 	Ctime         float64 `json:"ctime"`
 	Mtime         float64 `json:"mtime"`
 	Price         string  `json:"price"`

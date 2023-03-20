@@ -16,6 +16,8 @@ type LimitOrderParams struct {
 	Amount        string `json:"amount"`
 	Side          string `json:"side"`
 	Price         string `json:"price"`
+	PostOnly      bool   `json:"postOnly"`
+	IOC           bool   `json:"ioc"`
 	ClientOrderId string `json:"clientOrderId,omitempty"`
 }
 

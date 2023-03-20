@@ -13,13 +13,13 @@ func (s *AccountTestSuite) TestOcoWithResult() {
 			MarketOrder: spot.MarketOrder{
 				OrderID: 3313899824, ClientOrderID: "", Market: "BTC_USDT", Side: "buy", Type: "margin stop limit",
 				Timestamp: 1.669375581341061e+09, DealMoney: "0", DealStock: "0", Amount: "100", TakerFee: "0.001",
-				MakerFee: "0.001", Left: "100", DealFee: "0"}, PostOnly: false, Mtime: 1.669375581341061e+09,
+				MakerFee: "0.001", Left: "100", DealFee: "0", PostOnly: false}, Mtime: 1.669375581341061e+09,
 			Price: "40000", ActivationPrice: "30300", ActivationCondition: "gte", Activated: 0},
 		TakeProfit: spot.TakeProfit{
 			MarketOrder: spot.MarketOrder{
 				OrderID: 3313899825, ClientOrderID: "", Market: "BTC_USDT", Side: "buy", Type: "margin limit",
 				Timestamp: 1.669375581341061e+09, DealMoney: "0", DealStock: "0", Amount: "100", TakerFee: "0.001",
-				MakerFee: "0.001", Left: "100", DealFee: "0"}, PostOnly: false, Mtime: 1.669375581341061e+09, Price: "2000"}},
+				MakerFee: "0.001", Left: "100", DealFee: "0", PostOnly: false}, Mtime: 1.669375581341061e+09, Price: "2000"}},
 	}
 
 	expectedResponse, _ := json.Marshal(expectedServerResponse)

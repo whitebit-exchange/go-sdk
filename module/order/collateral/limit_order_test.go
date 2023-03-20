@@ -26,6 +26,8 @@ func (s *OrderTestSuite) TestLimitOrderSuccess() {
 		Amount:        "1",
 		Side:          "buy",
 		Price:         "3000",
+		PostOnly:      false,
+		IOC:           false,
 		ClientOrderId: "23",
 	})
 
@@ -36,7 +38,7 @@ func (s *OrderTestSuite) TestLimitOrderSuccess() {
 	serverResponse := LimitOrder{MarketOrder: MarketOrder{OrderID: 3310300051,
 		ClientOrderID: "25", Market: "BTC_USDT", Side: "buy", Type: "margin limit", Timestamp: 1.669326096937214e+09,
 		DealMoney: "0", DealStock: "0", Amount: "0.001", TakerFee: "0.001",
-		MakerFee: "0.001", Left: "0.001", DealFee: "0"}, Price: "3000"}
+		MakerFee: "0.001", Left: "0.001", DealFee: "0", PostOnly: false, IOC: false}, Price: "3000"}
 
 	request, _ := whitebit.CreateRequest(endpoint.Url())
 	expectedRequest := "/api/v4/order/collateral/limit"
@@ -50,6 +52,8 @@ func (s *OrderTestSuite) TestLimitOrderSuccess() {
 		Amount:        "1",
 		Side:          "buy",
 		Price:         "3000",
+		PostOnly:      false,
+		IOC:           false,
 		ClientOrderId: "23",
 	})
 

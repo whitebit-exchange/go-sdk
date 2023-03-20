@@ -26,6 +26,7 @@ type OrderDetail struct {
 	Price       string `json:"price"`
 	TradeFee    string `json:"tradeFee"`
 	FundingFee  string `json:"fundingFee"`
+	RealizedPnl string `json:"realizedPnl"`
 }
 
 type positionHistoryEndpoint struct {

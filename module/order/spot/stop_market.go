@@ -8,7 +8,9 @@ const stopMarketOrderEndpointUrl = "/api/v4/order/stop_market"
 
 type StopMarketOrder struct {
 	MarketOrder
-	ActivationPrice string `json:"activation_price"`
+	Activated           int64  `json:"activated"`
+	ActivationPrice     string `json:"activation_price"`
+	ActivationCondition string `json:"activationCondition"`
 }
 
 type StopMarketOrderParams struct {
