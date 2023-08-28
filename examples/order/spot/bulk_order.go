@@ -26,6 +26,8 @@ func main() {
 		fmt.Println(err.Error())
 	}
 
-	fmt.Printf("%#v\n", response)
+	for _, resp := range response {
+		fmt.Printf("%v\n", resp.Error)
+	}
 
 }
