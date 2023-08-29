@@ -98,6 +98,23 @@ func (service *Service) CreateStopLimitOrder(params StopLimitOrderParams) (*Stop
 	return &order, nil
 }
 
+func (service *Service) CreateBulkOrder(params []LimitOrderParams) ([]BulkOrderResponseRecord, error) {
+	endpoint := newBulkEndpoint(params)
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var order []BulkOrderResponseRecord
+	err = json.Unmarshal(result, &order)
+	if err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
 func (service *Service) CancelOrder(market string, orderId int64) (*CancelOrder, error) {
 	endpoint := newCancelOrderEndpoint(market, orderId)
 	result, err := service.client.SendRequest(endpoint)
@@ -113,4 +130,38 @@ func (service *Service) CancelOrder(market string, orderId int64) (*CancelOrder,
 	}
 
 	return &order, nil
+}
+
+func (service *Service) CreateKillSwitch(params KillSwitchParams) (*KillSwitchResponse, error) {
+	endpoint := newKillSwitchEndpoint(params)
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var killSwitchResponses KillSwitchResponse
+	err = json.Unmarshal(result, &killSwitchResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	return &killSwitchResponses, nil
+}
+
+func (service *Service) GetKillSwitchStatus(params KillSwitchStatusParams) ([]KillSwitchStatusResponse, error) {
+	endpoint := newKillSwitchStatusEndpoint(params)
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var killSwitchResponses []KillSwitchStatusResponse
+	err = json.Unmarshal(result, &killSwitchResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	return killSwitchResponses, nil
 }
