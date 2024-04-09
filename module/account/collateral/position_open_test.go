@@ -8,7 +8,7 @@ import (
 
 func (s *CollateralAccountTestSuite) TestOpenPositionWithResult() {
 	expectedServerResponse := []OpenPosition{
-		{PositionID: 664, Market: "BTC_USDT", OpenDate: "1669338402.712101", ModifyDate: "1669375581.3410611",
+		{PositionID: 664, Market: "BTC_USDT", OpenDate: 1669338402.712101, ModifyDate: 1669375581.3410611,
 			Amount: "100", BasePrice: "16558.5199706587661", LiquidationPrice: "8568.62", Leverage: "5",
 			Pnl: "-11629.86", PnlPercent: "-0.70", Margin: "371610.4", FreeMargin: "1379086.41", Funding: "0",
 			UnrealizedFunding: "0", LiquidationState: ""}}
@@ -21,8 +21,8 @@ func (s *CollateralAccountTestSuite) TestOpenPositionWithResult() {
 
 	s.Equal(expectedRequest, request.URL.String())
 
-	byteResponse := []byte(`[{"positionId":664,"market":"BTC_USDT","openDate":"1669338402.712101",
-	"modifyDate":"1669375581.3410611","amount":"100","basePrice":"16558.5199706587661","liquidationPrice":"8568.62",
+	byteResponse := []byte(`[{"positionId":664,"market":"BTC_USDT","openDate":1669338402.712101,
+	"modifyDate":1669375581.3410611,"amount":"100","basePrice":"16558.5199706587661","liquidationPrice":"8568.62",
 	"leverage":"5","pnl":"-11629.86","pnlPercent":"-0.70","margin":"371610.4","freeMargin":"1379086.41",
 	"funding":"0","unrealizedFunding":"0","liquidationState":""}]`)
 	s.client.On("SendRequest", mock.Anything).Return(byteResponse, nil).Once()
