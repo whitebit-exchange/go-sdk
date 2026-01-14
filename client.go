@@ -2,14 +2,16 @@ package whitebit
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"time"
 )
 
 type Whitebit struct {
-	ApiKey    string
-	ApiSecret string
-	BaseURL   string
+	ApiKey     string
+	ApiSecret  string
+	BaseURL    string
+	httpClient *http.Client
 }
 
 type Client interface {
@@ -17,11 +19,33 @@ type Client interface {
 }
 
 func NewClient(apiKey string, apiSecret string) *Whitebit {
-	return &Whitebit{ApiKey: apiKey, ApiSecret: apiSecret, BaseURL: "https://whitebit.com"}
+	return &Whitebit{
+		ApiKey:     apiKey,
+		ApiSecret:  apiSecret,
+		BaseURL:    "https://whitebit.com",
+		httpClient: &http.Client{Timeout: 15 * time.Second},
+	}
+}
+
+// NewClientWithHTTPClient allows constructing a Whitebit client with a custom http.Client and baseURL.
+// If httpClient is nil, a default one will be used.
+func NewClientWithHTTPClient(apiKey, apiSecret string, httpClient *http.Client, baseURL string) *Whitebit {
+	if httpClient == nil {
+		httpClient = &http.Client{Timeout: 15 * time.Second}
+	}
+	if baseURL == "" {
+		baseURL = "https://whitebit.com"
+	}
+	return &Whitebit{
+		ApiKey:     apiKey,
+		ApiSecret:  apiSecret,
+		BaseURL:    baseURL,
+		httpClient: httpClient,
+	}
 }
 
 func (c *Whitebit) call(request *http.Request) ([]byte, int, error) {
-	client := http.Client{}
+	client := c.httpClient
 
 	response, err := client.Do(request)
 	if err != nil {
@@ -30,7 +54,7 @@ func (c *Whitebit) call(request *http.Request) ([]byte, int, error) {
 	defer response.Body.Close()
 
 	//receiving data
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 
 	return responseBody, response.StatusCode, err
 }
