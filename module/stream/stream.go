@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/fasthttp/websocket"
-	"github.com/spf13/cast"
-	"math/rand"
+	"io"
+	"net"
 	"sync"
 	"time"
+
+	"github.com/gobwas/ws"
+	"github.com/gobwas/ws/wsutil"
 )
 
 type CommandHandler struct {
@@ -25,23 +27,25 @@ type Event struct {
 type Stream struct {
 	Url             string
 	token           string
-	m               *sync.Mutex
+	m               sync.Mutex
 	isConnected     bool
 	isAuthorized    bool
-	Connection      *websocket.Conn
+	conn            net.Conn
+	rw              io.ReadWriter
 	subscribes      map[string]*Subscription
 	commandHandlers map[int64]CommandHandler
 	errorHandler    func(err error)
+	randCounter     int64
 }
 
 func NewStream(ctx context.Context, token string, errorHandler func(err error)) (*Stream, error) {
 	stream := &Stream{
 		Url:             "wss://api.whitebit.com/ws",
 		token:           token,
-		m:               &sync.Mutex{},
-		subscribes:      map[string]*Subscription{},
-		commandHandlers: map[int64]CommandHandler{},
+		subscribes:      make(map[string]*Subscription),
+		commandHandlers: make(map[int64]CommandHandler),
 		errorHandler:    errorHandler,
+		randCounter:     1,
 	}
 	err := stream.init(ctx)
 	if err != nil {
@@ -97,7 +101,7 @@ func (stream *Stream) init(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 			default:
-				_, message, err := stream.getConnection().ReadMessage()
+				message, err := stream.readMessage()
 				if err != nil {
 					stream.errorHandler(err)
 					time.Sleep(time.Second)
@@ -111,36 +115,51 @@ func (stream *Stream) init(ctx context.Context) error {
 					continue
 				}
 
-				var event Event
-				errUnmarshal := json.Unmarshal(message, &event)
-				if err != nil {
-					stream.errorHandler(errUnmarshal)
-					return
+				if len(message) == 0 {
+					continue
 				}
 
-				//command response handling
+				var event Event
+				errUnmarshal := json.Unmarshal(message, &event)
+				if errUnmarshal != nil {
+					stream.errorHandler(errUnmarshal)
+					continue
+				}
+
+				// command response handling
 				if event.Method == "" {
-					if cast.ToInt(event.ID) == 0 {
+					if event.ID == 0 {
 						continue
 					}
 					var reply CommandReply
 					errReply := json.Unmarshal(message, &reply)
 					if errReply != nil {
-						return
+						continue
 					}
+
+					stream.m.Lock()
 					handler, exists := stream.commandHandlers[event.ID]
+					if exists {
+						delete(stream.commandHandlers, event.ID)
+					}
+					stream.m.Unlock()
+
 					if !exists {
 						continue
 					}
 
-					delete(stream.commandHandlers, event.ID)
 					result, _ := json.Marshal(reply.Result)
 					handler.Handler(handler.Command, result)
 					continue
 				}
 
+				stream.m.Lock()
 				subscribe := stream.subscribes[event.Method]
-				subscribe.OnEvent(event)
+				stream.m.Unlock()
+
+				if subscribe != nil {
+					subscribe.OnEvent(event)
+				}
 			}
 		}
 	}()
@@ -154,12 +173,36 @@ func (stream *Stream) isAlive() bool {
 	return stream.isConnected
 }
 
+func (stream *Stream) readMessage() ([]byte, error) {
+	stream.m.Lock()
+	rw := stream.rw
+	stream.m.Unlock()
+
+	if rw == nil {
+		return nil, fmt.Errorf("connection is nil")
+	}
+
+	data, err := wsutil.ReadServerText(rw)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func (stream *Stream) write(msg []byte) error {
 	stream.m.Lock()
-	stream.Connection.SetWriteDeadline(time.Now().Add(time.Second * 30))
-	err := stream.Connection.WriteMessage(websocket.TextMessage, msg)
-	stream.m.Unlock()
-	return err
+	defer stream.m.Unlock()
+
+	if stream.conn == nil {
+		return fmt.Errorf("connection is nil")
+	}
+
+	if err := stream.conn.SetWriteDeadline(time.Now().Add(time.Second * 30)); err != nil {
+		return err
+	}
+
+	return wsutil.WriteClientText(stream.conn, msg)
 }
 
 func (stream *Stream) authorize() error {
@@ -186,7 +229,9 @@ func (stream *Stream) Subscribe(command *Subscription) error {
 		return fmt.Errorf("websocket send command error: %w", err)
 	}
 	if !command.Command.IsQuery {
+		stream.m.Lock()
 		stream.subscribes[command.EventMethod] = command
+		stream.m.Unlock()
 	}
 	return nil
 }
@@ -196,13 +241,7 @@ func (command Command) send(stream *Stream) error {
 	if err != nil {
 		return fmt.Errorf("whitebitws subscribe command marshal error: %w", err)
 	}
-	stream.getConnection().SetWriteDeadline(time.Now().Add(time.Second * 30))
-	err = stream.Connection.WriteMessage(websocket.TextMessage, msg)
-	if err != nil {
-		return fmt.Errorf("error during stream subscribe: %w", err)
-	}
-
-	return nil
+	return stream.write(msg)
 }
 
 func (stream *Stream) Unsubscribe(command Command) error {
@@ -210,19 +249,17 @@ func (stream *Stream) Unsubscribe(command Command) error {
 	if err != nil {
 		return fmt.Errorf("whitebitws unsubscribe command marshal error: %w", err)
 	}
-	stream.getConnection().SetWriteDeadline(time.Now().Add(time.Second * 30))
-	err = stream.write(msg)
-
-	if err != nil {
-		return fmt.Errorf("error during stream subscribe: %w", err)
-	}
-
-	return nil
+	return stream.write(msg)
 }
 
 func (stream *Stream) Query(command Command, callback func(command Command, response []byte)) error {
+	stream.m.Lock()
 	for {
-		randId := int64(rand.Intn(1000000-1+1) + 1)
+		stream.randCounter++
+		if stream.randCounter > 1000000 {
+			stream.randCounter = 1
+		}
+		randId := stream.randCounter
 		_, exists := stream.commandHandlers[randId]
 		if !exists {
 			command.Id = randId
@@ -232,28 +269,24 @@ func (stream *Stream) Query(command Command, callback func(command Command, resp
 
 	msg, err := json.Marshal(command)
 	if err != nil {
+		stream.m.Unlock()
 		return fmt.Errorf("whitebitws subscribe command marshal error: %w", err)
 	}
 	stream.commandHandlers[command.Id] = CommandHandler{Command: command, Handler: callback}
+	stream.m.Unlock()
 
-	stream.getConnection().SetWriteDeadline(time.Now().Add(time.Second * 30))
-	err = stream.write(msg)
-
-	if err != nil {
-		return fmt.Errorf("error during stream subscribe: %w", err)
-	}
-
-	return nil
+	return stream.write(msg)
 }
 
 func (stream *Stream) connect() error {
-	c, _, err := websocket.DefaultDialer.Dial(stream.Url, nil)
+	conn, _, _, err := ws.Dial(context.Background(), stream.Url)
 	if err != nil {
 		return fmt.Errorf("whitebitws connection error: %w", err)
 	}
 
 	stream.m.Lock()
-	stream.Connection = c
+	stream.conn = conn
+	stream.rw = conn
 	stream.isConnected = true
 	stream.m.Unlock()
 
@@ -273,13 +306,17 @@ func (stream *Stream) reconnect() error {
 		return authErr
 	}
 
-	var subscribeError error
+	stream.m.Lock()
+	subscribes := make([]*Subscription, 0, len(stream.subscribes))
 	for _, subscribe := range stream.subscribes {
-		for subscribeError == nil {
-			subscribeError = subscribe.send(stream)
-			if subscribeError == nil {
-				break
-			}
+		subscribes = append(subscribes, subscribe)
+	}
+	stream.m.Unlock()
+
+	for _, subscribe := range subscribes {
+		subscribeError := subscribe.send(stream)
+		if subscribeError != nil {
+			return subscribeError
 		}
 	}
 	return nil
@@ -290,7 +327,14 @@ func (stream *Stream) makeDisconnected() {
 		return
 	}
 
+	stream.m.Lock()
+	subscribes := make([]*Subscription, 0, len(stream.subscribes))
 	for _, subscribe := range stream.subscribes {
+		subscribes = append(subscribes, subscribe)
+	}
+	stream.m.Unlock()
+
+	for _, subscribe := range subscribes {
 		err := subscribe.UnsubscribeMethod.send(stream)
 		if err != nil {
 			break
@@ -299,16 +343,13 @@ func (stream *Stream) makeDisconnected() {
 	stream.Close()
 }
 
-func (stream *Stream) getConnection() *websocket.Conn {
-	stream.m.Lock()
-	defer stream.m.Unlock()
-	return stream.Connection
-}
-
 func (stream *Stream) Close() error {
 	stream.m.Lock()
 	defer stream.m.Unlock()
 
 	stream.isConnected = false
-	return stream.Connection.Close()
+	if stream.conn != nil {
+		return stream.conn.Close()
+	}
+	return nil
 }
