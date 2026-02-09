@@ -131,3 +131,21 @@ func (service *Service) CancelOcoOrder(market string, orderId int64) (*OcoCancel
 
 	return &order, nil
 }
+
+// CreateBulkOrder creates multiple collateral orders in a single request.
+func (service *Service) CreateBulkOrder(orders []BulkOrderParams) ([]BulkOrderResponse, error) {
+	endpoint := newBulkOrderEndpoint(orders)
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var responses []BulkOrderResponse
+	err = json.Unmarshal(result, &responses)
+	if err != nil {
+		return nil, err
+	}
+
+	return responses, nil
+}

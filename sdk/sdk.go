@@ -10,16 +10,20 @@ import (
 	accountMain "github.com/whitebit-exchange/go-sdk/module/account/main_account"
 	accountTrade "github.com/whitebit-exchange/go-sdk/module/account/trade"
 	"github.com/whitebit-exchange/go-sdk/module/assets"
+	"github.com/whitebit-exchange/go-sdk/module/convert"
 	"github.com/whitebit-exchange/go-sdk/module/deal"
 	"github.com/whitebit-exchange/go-sdk/module/depth"
 	"github.com/whitebit-exchange/go-sdk/module/fee"
 	"github.com/whitebit-exchange/go-sdk/module/futures"
 	"github.com/whitebit-exchange/go-sdk/module/kline"
 	"github.com/whitebit-exchange/go-sdk/module/market"
+	"github.com/whitebit-exchange/go-sdk/module/mining"
 	orderCollateral "github.com/whitebit-exchange/go-sdk/module/order/collateral"
 	orderSpot "github.com/whitebit-exchange/go-sdk/module/order/spot"
 	"github.com/whitebit-exchange/go-sdk/module/server"
+	"github.com/whitebit-exchange/go-sdk/module/smartlending"
 	"github.com/whitebit-exchange/go-sdk/module/status"
+	"github.com/whitebit-exchange/go-sdk/module/subaccount"
 	"github.com/whitebit-exchange/go-sdk/module/symbol"
 	"github.com/whitebit-exchange/go-sdk/module/tickers"
 )
@@ -27,6 +31,7 @@ import (
 type SDK struct {
 	Client *whitebit.Whitebit
 
+	// Public API
 	Server  *server.Service
 	Market  *market.Service
 	Depth   *depth.Service
@@ -39,12 +44,20 @@ type SDK struct {
 	Kline   *kline.Service
 	Status  *status.Service
 
+	// Orders
 	OrdersSpot       *orderSpot.Service
 	OrdersCollateral *orderCollateral.Service
 
+	// Account
 	AccountTrade      *accountTrade.Service
 	AccountCollateral *accountCollateral.Service
 	AccountMain       *accountMain.Service
+
+	// Additional Services
+	Convert      *convert.Service
+	SubAccount   *subaccount.Service
+	SmartLending *smartlending.Service
+	Mining       *mining.Service
 }
 
 type config struct {
@@ -107,6 +120,12 @@ func New(apiKey, apiSecret string, opts ...Option) *SDK {
 	sdk.AccountTrade = accountTrade.NewService(wb)
 	sdk.AccountCollateral = accountCollateral.NewService(wb)
 	sdk.AccountMain = accountMain.NewService(wb)
+
+	// Additional services
+	sdk.Convert = convert.NewService(wb)
+	sdk.SubAccount = subaccount.NewService(wb)
+	sdk.SmartLending = smartlending.NewService(wb)
+	sdk.Mining = mining.NewService(wb)
 
 	return sdk
 }

@@ -212,3 +212,74 @@ func (service *Service) GetCustomFee() (CustomFee, error) {
 
 	return response, nil
 }
+
+// GetDepositAddress returns a deposit address for the specified ticker.
+func (service *Service) GetDepositAddress(ticker, network string) (AddressResponse, error) {
+	endpoint := newAddressEndpoint(ticker, network)
+	var response AddressResponse
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+// CreateNewAddress creates a new deposit address for the specified ticker.
+func (service *Service) CreateNewAddress(ticker, network, addressType string) (AddressResponse, error) {
+	endpoint := newCreateNewAddressEndpoint(ticker, network, addressType)
+	var response AddressResponse
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+// GetFiatDepositURL returns a fiat deposit URL.
+func (service *Service) GetFiatDepositURL(ticker, provider, amount, uniqueID string, customer *Customer, successLink, failureLink, returnLink string) (FiatDepositURLResponse, error) {
+	endpoint := newFiatDepositURLEndpoint(ticker, provider, amount, uniqueID, customer, successLink, failureLink, returnLink)
+	var response FiatDepositURLResponse
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+// Withdraw creates a withdrawal request. Amount includes fee.
+func (service *Service) Withdraw(params WithdrawParams) error {
+	endpoint := newWithdrawEndpoint(params)
+	_, err := service.client.SendRequest(endpoint)
+	return err
+}
+
+// WithdrawPay creates a withdrawal request where the fee is added on top of the amount.
+func (service *Service) WithdrawPay(params WithdrawParams) error {
+	endpoint := newWithdrawPayEndpoint(params)
+	_, err := service.client.SendRequest(endpoint)
+	return err
+}

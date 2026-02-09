@@ -131,3 +131,87 @@ func (service *Service) GetOpenPositions(market string) ([]OpenPosition, error) 
 
 	return response, nil
 }
+
+// GetFundingHistory returns funding payments history.
+func (service *Service) GetFundingHistory(market string, limit, offset int) (FundingHistoryResponse, error) {
+	endpoint := newFundingHistoryEndpoint(market, limit, offset)
+	var response FundingHistoryResponse
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+// GetHedgeMode returns the current hedge mode status.
+func (service *Service) GetHedgeMode() (HedgeModeResponse, error) {
+	endpoint := newHedgeModeEndpoint()
+	var response HedgeModeResponse
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+// UpdateHedgeMode enables or disables hedge mode.
+func (service *Service) UpdateHedgeMode(hedgeMode bool) (HedgeModeResponse, error) {
+	endpoint := newHedgeModeUpdateEndpoint(hedgeMode)
+	var response HedgeModeResponse
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return response, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
+}
+
+// GetPositions returns all open positions.
+func (service *Service) GetPositions(market string) ([]Position, error) {
+	endpoint := newPositionsEndpoint(market)
+	response := make([]Position, 0)
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(result, &response)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+// ClosePosition closes a position by market order.
+// positionSide: "long" or "short" (for hedge mode)
+func (service *Service) ClosePosition(market, positionSide string) error {
+	endpoint := newPositionCloseEndpoint(market, positionSide)
+	_, err := service.client.SendRequest(endpoint)
+	return err
+}

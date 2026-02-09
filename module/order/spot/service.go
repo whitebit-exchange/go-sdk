@@ -165,3 +165,29 @@ func (service *Service) GetKillSwitchStatus(params KillSwitchStatusParams) ([]Ki
 
 	return killSwitchResponses, nil
 }
+
+// CancelAllOrders cancels all orders for a market.
+// types can be: "limit", "stop-limit", "stop-market", "oco", "oto"
+func (service *Service) CancelAllOrders(market string, types []string) error {
+	endpoint := newCancelAllOrdersEndpoint(market, types)
+	_, err := service.client.SendRequest(endpoint)
+	return err
+}
+
+// ModifyOrder modifies an existing order.
+func (service *Service) ModifyOrder(params ModifyOrderParams) (*ModifiedOrder, error) {
+	endpoint := newModifyOrderEndpoint(params)
+	result, err := service.client.SendRequest(endpoint)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var order ModifiedOrder
+	err = json.Unmarshal(result, &order)
+	if err != nil {
+		return nil, err
+	}
+
+	return &order, nil
+}
