@@ -19,8 +19,8 @@ import (
 func main() {
 	// Create a client with your own apiKey and apiSecret (need for authorize websocket connecting)
 	client := whitebit.NewClient(
-		"26b34be172199d7426accf8ff2e39973",
-		"8779b00e722d9485c072ebf59f65074d",
+		"",
+		"",
 	)
 
 	// Create new service
