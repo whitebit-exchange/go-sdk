@@ -60,49 +60,49 @@ func newMockWSServer(t *testing.T) *mockWSServer {
 
 				switch cmd.Method {
 				case PingRequest:
-					resp := map[string]interface{}{
-						"id":     cmd.Id,
+					resp := map[string]any{
+						"id":     cmd.ID,
 						"result": "pong",
 						"error":  nil,
 					}
 					respData, _ := json.Marshal(resp)
 					wsutil.WriteServerText(conn, respData)
 				case "authorize":
-					resp := map[string]interface{}{
-						"id":     cmd.Id,
-						"result": map[string]interface{}{"status": "success"},
+					resp := map[string]any{
+						"id":     cmd.ID,
+						"result": map[string]any{"status": "success"},
 						"error":  nil,
 					}
 					respData, _ := json.Marshal(resp)
 					wsutil.WriteServerText(conn, respData)
 				case KlineSubscribe:
-					resp := map[string]interface{}{
-						"id":     cmd.Id,
-						"result": map[string]interface{}{"status": "success"},
+					resp := map[string]any{
+						"id":     cmd.ID,
+						"result": map[string]any{"status": "success"},
 						"error":  nil,
 					}
 					respData, _ := json.Marshal(resp)
 					wsutil.WriteServerText(conn, respData)
 				case KlineRequest:
-					resp := map[string]interface{}{
-						"id":     cmd.Id,
-						"result": [][]interface{}{},
+					resp := map[string]any{
+						"id":     cmd.ID,
+						"result": [][]any{},
 						"error":  nil,
 					}
 					respData, _ := json.Marshal(resp)
 					wsutil.WriteServerText(conn, respData)
 				case DepthSubscribe:
-					resp := map[string]interface{}{
-						"id":     cmd.Id,
-						"result": map[string]interface{}{"status": "success"},
+					resp := map[string]any{
+						"id":     cmd.ID,
+						"result": map[string]any{"status": "success"},
 						"error":  nil,
 					}
 					respData, _ := json.Marshal(resp)
 					wsutil.WriteServerText(conn, respData)
 				case LastPriceSubscribe:
-					resp := map[string]interface{}{
-						"id":     cmd.Id,
-						"result": map[string]interface{}{"status": "success"},
+					resp := map[string]any{
+						"id":     cmd.ID,
+						"result": map[string]any{"status": "success"},
 						"error":  nil,
 					}
 					respData, _ := json.Marshal(resp)
@@ -154,10 +154,10 @@ func (m *mockWSServer) getMessages() [][]byte {
 }
 
 func newTestStream(t *testing.T, url string, token string) (*Stream, context.CancelFunc) {
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 
 	stream := &Stream{
-		Url:             url,
+		URL:             url,
 		token:           token,
 		subscribes:      make(map[string]*Subscription),
 		commandHandlers: make(map[int64]CommandHandler),
@@ -165,7 +165,7 @@ func newTestStream(t *testing.T, url string, token string) (*Stream, context.Can
 		randCounter:     1,
 	}
 
-	err := stream.connect()
+	err := stream.connect(ctx)
 	require.NoError(t, err)
 
 	return stream, cancel
@@ -179,7 +179,7 @@ func TestNewStream_Connect(t *testing.T) {
 	defer cancel()
 
 	stream := &Stream{
-		Url:             server.getURL(),
+		URL:             server.getURL(),
 		token:           "",
 		subscribes:      make(map[string]*Subscription),
 		commandHandlers: make(map[int64]CommandHandler),
@@ -187,8 +187,9 @@ func TestNewStream_Connect(t *testing.T) {
 		randCounter:     1,
 	}
 
-	err := stream.init(ctx)
+	err := stream.connect(ctx)
 	require.NoError(t, err)
+	stream.listen(ctx)
 	defer stream.Close()
 
 	assert.True(t, stream.isAlive())
@@ -226,7 +227,7 @@ func TestStream_Query(t *testing.T) {
 	defer cancel()
 
 	stream := &Stream{
-		Url:             server.getURL(),
+		URL:             server.getURL(),
 		token:           "",
 		subscribes:      make(map[string]*Subscription),
 		commandHandlers: make(map[int64]CommandHandler),
@@ -234,8 +235,9 @@ func TestStream_Query(t *testing.T) {
 		randCounter:     1,
 	}
 
-	err := stream.init(ctx)
+	err := stream.connect(ctx)
 	require.NoError(t, err)
+	stream.listen(ctx)
 	defer stream.Close()
 
 	time.Sleep(100 * time.Millisecond)
@@ -270,8 +272,13 @@ func TestStream_Unsubscribe(t *testing.T) {
 	err := stream.Subscribe(sub)
 	require.NoError(t, err)
 
-	err = stream.Unsubscribe(NewKlineUnsubscribe())
+	err = stream.Unsubscribe(sub)
 	require.NoError(t, err)
+
+	stream.m.Lock()
+	_, exists := stream.subscribes[KlineUpdate]
+	stream.m.Unlock()
+	assert.False(t, exists)
 }
 
 func TestStream_Close(t *testing.T) {
@@ -351,7 +358,7 @@ func TestNewKlineSubscription(t *testing.T) {
 
 	event := Event{
 		Method: KlineUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -371,7 +378,7 @@ func TestNewDepthSubscription(t *testing.T) {
 
 	event := Event{
 		Method: DepthUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -391,7 +398,7 @@ func TestNewLastPriceSubscription(t *testing.T) {
 
 	event := Event{
 		Method: LastPriceUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -411,7 +418,7 @@ func TestNewSpotBalanceSubscription(t *testing.T) {
 
 	event := Event{
 		Method: SpotBalanceUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -431,7 +438,7 @@ func TestNewMarginBalanceSubscription(t *testing.T) {
 
 	event := Event{
 		Method: MarginBalanceUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -451,7 +458,7 @@ func TestNewMarketTradesSubscription(t *testing.T) {
 
 	event := Event{
 		Method: TradesUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -471,7 +478,7 @@ func TestNewMarketStatSubscription(t *testing.T) {
 
 	event := Event{
 		Method: MarketStatUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -491,7 +498,7 @@ func TestNewDealsSubscription(t *testing.T) {
 
 	event := Event{
 		Method: DealsUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -511,7 +518,7 @@ func TestNewPendingOrdersSubscription(t *testing.T) {
 
 	event := Event{
 		Method: OrdersPendingUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -531,7 +538,7 @@ func TestNewOrderExecutedSubscription(t *testing.T) {
 
 	event := Event{
 		Method: OrdersExecutedUpdate,
-		Params: []interface{}{},
+		Params: []any{},
 	}
 	sub.OnEvent(event)
 	assert.True(t, called)
@@ -540,7 +547,7 @@ func TestNewOrderExecutedSubscription(t *testing.T) {
 func TestTransformEvent(t *testing.T) {
 	event := Event{
 		Method: KlineUpdate,
-		Params: []interface{}{"data1", "data2"},
+		Params: []any{"data1", "data2"},
 	}
 
 	result, err := TransformEvent[KlineUpdateEvent](event)
@@ -563,10 +570,10 @@ func TestStream_ConcurrentWrite(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			msg, _ := json.Marshal(map[string]interface{}{
+			msg, _ := json.Marshal(map[string]any{
 				"id":     id,
 				"method": "ping",
-				"params": []interface{}{},
+				"params": []any{},
 			})
 			err := stream.write(msg)
 			assert.NoError(t, err)

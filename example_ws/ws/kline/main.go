@@ -64,7 +64,8 @@ func main() {
 	}
 
 	// Subscribe on kline events
-	err = streamService.Subscribe(stream.NewKlineSubscription(klineHandler, "BTC_USDT", 3600))
+	klineSub := stream.NewKlineSubscription(klineHandler, "BTC_USDT", 3600)
+	err = streamService.Subscribe(klineSub)
 
 	//Send MarketKline query with handler for result processing
 	streamService.Query(stream.NewKlineCommand("BTC_USDT", time.Now().Unix()-3600, time.Now().Unix(), 3600), func(command stream.Command, response []byte) {
@@ -81,7 +82,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewKlineUnsubscribe())
+	err = streamService.Unsubscribe(klineSub)
 	if err != nil {
 		log.Fatal(err)
 	}

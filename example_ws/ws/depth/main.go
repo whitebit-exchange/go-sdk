@@ -65,7 +65,8 @@ func main() {
 	}
 
 	// Subscribe on market depth events
-	err = streamService.Subscribe(stream.NewMarketDepthSubscription(marketDepthHandler, "ETH_USDT", 1, "0", false))
+	depthSub := stream.NewMarketDepthSubscription(marketDepthHandler, "ETH_USDT", 1, "0", false)
+	err = streamService.Subscribe(depthSub)
 
 	//Send MarketDepth query with handler for result processing
 	streamService.Query(stream.NewMarketDepthCommand("BTC_USDT", 10, "0"), func(command stream.Command, response []byte) {
@@ -80,7 +81,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewDepthUnsubscribeUnsubscribe())
+	err = streamService.Unsubscribe(depthSub)
 	if err != nil {
 		log.Fatal(err)
 	}

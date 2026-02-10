@@ -64,7 +64,8 @@ func main() {
 	}
 
 	// Subscribe on market last price events
-	err = streamService.Subscribe(stream.NewLastPriceSubscription(lastPriceHandler, []string{"BTC_USDT"}))
+	lastPriceSub := stream.NewLastPriceSubscription(lastPriceHandler, []string{"BTC_USDT"})
+	err = streamService.Subscribe(lastPriceSub)
 
 	//Send LastPrice query with handler for result processing
 	streamService.Query(stream.NewLastPriceCommand("BTC_USDT"), func(command stream.Command, response []byte) {
@@ -79,7 +80,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewLastPriceUnsubscribe())
+	err = streamService.Unsubscribe(lastPriceSub)
 	if err != nil {
 		log.Fatal(err)
 	}

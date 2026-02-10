@@ -64,7 +64,8 @@ func main() {
 	}
 
 	// Subscribe on SpotBalance events
-	err = streamService.Subscribe(stream.NewSpotBalanceSubscription(spotHandler, "USDT"))
+	spotSub := stream.NewSpotBalanceSubscription(spotHandler, "USDT")
+	err = streamService.Subscribe(spotSub)
 
 	// Send SpotBalance query with handler for result processing
 	streamService.Query(stream.NewSpotBalanceCommand([]string{"BTC", "USDT"}), func(command stream.Command, response []byte) {
@@ -79,7 +80,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewSpotBalanceUnsubscribe())
+	err = streamService.Unsubscribe(spotSub)
 	if err != nil {
 		log.Fatal(err)
 	}

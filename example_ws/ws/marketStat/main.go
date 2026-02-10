@@ -68,13 +68,15 @@ func main() {
 	}
 
 	// Subscribe on market status
-	err = streamService.Subscribe(stream.NewMarketStatSubscription(marketStatHandler, []string{"BTC_USDT"}))
+	marketStatSub := stream.NewMarketStatSubscription(marketStatHandler, []string{"BTC_USDT"})
+	err = streamService.Subscribe(marketStatSub)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Subscribe on market status from 0:00
-	err = streamService.Subscribe(stream.NewMarketStatTodaySubscription(MarketStatTodayHandler, []string{"BTC_USDT"}))
+	marketStatTodaySub := stream.NewMarketStatTodaySubscription(MarketStatTodayHandler, []string{"BTC_USDT"})
+	err = streamService.Subscribe(marketStatTodaySub)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -103,11 +105,11 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewMarketStatUnsubscribe())
+	err = streamService.Unsubscribe(marketStatSub)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = streamService.Unsubscribe(stream.NewMarketStatTodayUnsubscribe())
+	err = streamService.Unsubscribe(marketStatTodaySub)
 	if err != nil {
 		log.Fatal(err)
 	}

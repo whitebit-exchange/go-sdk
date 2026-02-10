@@ -64,7 +64,8 @@ func main() {
 	}
 
 	// Subscribe on executed orders events
-	err = streamService.Subscribe(stream.NewOrderExecutedSubscription(executedOrdersHandler, []string{"BTC_USDT"}, 0))
+	executedSub := stream.NewOrderExecutedSubscription(executedOrdersHandler, []string{"BTC_USDT"}, 0)
+	err = streamService.Subscribe(executedSub)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,7 +83,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewOrdersExecutedUnsubscribe())
+	err = streamService.Unsubscribe(executedSub)
 	if err != nil {
 		log.Fatal(err)
 	}

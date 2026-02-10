@@ -64,7 +64,8 @@ func main() {
 	}
 
 	// Subscribe on deals events
-	err = streamService.Subscribe(stream.NewDealsSubscription(dealsHandler, []string{"BTC_USDT"}))
+	dealsSub := stream.NewDealsSubscription(dealsHandler, []string{"BTC_USDT"})
+	err = streamService.Subscribe(dealsSub)
 
 	// Send Deals query with handler for result processing
 	streamService.Query(stream.NewDealsCommand("BTC_USDT", 0, 1), func(command stream.Command, response []byte) {
@@ -79,7 +80,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewDealsUnsubscribe())
+	err = streamService.Unsubscribe(dealsSub)
 	if err != nil {
 		log.Fatal(err)
 	}

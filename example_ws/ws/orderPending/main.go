@@ -64,7 +64,8 @@ func main() {
 	}
 
 	// Subscribe on pending orders events
-	err = streamService.Subscribe(stream.NewPendingOrdersSubscription(pendingOrdersHandler, "BTC_USDT"))
+	pendingSub := stream.NewPendingOrdersSubscription(pendingOrdersHandler, "BTC_USDT")
+	err = streamService.Subscribe(pendingSub)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,7 +83,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewOrdersPendingUnsubscribe())
+	err = streamService.Unsubscribe(pendingSub)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -64,7 +64,8 @@ func main() {
 	}
 
 	// Subscribe on deals events
-	err = streamService.Subscribe(stream.NewMarketTradesSubscription(marketTradesHandler, []string{"BTC_USDT"}))
+	tradesSub := stream.NewMarketTradesSubscription(marketTradesHandler, []string{"BTC_USDT"})
+	err = streamService.Subscribe(tradesSub)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,7 +82,7 @@ func main() {
 
 	time.Sleep(time.Second * 10)
 	// unsubscribe example if you need
-	err = streamService.Unsubscribe(stream.NewMarketTradesUnsubscribe())
+	err = streamService.Unsubscribe(tradesSub)
 	if err != nil {
 		log.Fatal(err)
 	}
