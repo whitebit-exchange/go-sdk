@@ -1,11 +1,13 @@
 module github.com/whitebit-exchange/go-sdk
 
-go 1.18
+go 1.25
+
+toolchain go1.25.2
 
 require (
 	github.com/gobwas/ws v1.4.0
 	github.com/spf13/cast v1.4.1
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
