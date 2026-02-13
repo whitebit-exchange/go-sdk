@@ -19,10 +19,10 @@ type accountFeeByMarketEndpoint struct {
 }
 
 type CustomFee struct {
-	Error     interface{}         `json:"error,omitempty"`
-	Taker     string              `json:"taker,omitempty"`
-	Maker     string              `json:"maker,omitempty"`
-	CustomFee map[string][]string `json:"custom_fee,omitempty"`
+	Error     any                          `json:"error,omitempty"`
+	Taker     string                       `json:"taker,omitempty"`
+	Maker     string                       `json:"maker,omitempty"`
+	CustomFee map[string]map[string]string `json:"custom_fee,omitempty"`
 }
 
 type customFeeEndpoint struct {
