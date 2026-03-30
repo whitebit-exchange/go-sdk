@@ -3,324 +3,322 @@
 package accountendpoints
 
 import (
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    core "github.com/whitebit-exchange/go-sdk/core"
-    context "context"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    http "net/http"
+	context "context"
+	http "net/http"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type RawClient struct {
-    baseURL string
-    caller *internal.Caller
-    options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
+	options *core.RequestOptions
 }
 
 func NewRawClient(options *core.RequestOptions) *RawClient {
-    return &RawClient{
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &RawClient{
+		options: options,
+		baseURL: options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 func (r *RawClient) GetAccountTransactions(
-    ctx context.Context,
-    request map[string]any,
-    opts ...option.RequestOption,
-) (*core.Response[map[string]any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/accounts/transactions"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    var response map[string]any
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[map[string]any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request map[string]any,
+	opts ...option.RequestOption,
+) (*core.Response[map[string]any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/accounts/transactions"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response map[string]any
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[map[string]any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetCurrencyConversions(
-    ctx context.Context,
-    request map[string]any,
-    opts ...option.RequestOption,
-) (*core.Response[map[string]any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/accounts/converts"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    var response map[string]any
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[map[string]any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request map[string]any,
+	opts ...option.RequestOption,
+) (*core.Response[map[string]any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/accounts/converts"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response map[string]any
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[map[string]any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetOrdersHistory(
-    ctx context.Context,
-    request map[string]any,
-    opts ...option.RequestOption,
-) (*core.Response[map[string]any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/accounts/orders"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    var response map[string]any
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[map[string]any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request map[string]any,
+	opts ...option.RequestOption,
+) (*core.Response[map[string]any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/accounts/orders"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response map[string]any
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[map[string]any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetExecutedDeals(
-    ctx context.Context,
-    request map[string]any,
-    opts ...option.RequestOption,
-) (*core.Response[map[string]any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/accounts/deals"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    var response map[string]any
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[map[string]any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request map[string]any,
+	opts ...option.RequestOption,
+) (*core.Response[map[string]any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/accounts/deals"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response map[string]any
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[map[string]any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetMainAccountBalance(
-    ctx context.Context,
-    request map[string]any,
-    opts ...option.RequestOption,
-) (*core.Response[map[string]any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/accounts/balances/main"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    var response map[string]any
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[map[string]any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request map[string]any,
+	opts ...option.RequestOption,
+) (*core.Response[map[string]any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/accounts/balances/main"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response map[string]any
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[map[string]any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetSpotAccountBalance(
-    ctx context.Context,
-    request map[string]any,
-    opts ...option.RequestOption,
-) (*core.Response[map[string]any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/accounts/balances/spot"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    var response map[string]any
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[map[string]any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request map[string]any,
+	opts ...option.RequestOption,
+) (*core.Response[map[string]any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/accounts/balances/spot"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	var response map[string]any
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[map[string]any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
-

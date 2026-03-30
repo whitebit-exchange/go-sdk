@@ -3,291 +3,289 @@
 package sub_account_api_keys_test
 
 import (
-    http "net/http"
-    bytes "bytes"
-    json "encoding/json"
-    os "os"
-    testing "testing"
-    client "github.com/whitebit-exchange/go-sdk/client"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    context "context"
-    require "github.com/stretchr/testify/require"
+	bytes "bytes"
+	context "context"
+	json "encoding/json"
+	require "github.com/stretchr/testify/require"
+	http "net/http"
+	os "os"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	client "github.com/whitebit-exchange/go-sdk/client"
+	option "github.com/whitebit-exchange/go-sdk/option"
+	testing "testing"
 )
 
-
-
 func VerifyRequestCount(
-    t *testing.T,
-    testId string,
-    method string,
-    urlPath string,
-    queryParams map[string]string,
-    expected int,
+	t *testing.T,
+	testId string,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
-    var reqBody bytes.Buffer
-    reqBody.WriteString(`{"method":"`)
-    reqBody.WriteString(method)
-    reqBody.WriteString(`","urlPath":"`)
-    reqBody.WriteString(urlPath)
-    reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
-    reqBody.WriteString(testId)
-    reqBody.WriteString(`"}}`)
-    if len(queryParams) > 0 {
-        reqBody.WriteString(`,"queryParameters":{`)
-        first := true
-        for key, value := range queryParams {
-            if !first {
-                reqBody.WriteString(",")
-            }
-            reqBody.WriteString(`"`)
-            reqBody.WriteString(key)
-            reqBody.WriteString(`":{"equalTo":"`)
-            reqBody.WriteString(value)
-            reqBody.WriteString(`"}`)
-            first = false
-        }
-        reqBody.WriteString("}")
-    }
-    reqBody.WriteString("}")
-    resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
-    require.NoError(t, err)
-    var result struct { Requests []interface{} `json:"requests"` }
-    json.NewDecoder(resp.Body).Decode(&result)
-    require.Equal(t, expected, len(result.Requests))
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
+	reqBody.WriteString(testId)
+	reqBody.WriteString(`"}}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
+			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
+		}
+		reqBody.WriteString("}")
+	}
+	reqBody.WriteString("}")
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestSubAccountAPIKeysCreateSubAccountAPIKeyWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateSubAccountAPIKeyRequest{
-            Type: 1,
-            SubAccountID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
-        }
-    _, invocationErr :=     client.SubAccountAPIKeys.CreateSubAccountAPIKey(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysCreateSubAccountAPIKeyWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateSubAccountAPIKeyRequest{
+		Type:         1,
+		SubAccountID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
+	}
+	_, invocationErr := client.SubAccountAPIKeys.CreateSubAccountAPIKey(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysCreateSubAccountAPIKeyWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysCreateSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/create", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysCreateSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/create", nil, 1)
 }
 
 func TestSubAccountAPIKeysEditSubAccountAPIKeyWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.EditSubAccountAPIKeyRequest{
-            APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-            Title: "Trading Bot Key",
-            URLs: []*gosdk.EditSubAccountAPIKeyRequestURLsItem{
-                &gosdk.EditSubAccountAPIKeyRequestURLsItem{
-                    URL: gosdk.String(
-                        "/api/v4/main-account/withdraw",
-                    ),
-                    Enable: gosdk.Bool(
-                        false,
-                    ),
-                },
-                &gosdk.EditSubAccountAPIKeyRequestURLsItem{
-                    URL: gosdk.String(
-                        "/api/v4/main-account/balance",
-                    ),
-                    Enable: gosdk.Bool(
-                        true,
-                    ),
-                },
-            },
-        }
-    _, invocationErr :=     client.SubAccountAPIKeys.EditSubAccountAPIKey(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysEditSubAccountAPIKeyWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.EditSubAccountAPIKeyRequest{
+		APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		Title:    "Trading Bot Key",
+		URLs: []*sdk.EditSubAccountAPIKeyRequestURLsItem{
+			&sdk.EditSubAccountAPIKeyRequestURLsItem{
+				URL: sdk.String(
+					"/api/v4/main-account/withdraw",
+				),
+				Enable: sdk.Bool(
+					false,
+				),
+			},
+			&sdk.EditSubAccountAPIKeyRequestURLsItem{
+				URL: sdk.String(
+					"/api/v4/main-account/balance",
+				),
+				Enable: sdk.Bool(
+					true,
+				),
+			},
+		},
+	}
+	_, invocationErr := client.SubAccountAPIKeys.EditSubAccountAPIKey(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysEditSubAccountAPIKeyWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysEditSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/edit", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysEditSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/edit", nil, 1)
 }
 
 func TestSubAccountAPIKeysDeleteSubAccountAPIKeyWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.DeleteSubAccountAPIKeyRequest{
-            APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        }
-    _, invocationErr :=     client.SubAccountAPIKeys.DeleteSubAccountAPIKey(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysDeleteSubAccountAPIKeyWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.DeleteSubAccountAPIKeyRequest{
+		APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+	}
+	_, invocationErr := client.SubAccountAPIKeys.DeleteSubAccountAPIKey(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysDeleteSubAccountAPIKeyWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysDeleteSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/delete", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysDeleteSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/delete", nil, 1)
 }
 
 func TestSubAccountAPIKeysListSubAccountAPIKeysWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.ListSubAccountAPIKeysRequest{}
-    _, invocationErr :=     client.SubAccountAPIKeys.ListSubAccountAPIKeys(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysListSubAccountAPIKeysWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ListSubAccountAPIKeysRequest{}
+	_, invocationErr := client.SubAccountAPIKeys.ListSubAccountAPIKeys(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysListSubAccountAPIKeysWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysListSubAccountAPIKeysWithWireMock", "POST", "/api/v4/sub-account/api-key/list", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysListSubAccountAPIKeysWithWireMock", "POST", "/api/v4/sub-account/api-key/list", nil, 1)
 }
 
 func TestSubAccountAPIKeysResetSubAccountAPIKeyWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.ResetSubAccountAPIKeyRequest{
-            APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        }
-    _, invocationErr :=     client.SubAccountAPIKeys.ResetSubAccountAPIKey(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysResetSubAccountAPIKeyWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ResetSubAccountAPIKeyRequest{
+		APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+	}
+	_, invocationErr := client.SubAccountAPIKeys.ResetSubAccountAPIKey(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysResetSubAccountAPIKeyWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysResetSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/reset", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysResetSubAccountAPIKeyWithWireMock", "POST", "/api/v4/sub-account/api-key/reset", nil, 1)
 }
 
 func TestSubAccountAPIKeysListSubAccountAPIKeyIPAddressesWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.ListSubAccountAPIKeyIPAddressesRequest{
-            APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-        }
-    _, invocationErr :=     client.SubAccountAPIKeys.ListSubAccountAPIKeyIPAddresses(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysListSubAccountAPIKeyIPAddressesWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ListSubAccountAPIKeyIPAddressesRequest{
+		APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+	}
+	_, invocationErr := client.SubAccountAPIKeys.ListSubAccountAPIKeyIPAddresses(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysListSubAccountAPIKeyIPAddressesWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysListSubAccountAPIKeyIPAddressesWithWireMock", "POST", "/api/v4/sub-account/api-key/ip-address/list", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysListSubAccountAPIKeyIPAddressesWithWireMock", "POST", "/api/v4/sub-account/api-key/ip-address/list", nil, 1)
 }
 
 func TestSubAccountAPIKeysCreateSubAccountAPIKeyIPAddressWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateSubAccountAPIKeyIPAddressRequest{
-            APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-            IP: "192.168.1.100",
-        }
-    _, invocationErr :=     client.SubAccountAPIKeys.CreateSubAccountAPIKeyIPAddress(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysCreateSubAccountAPIKeyIPAddressWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateSubAccountAPIKeyIPAddressRequest{
+		APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		IP:       "192.168.1.100",
+	}
+	_, invocationErr := client.SubAccountAPIKeys.CreateSubAccountAPIKeyIPAddress(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysCreateSubAccountAPIKeyIPAddressWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysCreateSubAccountAPIKeyIPAddressWithWireMock", "POST", "/api/v4/sub-account/api-key/ip-address/create", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysCreateSubAccountAPIKeyIPAddressWithWireMock", "POST", "/api/v4/sub-account/api-key/ip-address/create", nil, 1)
 }
 
 func TestSubAccountAPIKeysDeleteSubAccountAPIKeyIPAddressWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.DeleteSubAccountAPIKeyIPAddressRequest{
-            APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-            IP: "192.168.1.100",
-        }
-    _, invocationErr :=     client.SubAccountAPIKeys.DeleteSubAccountAPIKeyIPAddress(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysDeleteSubAccountAPIKeyIPAddressWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.DeleteSubAccountAPIKeyIPAddressRequest{
+		APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		IP:       "192.168.1.100",
+	}
+	_, invocationErr := client.SubAccountAPIKeys.DeleteSubAccountAPIKeyIPAddress(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountAPIKeysDeleteSubAccountAPIKeyIPAddressWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSubAccountAPIKeysDeleteSubAccountAPIKeyIPAddressWithWireMock", "POST", "/api/v4/sub-account/api-key/ip-address/delete", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountAPIKeysDeleteSubAccountAPIKeyIPAddressWithWireMock", "POST", "/api/v4/sub-account/api-key/ip-address/delete", nil, 1)
 }
-
-

@@ -3,91 +3,89 @@
 package withdraw
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint creates withdraw for the specified ticker.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
-// 
+//
 // <Note>
 // Also, fiat currencies can't be withdrawn without KYC verification.
 // </Note>
 func (c *Client) CreateWithdraw(
-    ctx context.Context,
-    request *gosdk.CreateWithdrawRequest,
-    opts ...option.RequestOption,
-) ([]any, error){
-    response, err := c.WithRawResponse.CreateWithdraw(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateWithdrawRequest,
+	opts ...option.RequestOption,
+) ([]any, error) {
+	response, err := c.WithRawResponse.CreateWithdraw(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint has the similar logic as /main-account/withdraw, but with the only difference: amount that is specified will not include [fee](/glossary#fee) (it will be calculated to make target withdraw amount equal to the specified amount).
-// 
+//
 // **Example:**
 // - When creating a base withdraw with amount = 100 USD, the receiver receives 100 USD minus the [fee](/glossary#fee), and the balance decreases by 100 USD.
 // - When using this endpoint with amount = 100 USD, the receiver receives 100 USD, and the balance decreases by 100 USD plus the [fee](/glossary#fee).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) CreateWithdrawPay(
-    ctx context.Context,
-    request *gosdk.WithdrawRequest,
-    opts ...option.RequestOption,
-) ([]any, error){
-    response, err := c.WithRawResponse.CreateWithdrawPay(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.WithdrawRequest,
+	opts ...option.RequestOption,
+) ([]any, error) {
+	response, err := c.WithRawResponse.CreateWithdrawPay(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

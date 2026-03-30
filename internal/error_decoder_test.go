@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-    "github.com/whitebit-exchange/go-sdk/core"
 	"github.com/stretchr/testify/assert"
+	"github.com/whitebit-exchange/go-sdk/core"
 )
 
 func TestErrorDecoder(t *testing.T) {

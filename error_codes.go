@@ -3,41 +3,39 @@
 package api
 
 import (
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    core "github.com/whitebit-exchange/go-sdk/core"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
 )
 
-
 var ErrorCodes internal.ErrorCodes = internal.ErrorCodes{
-    401: func(apiError *core.APIError) error{
-        return &UnauthorizedError{
-            APIError: apiError,
-        }
-    },
-    422: func(apiError *core.APIError) error{
-        return &UnprocessableEntityError{
-            APIError: apiError,
-        }
-    },
-    400: func(apiError *core.APIError) error{
-        return &BadRequestError{
-            APIError: apiError,
-        }
-    },
-    503: func(apiError *core.APIError) error{
-        return &ServiceUnavailableError{
-            APIError: apiError,
-        }
-    },
-    500: func(apiError *core.APIError) error{
-        return &InternalServerError{
-            APIError: apiError,
-        }
-    },
-    404: func(apiError *core.APIError) error{
-        return &NotFoundError{
-            APIError: apiError,
-        }
-    },
+	401: func(apiError *core.APIError) error {
+		return &UnauthorizedError{
+			APIError: apiError,
+		}
+	},
+	422: func(apiError *core.APIError) error {
+		return &UnprocessableEntityError{
+			APIError: apiError,
+		}
+	},
+	400: func(apiError *core.APIError) error {
+		return &BadRequestError{
+			APIError: apiError,
+		}
+	},
+	503: func(apiError *core.APIError) error {
+		return &ServiceUnavailableError{
+			APIError: apiError,
+		}
+	},
+	500: func(apiError *core.APIError) error {
+		return &InternalServerError{
+			APIError: apiError,
+		}
+	},
+	404: func(apiError *core.APIError) error {
+		return &NotFoundError{
+			APIError: apiError,
+		}
+	},
 }
-

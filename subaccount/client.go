@@ -3,264 +3,262 @@
 package subaccount
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint creates new [sub-account](/glossary#sub-account).
-// 
+//
 // <Note>
 // The `email` field requirement depends on the `shareKyc` parameter:
 // - When `shareKyc` is `false` or not provided: `email` is **required**
 // - When `shareKyc` is `true`: `email` is **optional**
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) CreateSubAccount(
-    ctx context.Context,
-    request *gosdk.CreateSubAccountRequest,
-    opts ...option.RequestOption,
-) (*gosdk.SubAccount, error){
-    response, err := c.WithRawResponse.CreateSubAccount(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateSubAccountRequest,
+	opts ...option.RequestOption,
+) (*sdk.SubAccount, error) {
+	response, err := c.WithRawResponse.CreateSubAccount(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint deletes [sub-account](/glossary#sub-account).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) DeleteSubAccount(
-    ctx context.Context,
-    request *gosdk.DeleteSubAccountRequest,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.DeleteSubAccount(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.DeleteSubAccountRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.DeleteSubAccount(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint edits [sub-account](/glossary#sub-account).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) EditSubAccount(
-    ctx context.Context,
-    request *gosdk.EditSubAccountRequest,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.EditSubAccount(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.EditSubAccountRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.EditSubAccount(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns list of current user [sub-accounts](/glossary#sub-account).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) ListSubAccounts(
-    ctx context.Context,
-    request *gosdk.ListSubAccountsRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ListSubAccountsResponse, error){
-    response, err := c.WithRawResponse.ListSubAccounts(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ListSubAccountsRequest,
+	opts ...option.RequestOption,
+) (*sdk.ListSubAccountsResponse, error) {
+	response, err := c.WithRawResponse.ListSubAccounts(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates transfer from main account to [sub-account](/glossary#sub-account) or vice versa.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) Transfer(
-    ctx context.Context,
-    request *gosdk.SubAccountTransferRequest,
-    opts ...option.RequestOption,
-) (*gosdk.SubAccountTransferResponse, error){
-    response, err := c.WithRawResponse.Transfer(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.SubAccountTransferRequest,
+	opts ...option.RequestOption,
+) (*sdk.SubAccountTransferResponse, error) {
+	response, err := c.WithRawResponse.Transfer(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint blocks [sub-account](/glossary#sub-account).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) BlockSubAccount(
-    ctx context.Context,
-    request *gosdk.BlockSubAccountRequest,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.BlockSubAccount(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.BlockSubAccountRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.BlockSubAccount(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint unblocks [sub-account](/glossary#sub-account).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) UnblockSubAccount(
-    ctx context.Context,
-    request *gosdk.UnblockSubAccountRequest,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.UnblockSubAccount(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.UnblockSubAccountRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.UnblockSubAccount(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns [sub-account](/glossary#sub-account) balances.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetSubAccountBalances(
-    ctx context.Context,
-    request *gosdk.GetSubAccountBalancesRequest,
-    opts ...option.RequestOption,
-) (map[string][]*gosdk.GetSubAccountBalancesResponseValueItem, error){
-    response, err := c.WithRawResponse.GetSubAccountBalances(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetSubAccountBalancesRequest,
+	opts ...option.RequestOption,
+) (map[string][]*sdk.GetSubAccountBalancesResponseValueItem, error) {
+	response, err := c.WithRawResponse.GetSubAccountBalances(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns history of transfers between main account and [sub-account](/glossary#sub-account).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetSubAccountTransferHistory(
-    ctx context.Context,
-    request *gosdk.GetSubAccountTransferHistoryRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetSubAccountTransferHistoryResponse, error){
-    response, err := c.WithRawResponse.GetSubAccountTransferHistory(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetSubAccountTransferHistoryRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetSubAccountTransferHistoryResponse, error) {
+	response, err := c.WithRawResponse.GetSubAccountTransferHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

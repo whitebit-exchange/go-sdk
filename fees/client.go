@@ -3,59 +3,57 @@
 package fees
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // Returns an array of objects containing deposit/withdrawal [fees](/glossary#fee) for the corresponding currencies.
 // Zero value in amount fields means that the setting is disabled.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetFees(
-    ctx context.Context,
-    request *gosdk.GetFeesRequest,
-    opts ...option.RequestOption,
-) ([]*gosdk.FeeInfo, error){
-    response, err := c.WithRawResponse.GetFees(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetFeesRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.FeeInfo, error) {
+	response, err := c.WithRawResponse.GetFees(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

@@ -3,10 +3,10 @@
 package option
 
 import (
-	gosdk "github.com/whitebit-exchange/go-sdk"
-	core "github.com/whitebit-exchange/go-sdk/core"
 	http "net/http"
 	url "net/url"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
 )
 
 // RequestOption adapts the behavior of an individual request.
@@ -66,7 +66,7 @@ func WithMaxAttempts(attempts uint) *core.MaxAttemptsOption {
 
 // WithEnvironment sets the environment for the client, which determines
 // the base URL for each endpoint.
-func WithEnvironment(environment gosdk.Environment) *core.EnvironmentOption {
+func WithEnvironment(environment sdk.Environment) *core.EnvironmentOption {
 	return &core.EnvironmentOption{
 		Environment: environment,
 	}

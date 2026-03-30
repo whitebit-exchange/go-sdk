@@ -3,63 +3,64 @@
 package mainaccount
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint retrieves the [main balance](/glossary#balance-main) by currency [ticker](/glossary#ticker) or all balances.
-// 
+//
 // <Warning>
-//   Rate limit: 1000 requests/10 sec.
+//
+//	Rate limit: 1000 requests/10 sec.
+//
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetMainBalance(
-    ctx context.Context,
-    request *gosdk.GetMainBalanceRequest,
-    opts ...option.RequestOption,
-) (map[string]*gosdk.GetMainBalanceResponseValue, error){
-    response, err := c.WithRawResponse.GetMainBalance(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMainBalanceRequest,
+	opts ...option.RequestOption,
+) (map[string]*sdk.GetMainBalanceResponseValue, error) {
+	response, err := c.WithRawResponse.GetMainBalance(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the history of deposits and withdraws.
-// 
+//
 // **Deposit status codes:**
 // - `Successful` - 3, 7
 // - `Canceled` - 4, 9
@@ -67,13 +68,13 @@ func (c *Client) GetMainBalance(
 // - `Additional data required` - 21
 // - `Uncredited` - 22
 // - `Pending` - 15
-// 
+//
 // **Travel Rule Deposit check status codes:**
 // - `Awaiting verification` - 27: The transaction has been frozen due to the lack of data required under the Travel Rule. The user is required to provide this data manually through the exchange interface.
 // - `Confirmation in progress` - 28: The Travel Rule data provided by the user is currently being verified by WhiteBIT.
-// 
+//
 // ⚠️ Due to regulatory requirements in Turkey and [EU](/glossary#european-economic-area-eea), the system places every inbound crypto deposit on hold (frozen) until confirming the transaction's origin. The sender must provide certain details if the transaction is from another Virtual Asset Service Provider (VASP) or verify the address if from a self-hosted wallet. The system credits deposited funds to the account only after successful verification.
-// 
+//
 // **Withdraw status codes:**
 // - `Pending` - 1, 2, 6, 10, 11, 12, 13, 14, 15, 16, 17
 // - `Successful` - 3, 7
@@ -81,27 +82,26 @@ func (c *Client) GetMainBalance(
 // - `Unconfirmed by user` - 5
 // - `Additional data required` - 21
 // - `Partially successful` - 18
-// 
+//
 // <Warning>
 // Rate limit: 200 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetDepositWithdrawHistory(
-    ctx context.Context,
-    request *gosdk.GetDepositWithdrawHistoryRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetDepositWithdrawHistoryResponse, error){
-    response, err := c.WithRawResponse.GetDepositWithdrawHistory(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetDepositWithdrawHistoryRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetDepositWithdrawHistoryResponse, error) {
+	response, err := c.WithRawResponse.GetDepositWithdrawHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

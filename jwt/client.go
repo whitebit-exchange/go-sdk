@@ -3,81 +3,79 @@
 package jwt
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint issues a JWT token for the Fiat Gateway service.
 // The token is used to authenticate requests to the Fiat Gateway API.
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) IssueJwtToken(
-    ctx context.Context,
-    request *gosdk.IssueJwtTokenRequest,
-    opts ...option.RequestOption,
-) (*gosdk.IssueJwtTokenResponse, error){
-    response, err := c.WithRawResponse.IssueJwtToken(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.IssueJwtTokenRequest,
+	opts ...option.RequestOption,
+) (*sdk.IssueJwtTokenResponse, error) {
+	response, err := c.WithRawResponse.IssueJwtToken(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The V4 endpoint can be used to retrieve the WebSocket token for user.
 // The token is required to authorize WebSocket connections for private API access.
-// 
+//
 // <Warning>
 // Rate limit: 10 requests/60 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetWebSocketToken(
-    ctx context.Context,
-    request *gosdk.GetWebSocketTokenRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetWebSocketTokenResponse, error){
-    response, err := c.WithRawResponse.GetWebSocketToken(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetWebSocketTokenRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetWebSocketTokenResponse, error) {
+	response, err := c.WithRawResponse.GetWebSocketToken(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

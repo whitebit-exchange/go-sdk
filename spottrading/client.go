@@ -3,100 +3,106 @@
 package spottrading
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint retrieves the [trade balance](/glossary#balance-spotbalance-trade) by currency [ticker](/glossary#ticker) or all balances.
-// 
+//
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "ticker": ["Ticker field should be a string."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "ticker": ["Ticker field should be a string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "ticker": ["Currency was not found."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "ticker": ["Currency was not found."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 1,
-//   "message": "Inner validation failed",
-//   "errors": {
-//     "amount": ["Invalid argument."]
-//   }
-// }
+//
+//	{
+//	  "code": 1,
+//	  "message": "Inner validation failed",
+//	  "errors": {
+//	    "amount": ["Invalid argument."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) TradeAccountBalance(
-    ctx context.Context,
-    request *gosdk.TradeAccountBalanceRequest,
-    opts ...option.RequestOption,
-) (map[string]*gosdk.TradeAccountBalanceResponseValue, error){
-    response, err := c.WithRawResponse.TradeAccountBalance(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.TradeAccountBalanceRequest,
+	opts ...option.RequestOption,
+) (map[string]*sdk.TradeAccountBalanceResponseValue, error) {
+	response, err := c.WithRawResponse.TradeAccountBalance(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates [limit trading order](/glossary#limit-order).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 //   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
 //   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+//
 // </Note>
-// 
+//
 // <Accordion title="Error Codes">
 //   - `30` - default validation error code
 //   - `31` - market validation failed
@@ -104,209 +110,244 @@ func (c *Client) TradeAccountBalance(
 //   - `33` - price validation failed
 //   - `36` - client_order_id validation failed
 //   - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+//
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field is required."],
-//     "market": ["Market field is required."],
-//     "price": ["Price field is required."],
-//     "side": ["Side field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field is required."],
+//	    "market": ["Market field is required."],
+//	    "price": ["Price field is required."],
+//	    "side": ["Side field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "side": ["Side field should contain only 'buy' or 'sell' values."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "side": ["Side field should contain only 'buy' or 'sell' values."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 33,
-//   "message": "Validation failed",
-//   "errors": {
-//     "price": ["Price field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 33,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "price": ["Price field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field should not be empty string."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field should not be empty string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": [
-//       "Given amount is less than min amount 0.001",
-//       "Min amount step = 0.000001"
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": [
+//	      "Given amount is less than min amount 0.001",
+//	      "Min amount step = 0.000001"
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": ["ClientOrderId field should be a string."]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": ["ClientOrderId field should be a string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": [
-//       "ClientOrderId field should contain only latin letters, numbers and dashes."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": [
+//	      "ClientOrderId field should contain only latin letters, numbers and dashes."
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": [
-//       "This client order id is already used by the current account."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": [
+//	      "This client order id is already used by the current account."
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 37,
-//   "message": "Validation failed",
-//   "errors": {
-//     "ioc": ["Either IOC or PostOnly flag in true state is allowed."]
-//   }
-// }
+//
+//	{
+//	  "code": 37,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "ioc": ["Either IOC or PostOnly flag in true state is allowed."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "total": ["Total (amount * price) is less than 5.05"]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "total": ["Total (amount * price) is less than 5.05"]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": [
-//       "Min amount step = 0.01"
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": [
+//	      "Min amount step = 0.01"
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 33,
-//   "message": "Validation failed",
-//   "errors": {
-//     "price": ["Price field should be at least 10", "Min price step = 0.000001"]
-//   }
-// }
+//
+//	{
+//	  "code": 33,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "price": ["Price field should be at least 10", "Min price step = 0.000001"]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 33,
-//   "message": "Validation failed",
-//   "errors": {
-//     "price": ["Price should be greater than 0."]
-//   }
-// }
+//
+//	{
+//	  "code": 33,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "price": ["Price should be greater than 0."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 35,
-//   "message": "Validation failed",
-//   "errors": {
-//     "maker_fee": ["Incorrect maker fee"]
-//   }
-// }
+//
+//	{
+//	  "code": 35,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "maker_fee": ["Incorrect maker fee"]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CreateLimitOrder(
-    ctx context.Context,
-    request *gosdk.LimitOrderRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.CreateLimitOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.LimitOrderRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.CreateLimitOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates bulk [limit trading orders](/glossary#limit-order).
-// 
+//
 // <Warning>
-//   Limit: From 1 to 20 orders per request.
+//
+//	Limit: From 1 to 20 orders per request.
+//
 // </Warning>
-// 
+//
 // <Note>
 //   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
 //   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+//
 // </Note>
-// 
-// 
+//
 // <Accordion title="Error Codes">
 //   - `30` - default validation error code
 //   - `31` - market validation failed
@@ -314,328 +355,373 @@ func (c *Client) CreateLimitOrder(
 //   - `33` - price validation failed
 //   - `36` - client_order_id validation failed
 //   - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+//
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "orders": ["The orders must be an array."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "orders": ["The orders must be an array."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // Individual order errors (in multiply response):
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field is required."],
-//     "market": ["Market field is required."],
-//     "price": ["Price field is required."],
-//     "side": ["Side field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field is required."],
+//	    "market": ["Market field is required."],
+//	    "price": ["Price field is required."],
+//	    "side": ["Side field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "side": ["Side field should contain only 'buy' or 'sell' values."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "side": ["Side field should contain only 'buy' or 'sell' values."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 33,
-//   "message": "Validation failed",
-//   "errors": {
-//     "price": ["Price field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 33,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "price": ["Price field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CreateBulkLimitOrder(
-    ctx context.Context,
-    request *gosdk.CreateBulkLimitOrderRequest,
-    opts ...option.RequestOption,
-) (gosdk.BulkLimitOrderResponse, error){
-    response, err := c.WithRawResponse.CreateBulkLimitOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateBulkLimitOrderRequest,
+	opts ...option.RequestOption,
+) (sdk.BulkLimitOrderResponse, error) {
+	response, err := c.WithRawResponse.CreateBulkLimitOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates [market trading order](/glossary#market-order).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
 // - `32` - amount validation failed
 // - `36` - client_order_id validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field is required."],
-//     "market": ["Market field is required."],
-//     "side": ["Side field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field is required."],
+//	    "market": ["Market field is required."],
+//	    "side": ["Side field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "side": ["Side field should contain only 'buy' or 'sell' values."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "side": ["Side field should contain only 'buy' or 'sell' values."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field should not be empty string."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field should not be empty string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Not enough balance."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Not enough balance."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": [
-//       "Given amount is less than min amount 0.001",
-//       "Min amount step = 0.000001"
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": [
+//	      "Given amount is less than min amount 0.001",
+//	      "Min amount step = 0.000001"
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": ["ClientOrderId field should be a string."]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": ["ClientOrderId field should be a string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": [
-//       "ClientOrderId field should contain only latin letters, numbers and dashes."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": [
+//	      "ClientOrderId field should contain only latin letters, numbers and dashes."
+//	    ]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CreateMarketOrder(
-    ctx context.Context,
-    request *gosdk.MarketOrderRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.CreateMarketOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.MarketOrderRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.CreateMarketOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates buy [stock](/glossary#stock) market trading [order](/glossary#orders).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
 // - `32` - amount validation failed
 // - `36` - client_order_id validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field is required."],
-//     "market": ["Market field is required."],
-//     "side": ["Side field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field is required."],
+//	    "market": ["Market field is required."],
+//	    "side": ["Side field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "side": ["Side field should contain only 'buy' or 'sell' values."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "side": ["Side field should contain only 'buy' or 'sell' values."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field should not be empty string."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field should not be empty string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Not enough balance."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Not enough balance."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": [
-//       "Given amount is less than min amount 0.001",
-//       "Min amount step = 0.000001"
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": [
+//	      "Given amount is less than min amount 0.001",
+//	      "Min amount step = 0.000001"
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": ["ClientOrderId field should be a string."]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": ["ClientOrderId field should be a string."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CreateStockMarketOrder(
-    ctx context.Context,
-    request *gosdk.MarketOrderRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.CreateStockMarketOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.MarketOrderRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.CreateStockMarketOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates [stop-limit trading order](/glossary#stop-limit-order).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
@@ -643,759 +729,842 @@ func (c *Client) CreateStockMarketOrder(
 // - `33` - price validation failed
 // - `36` - client_order_id validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "activation_price": ["Activation price field is required."],
-//     "amount": ["Amount field is required."],
-//     "market": ["Market field is required."],
-//     "price": ["Price field is required."],
-//     "side": ["Side field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "activation_price": ["Activation price field is required."],
+//	    "amount": ["Amount field is required."],
+//	    "market": ["Market field is required."],
+//	    "price": ["Price field is required."],
+//	    "side": ["Side field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "side": ["Side field should contain only 'buy' or 'sell' values."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "side": ["Side field should contain only 'buy' or 'sell' values."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 33,
-//   "message": "Validation failed",
-//   "errors": {
-//     "price": ["Price field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 33,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "price": ["Price field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field should not be empty string."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field should not be empty string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Not enough balance."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Not enough balance."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": [
-//       "Given amount is less than min amount 0.001",
-//       "Min amount step = 0.000001"
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": [
+//	      "Given amount is less than min amount 0.001",
+//	      "Min amount step = 0.000001"
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "total": ["Total (amount * price) is less than 5.05"]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "total": ["Total (amount * price) is less than 5.05"]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": ["ClientOrderId field should be a string."]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": ["ClientOrderId field should be a string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": [
-//       "ClientOrderId field should contain only latin letters, numbers and dashes."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": [
+//	      "ClientOrderId field should contain only latin letters, numbers and dashes."
+//	    ]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CreateStopLimitOrder(
-    ctx context.Context,
-    request *gosdk.StopLimitOrderRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.CreateStopLimitOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.StopLimitOrderRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.CreateStopLimitOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates [stop-market trading order](/glossary#stop-market-order).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
 // - `32` - amount validation failed
 // - `36` - client_order_id validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "activation_price": ["Activation price field is required."],
-//     "amount": ["Amount field is required."],
-//     "market": ["Market field is required."],
-//     "side": ["Side field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "activation_price": ["Activation price field is required."],
+//	    "amount": ["Amount field is required."],
+//	    "market": ["Market field is required."],
+//	    "side": ["Side field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "side": ["Side field should contain only 'buy' or 'sell' values."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "side": ["Side field should contain only 'buy' or 'sell' values."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount field should be numeric string or number."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount field should be numeric string or number."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field should not be empty string."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field should not be empty string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Not enough balance."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Not enough balance."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": [
-//       "Given amount is less than min amount 0.001",
-//       "Min amount step = 0.000001"
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": [
+//	      "Given amount is less than min amount 0.001",
+//	      "Min amount step = 0.000001"
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": ["ClientOrderId field should be a string."]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": ["ClientOrderId field should be a string."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": [
-//       "ClientOrderId field should contain only latin letters, numbers and dashes."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": [
+//	      "ClientOrderId field should contain only latin letters, numbers and dashes."
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 36,
-//   "message": "Validation failed",
-//   "errors": {
-//     "client_order_id": [
-//       "This client order id is already used by the current account."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 36,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "client_order_id": [
+//	      "This client order id is already used by the current account."
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 32,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Amount should be greater than 0."]
-//   }
-// }
+//
+//	{
+//	  "code": 32,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount should be greater than 0."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CreateStopMarketOrder(
-    ctx context.Context,
-    request *gosdk.StopMarketOrderRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.CreateStopMarketOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.StopMarketOrderRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.CreateStopMarketOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Cancel existing [order](/glossary#orders).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // - Modification by client_order_id takes priority over order_id.
 // - The request supports working only with order_id or only with client_order_id.
 // - Do not pass both values at the same time.
 // </Note>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field is required."],
-//     "order_id": ["OrderId field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field is required."],
+//	    "order_id": ["OrderId field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "order_id": ["OrderId field should be an integer."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "order_id": ["OrderId field should be an integer."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": [
-//       "Market field should be a string.",
-//       "Market field format is invalid."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": [
+//	      "Market field should be a string.",
+//	      "Market field format is invalid."
+//	    ]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 2,
-//   "message": "Inner validation failed",
-//   "errors": {
-//     "order_id": ["Unexecuted order was not found."]
-//   }
-// }
+//
+//	{
+//	  "code": 2,
+//	  "message": "Inner validation failed",
+//	  "errors": {
+//	    "order_id": ["Unexecuted order was not found."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CancelOrder(
-    ctx context.Context,
-    request *gosdk.CancelOrderRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.CancelOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CancelOrderRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.CancelOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Cancels all orders that meet the conditions [order](/glossary#orders).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "type": ["The type must be an array."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "type": ["The type must be an array."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": [
-//       "Market field should be a string.",
-//       "Market field format is invalid."
-//     ]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": [
+//	      "Market field should be a string.",
+//	      "Market field format is invalid."
+//	    ]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) CancelAllOrders(
-    ctx context.Context,
-    request *gosdk.CancelAllOrdersRequest,
-    opts ...option.RequestOption,
-) error{
-    _, err := c.WithRawResponse.CancelAllOrders(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return err
-    }
-    return nil
+	ctx context.Context,
+	request *sdk.CancelAllOrdersRequest,
+	opts ...option.RequestOption,
+) error {
+	_, err := c.WithRawResponse.CancelAllOrders(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // The endpoint retrieves [active orders](/glossary#active-orders) (orders not yet executed).
-// 
+//
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // Search across all markets is available only if client_order_id and order_id are not provided.
 // </Note>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available"]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available"]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "limit": ["The limit may not be greater than 100."],
-//     "offset": ["The offset may not be greater than 10000."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "limit": ["The limit may not be greater than 100."],
+//	    "offset": ["The offset may not be greater than 10000."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) GetActiveOrders(
-    ctx context.Context,
-    request *gosdk.GetActiveOrdersRequest,
-    opts ...option.RequestOption,
-) ([]*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.GetActiveOrders(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetActiveOrdersRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.GetActiveOrders(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves all deals for all markets. Can be filtered by single market if needed.
-// 
+//
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The endpoint can retrieve data not older than 6 months from current month. For older data, use the Report on the History page.
 // </Note>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "limit": ["Limit field should be an integer."],
-//     "offset": ["Offset field should be an integer."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "limit": ["Limit field should be an integer."],
+//	    "offset": ["Offset field should be an integer."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field format is invalid."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field format is invalid."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) GetExecutedOrderHistory(
-    ctx context.Context,
-    request *gosdk.GetExecutedOrderHistoryRequest,
-    opts ...option.RequestOption,
-) ([]*gosdk.GetExecutedOrderHistoryResponseItem, error){
-    response, err := c.WithRawResponse.GetExecutedOrderHistory(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetExecutedOrderHistoryRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.GetExecutedOrderHistoryResponseItem, error) {
+	response, err := c.WithRawResponse.GetExecutedOrderHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves deals for a specific order.
-// 
+//
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
 func (c *Client) GetOrderDeals(
-    ctx context.Context,
-    request *gosdk.GetOrderDealsRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetOrderDealsResponse, error){
-    response, err := c.WithRawResponse.GetOrderDeals(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetOrderDealsRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetOrderDealsResponse, error) {
+	response, err := c.WithRawResponse.GetOrderDeals(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves order history.
-// 
+//
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
 func (c *Client) GetOrderHistory(
-    ctx context.Context,
-    request *gosdk.GetOrderHistoryRequest,
-    opts ...option.RequestOption,
-) (map[string][]*gosdk.GetOrderHistoryResponseValueItem, error){
-    response, err := c.WithRawResponse.GetOrderHistory(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetOrderHistoryRequest,
+	opts ...option.RequestOption,
+) (map[string][]*sdk.GetOrderHistoryResponseValueItem, error) {
+	response, err := c.WithRawResponse.GetOrderHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint modifies existing [order](/glossary#orders).
-// 
+//
 // Supported order types: limit, stop limit, stop market.
-// 
+//
 // Request must contain one of the following parameters: amount, price, activationPrice.
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // - Use total parameter instead of amount for modify buy stop market order.
 // - Modification by client_order_id takes priority.
 // - The request supports working only with order_id or only with client_order_id.
 // - Do not pass both values at the same time.
 // </Note>
-// 
+//
 // <Accordion title="Error Codes">
 // **Status 400** (client errors): 1, 2, 6, 20, 24, 101, 158
-// 
+//
 // **Status 422** (business logic): 10, 11, 12, 13, 14, 15, 16, 17, 25, 27, 40, 42, 51, 103, 104, 105, 106, 111, 112, 113, 114, 115, 150, 151, 152, 153, 155, 157, 159, 160, 161, 162, 163, 250, 251, 300, 302, 330
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 2,
-//   "message": "Inner validation failed",
-//   "errors": {
-//     "order_id": ["Unexecuted order was not found."]
-//   }
-// }
+//
+//	{
+//	  "code": 2,
+//	  "message": "Inner validation failed",
+//	  "errors": {
+//	    "order_id": ["Unexecuted order was not found."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 10,
-//   "message": "Validation failed",
-//   "errors": {
-//     "amount": ["Not enough balance."]
-//   }
-// }
+//
+//	{
+//	  "code": 10,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Not enough balance."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) ModifyOrder(
-    ctx context.Context,
-    request *gosdk.ModifyOrderRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderResponse, error){
-    response, err := c.WithRawResponse.ModifyOrder(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ModifyOrderRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderResponse, error) {
+	response, err := c.WithRawResponse.ModifyOrder(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint creates, updates, deletes [kill-switch timer](/glossary#kill-switch-timer).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // - If timeout=null - delete existing timer by market.
 // - If types=null - create timer by market for all order types.
 // </Note>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market field is required."],
-//     "timeout": ["Timeout field is required."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market field is required."],
+//	    "timeout": ["Timeout field is required."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
-// 
+//
 // ```json
-// {
-//   "code": 30,
-//   "message": "Validation failed",
-//   "errors": {
-//     "timeout": ["Timeout should be at least 5."]
-//   }
-// }
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "timeout": ["Timeout should be at least 5."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) SetKillSwitch(
-    ctx context.Context,
-    request *gosdk.SetKillSwitchRequest,
-    opts ...option.RequestOption,
-) (*gosdk.SetKillSwitchResponse, error){
-    response, err := c.WithRawResponse.SetKillSwitch(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.SetKillSwitchRequest,
+	opts ...option.RequestOption,
+) (*sdk.SetKillSwitchResponse, error) {
+	response, err := c.WithRawResponse.SetKillSwitch(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the status of [kill-switch timer](/glossary#kill-switch-timer).
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Accordion title="Error Codes">
 // - `30` - default validation error code
 // - `31` - market validation failed
 // </Accordion>
-// 
+//
 // <Accordion title="Errors">
 // ```json
-// {
-//   "code": 31,
-//   "message": "Validation failed",
-//   "errors": {
-//     "market": ["Market is not available."]
-//   }
-// }
+//
+//	{
+//	  "code": 31,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "market": ["Market is not available."]
+//	  }
+//	}
+//
 // ```
 // </Accordion>
 func (c *Client) GetKillSwitchStatus(
-    ctx context.Context,
-    request *gosdk.GetKillSwitchStatusRequest,
-    opts ...option.RequestOption,
-) ([]*gosdk.GetKillSwitchStatusResponseItem, error){
-    response, err := c.WithRawResponse.GetKillSwitchStatus(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetKillSwitchStatusRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.GetKillSwitchStatusResponseItem, error) {
+	response, err := c.WithRawResponse.GetKillSwitchStatus(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

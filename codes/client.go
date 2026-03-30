@@ -3,133 +3,131 @@
 package codes
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint creates [WhiteBIT code](/glossary#whitebit-codes).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) CreateCode(
-    ctx context.Context,
-    request *gosdk.CreateCodeRequest,
-    opts ...option.RequestOption,
-) (*gosdk.CreateCodeResponse, error){
-    response, err := c.WithRawResponse.CreateCode(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateCodeRequest,
+	opts ...option.RequestOption,
+) (*sdk.CreateCodeResponse, error) {
+	response, err := c.WithRawResponse.CreateCode(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint applies [WhiteBIT code](/glossary#whitebit-codes).
-// 
+//
 // <Warning>
 // Rate limit: 60 requests/1 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) ApplyCode(
-    ctx context.Context,
-    request *gosdk.ApplyCodeRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ApplyCodeResponse, error){
-    response, err := c.WithRawResponse.ApplyCode(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ApplyCodeRequest,
+	opts ...option.RequestOption,
+) (*sdk.ApplyCodeResponse, error) {
+	response, err := c.WithRawResponse.ApplyCode(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the list of [WhiteBIT codes](/glossary#whitebit-codes) created by my account.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetMyCodes(
-    ctx context.Context,
-    request *gosdk.GetMyCodesRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMyCodesResponse, error){
-    response, err := c.WithRawResponse.GetMyCodes(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMyCodesRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMyCodesResponse, error) {
+	response, err := c.WithRawResponse.GetMyCodes(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the whole [codes](/glossary#whitebit-codes) history for the account.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetCodesHistory(
-    ctx context.Context,
-    request *gosdk.GetCodesHistoryRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetCodesHistoryResponse, error){
-    response, err := c.WithRawResponse.GetCodesHistory(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetCodesHistoryRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetCodesHistoryResponse, error) {
+	response, err := c.WithRawResponse.GetCodesHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

@@ -3,155 +3,153 @@
 package client
 
 import (
-    authentication "github.com/whitebit-exchange/go-sdk/authentication"
-    accountendpoints "github.com/whitebit-exchange/go-sdk/accountendpoints"
-    publicapiv4 "github.com/whitebit-exchange/go-sdk/publicapiv4"
-    mainaccount "github.com/whitebit-exchange/go-sdk/mainaccount"
-    deposit "github.com/whitebit-exchange/go-sdk/deposit"
-    jwt "github.com/whitebit-exchange/go-sdk/jwt"
-    withdraw "github.com/whitebit-exchange/go-sdk/withdraw"
-    transfer "github.com/whitebit-exchange/go-sdk/transfer"
-    codes "github.com/whitebit-exchange/go-sdk/codes"
-    cryptolendingfixed "github.com/whitebit-exchange/go-sdk/cryptolendingfixed"
-    cryptolendingflex "github.com/whitebit-exchange/go-sdk/cryptolendingflex"
-    fees "github.com/whitebit-exchange/go-sdk/fees"
-    subaccount "github.com/whitebit-exchange/go-sdk/subaccount"
-    subaccountapikeys "github.com/whitebit-exchange/go-sdk/subaccountapikeys"
-    miningpool "github.com/whitebit-exchange/go-sdk/miningpool"
-    creditline "github.com/whitebit-exchange/go-sdk/creditline"
-    collateraltrading "github.com/whitebit-exchange/go-sdk/collateraltrading"
-    marketfee "github.com/whitebit-exchange/go-sdk/marketfee"
-    spottrading "github.com/whitebit-exchange/go-sdk/spottrading"
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	accountendpoints "github.com/whitebit-exchange/go-sdk/accountendpoints"
+	authentication "github.com/whitebit-exchange/go-sdk/authentication"
+	codes "github.com/whitebit-exchange/go-sdk/codes"
+	collateraltrading "github.com/whitebit-exchange/go-sdk/collateraltrading"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	creditline "github.com/whitebit-exchange/go-sdk/creditline"
+	cryptolendingfixed "github.com/whitebit-exchange/go-sdk/cryptolendingfixed"
+	cryptolendingflex "github.com/whitebit-exchange/go-sdk/cryptolendingflex"
+	deposit "github.com/whitebit-exchange/go-sdk/deposit"
+	fees "github.com/whitebit-exchange/go-sdk/fees"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	jwt "github.com/whitebit-exchange/go-sdk/jwt"
+	mainaccount "github.com/whitebit-exchange/go-sdk/mainaccount"
+	marketfee "github.com/whitebit-exchange/go-sdk/marketfee"
+	miningpool "github.com/whitebit-exchange/go-sdk/miningpool"
+	option "github.com/whitebit-exchange/go-sdk/option"
+	publicapiv4 "github.com/whitebit-exchange/go-sdk/publicapiv4"
+	spottrading "github.com/whitebit-exchange/go-sdk/spottrading"
+	subaccount "github.com/whitebit-exchange/go-sdk/subaccount"
+	subaccountapikeys "github.com/whitebit-exchange/go-sdk/subaccountapikeys"
+	transfer "github.com/whitebit-exchange/go-sdk/transfer"
+	withdraw "github.com/whitebit-exchange/go-sdk/withdraw"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
-    Authentication *authentication.Client
-    AccountEndpoints *accountendpoints.Client
-    PublicAPIV4 *publicapiv4.Client
-    MainAccount *mainaccount.Client
-    Deposit *deposit.Client
-    Jwt *jwt.Client
-    Withdraw *withdraw.Client
-    Transfer *transfer.Client
-    Codes *codes.Client
-    CryptoLendingFixed *cryptolendingfixed.Client
-    CryptoLendingFlex *cryptolendingflex.Client
-    Fees *fees.Client
-    SubAccount *subaccount.Client
-    SubAccountAPIKeys *subaccountapikeys.Client
-    MiningPool *miningpool.Client
-    CreditLine *creditline.Client
-    CollateralTrading *collateraltrading.Client
-    MarketFee *marketfee.Client
-    SpotTrading *spottrading.Client
+	WithRawResponse    *RawClient
+	Authentication     *authentication.Client
+	AccountEndpoints   *accountendpoints.Client
+	PublicAPIV4        *publicapiv4.Client
+	MainAccount        *mainaccount.Client
+	Deposit            *deposit.Client
+	Jwt                *jwt.Client
+	Withdraw           *withdraw.Client
+	Transfer           *transfer.Client
+	Codes              *codes.Client
+	CryptoLendingFixed *cryptolendingfixed.Client
+	CryptoLendingFlex  *cryptolendingflex.Client
+	Fees               *fees.Client
+	SubAccount         *subaccount.Client
+	SubAccountAPIKeys  *subaccountapikeys.Client
+	MiningPool         *miningpool.Client
+	CreditLine         *creditline.Client
+	CollateralTrading  *collateraltrading.Client
+	MarketFee          *marketfee.Client
+	SpotTrading        *spottrading.Client
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(opts ...option.RequestOption) *Client {
-    options := core.NewRequestOptions(opts...)
-    return &Client{
-        Authentication: authentication.NewClient(options),
-        AccountEndpoints: accountendpoints.NewClient(options),
-        PublicAPIV4: publicapiv4.NewClient(options),
-        MainAccount: mainaccount.NewClient(options),
-        Deposit: deposit.NewClient(options),
-        Jwt: jwt.NewClient(options),
-        Withdraw: withdraw.NewClient(options),
-        Transfer: transfer.NewClient(options),
-        Codes: codes.NewClient(options),
-        CryptoLendingFixed: cryptolendingfixed.NewClient(options),
-        CryptoLendingFlex: cryptolendingflex.NewClient(options),
-        Fees: fees.NewClient(options),
-        SubAccount: subaccount.NewClient(options),
-        SubAccountAPIKeys: subaccountapikeys.NewClient(options),
-        MiningPool: miningpool.NewClient(options),
-        CreditLine: creditline.NewClient(options),
-        CollateralTrading: collateraltrading.NewClient(options),
-        MarketFee: marketfee.NewClient(options),
-        SpotTrading: spottrading.NewClient(options),
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	options := core.NewRequestOptions(opts...)
+	return &Client{
+		Authentication:     authentication.NewClient(options),
+		AccountEndpoints:   accountendpoints.NewClient(options),
+		PublicAPIV4:        publicapiv4.NewClient(options),
+		MainAccount:        mainaccount.NewClient(options),
+		Deposit:            deposit.NewClient(options),
+		Jwt:                jwt.NewClient(options),
+		Withdraw:           withdraw.NewClient(options),
+		Transfer:           transfer.NewClient(options),
+		Codes:              codes.NewClient(options),
+		CryptoLendingFixed: cryptolendingfixed.NewClient(options),
+		CryptoLendingFlex:  cryptolendingflex.NewClient(options),
+		Fees:               fees.NewClient(options),
+		SubAccount:         subaccount.NewClient(options),
+		SubAccountAPIKeys:  subaccountapikeys.NewClient(options),
+		MiningPool:         miningpool.NewClient(options),
+		CreditLine:         creditline.NewClient(options),
+		CollateralTrading:  collateraltrading.NewClient(options),
+		MarketFee:          marketfee.NewClient(options),
+		SpotTrading:        spottrading.NewClient(options),
+		WithRawResponse:    NewRawClient(options),
+		options:            options,
+		baseURL:            options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint creates a quote for converting one currency to another. Quote lifetime is 10 seconds, then quote will be expired.
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
 func (c *Client) ConvertEstimate(
-    ctx context.Context,
-    request *gosdk.ConvertEstimateRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ConvertEstimateResponse, error){
-    response, err := c.WithRawResponse.ConvertEstimate(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ConvertEstimateRequest,
+	opts ...option.RequestOption,
+) (*sdk.ConvertEstimateResponse, error) {
+	response, err := c.WithRawResponse.ConvertEstimate(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint confirms an estimated quote.
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
 func (c *Client) ConvertConfirm(
-    ctx context.Context,
-    request *gosdk.ConvertConfirmRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ConvertConfirmResponse, error){
-    response, err := c.WithRawResponse.ConvertConfirm(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ConvertConfirmRequest,
+	opts ...option.RequestOption,
+) (*sdk.ConvertConfirmResponse, error) {
+	response, err := c.WithRawResponse.ConvertConfirm(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns convert history.
-// 
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
 // **Note:** The endpoint can retrieve data not older than 6 months from current month. For older data, use the Report on the History page.
 func (c *Client) ConvertHistory(
-    ctx context.Context,
-    request *gosdk.ConvertHistoryRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ConvertHistoryResponse, error){
-    response, err := c.WithRawResponse.ConvertHistory(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ConvertHistoryRequest,
+	opts ...option.RequestOption,
+) (*sdk.ConvertHistoryResponse, error) {
+	response, err := c.WithRawResponse.ConvertHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

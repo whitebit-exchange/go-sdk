@@ -3,1094 +3,1092 @@
 package collateraltrading
 
 import (
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    core "github.com/whitebit-exchange/go-sdk/core"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    http "net/http"
+	context "context"
+	http "net/http"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type RawClient struct {
-    baseURL string
-    caller *internal.Caller
-    options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
+	options *core.RequestOptions
 }
 
 func NewRawClient(options *core.RequestOptions) *RawClient {
-    return &RawClient{
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &RawClient{
+		options: options,
+		baseURL: options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 func (r *RawClient) CollateralAccountBalance(
-    ctx context.Context,
-    request *gosdk.CollateralAccountBalanceRequest,
-    opts ...option.RequestOption,
-) (*core.Response[map[string]float64], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/balance"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response map[string]float64
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[map[string]float64]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CollateralAccountBalanceRequest,
+	opts ...option.RequestOption,
+) (*core.Response[map[string]float64], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/balance"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response map[string]float64
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[map[string]float64]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CollateralAccountBalanceSummary(
-    ctx context.Context,
-    request *gosdk.CollateralAccountBalanceSummaryRequest,
-    opts ...option.RequestOption,
-) (*core.Response[[]*gosdk.CollateralAccountBalanceSummaryResponseItem], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/balance-summary"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response []*gosdk.CollateralAccountBalanceSummaryResponseItem
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[[]*gosdk.CollateralAccountBalanceSummaryResponseItem]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CollateralAccountBalanceSummaryRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.CollateralAccountBalanceSummaryResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/balance-summary"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.CollateralAccountBalanceSummaryResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.CollateralAccountBalanceSummaryResponseItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CreateCollateralLimitOrder(
-    ctx context.Context,
-    request *gosdk.CreateCollateralLimitOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CreateCollateralLimitOrderResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/collateral/limit"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CreateCollateralLimitOrderResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CreateCollateralLimitOrderResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CreateCollateralLimitOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CreateCollateralLimitOrderResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/collateral/limit"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CreateCollateralLimitOrderResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CreateCollateralLimitOrderResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CreateCollateralBulkOrder(
-    ctx context.Context,
-    request *gosdk.CreateCollateralBulkOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[[]*gosdk.CreateCollateralBulkOrderResponseItem], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/collateral/bulk"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response []*gosdk.CreateCollateralBulkOrderResponseItem
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[[]*gosdk.CreateCollateralBulkOrderResponseItem]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CreateCollateralBulkOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.CreateCollateralBulkOrderResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/collateral/bulk"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.CreateCollateralBulkOrderResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.CreateCollateralBulkOrderResponseItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CreateCollateralMarketOrder(
-    ctx context.Context,
-    request *gosdk.CreateCollateralMarketOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CreateCollateralMarketOrderResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/collateral/market"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CreateCollateralMarketOrderResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CreateCollateralMarketOrderResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CreateCollateralMarketOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CreateCollateralMarketOrderResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/collateral/market"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CreateCollateralMarketOrderResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CreateCollateralMarketOrderResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CreateCollateralStopLimitOrder(
-    ctx context.Context,
-    request *gosdk.CreateCollateralStopLimitOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CreateCollateralStopLimitOrderResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/collateral/stop-limit"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CreateCollateralStopLimitOrderResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CreateCollateralStopLimitOrderResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CreateCollateralStopLimitOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CreateCollateralStopLimitOrderResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/collateral/stop-limit"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CreateCollateralStopLimitOrderResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CreateCollateralStopLimitOrderResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CreateCollateralTriggerMarketOrder(
-    ctx context.Context,
-    request *gosdk.CreateCollateralTriggerMarketOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CreateCollateralTriggerMarketOrderResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/collateral/trigger-market"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CreateCollateralTriggerMarketOrderResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CreateCollateralTriggerMarketOrderResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CreateCollateralTriggerMarketOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CreateCollateralTriggerMarketOrderResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/collateral/trigger-market"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CreateCollateralTriggerMarketOrderResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CreateCollateralTriggerMarketOrderResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CollateralAccountSummary(
-    ctx context.Context,
-    request *gosdk.CollateralAccountSummaryRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CollateralAccountSummaryResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/summary"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CollateralAccountSummaryResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CollateralAccountSummaryResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CollateralAccountSummaryRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CollateralAccountSummaryResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/summary"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CollateralAccountSummaryResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CollateralAccountSummaryResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetOpenPositions(
-    ctx context.Context,
-    request *gosdk.GetOpenPositionsRequest,
-    opts ...option.RequestOption,
-) (*core.Response[[]*gosdk.GetOpenPositionsResponseItem], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/positions"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response []*gosdk.GetOpenPositionsResponseItem
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[[]*gosdk.GetOpenPositionsResponseItem]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetOpenPositionsRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.GetOpenPositionsResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/positions"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.GetOpenPositionsResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.GetOpenPositionsResponseItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) ClosePosition(
-    ctx context.Context,
-    request *gosdk.ClosePositionRequest,
-    opts ...option.RequestOption,
-) (*core.Response[any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/position/close"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: nil,
-    }, nil
+	ctx context.Context,
+	request *sdk.ClosePositionRequest,
+	opts ...option.RequestOption,
+) (*core.Response[any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/position/close"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       nil,
+	}, nil
 }
 
 func (r *RawClient) GetPositionsHistory(
-    ctx context.Context,
-    request *gosdk.GetPositionsHistoryRequest,
-    opts ...option.RequestOption,
-) (*core.Response[[]*gosdk.GetPositionsHistoryResponseItem], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/positions/history"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response []*gosdk.GetPositionsHistoryResponseItem
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[[]*gosdk.GetPositionsHistoryResponseItem]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetPositionsHistoryRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.GetPositionsHistoryResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/positions/history"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.GetPositionsHistoryResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.GetPositionsHistoryResponseItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetFundingHistory(
-    ctx context.Context,
-    request *gosdk.GetFundingHistoryRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.GetFundingHistoryResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/funding-history"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.GetFundingHistoryResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.GetFundingHistoryResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetFundingHistoryRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.GetFundingHistoryResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/funding-history"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.GetFundingHistoryResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.GetFundingHistoryResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) ChangeCollateralAccountLeverage(
-    ctx context.Context,
-    request *gosdk.ChangeCollateralAccountLeverageRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.ChangeCollateralAccountLeverageResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/leverage"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.ChangeCollateralAccountLeverageResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.ChangeCollateralAccountLeverageResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.ChangeCollateralAccountLeverageRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.ChangeCollateralAccountLeverageResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/leverage"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.ChangeCollateralAccountLeverageResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.ChangeCollateralAccountLeverageResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetCollateralHedgeMode(
-    ctx context.Context,
-    request *gosdk.GetCollateralHedgeModeRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.GetCollateralHedgeModeResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/hedge-mode"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.GetCollateralHedgeModeResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.GetCollateralHedgeModeResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetCollateralHedgeModeRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.GetCollateralHedgeModeResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/hedge-mode"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.GetCollateralHedgeModeResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.GetCollateralHedgeModeResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) UpdateHedgeMode(
-    ctx context.Context,
-    request *gosdk.UpdateHedgeModeRequest,
-    opts ...option.RequestOption,
-) (*core.Response[any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/collateral-account/hedge-mode/update"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: nil,
-    }, nil
+	ctx context.Context,
+	request *sdk.UpdateHedgeModeRequest,
+	opts ...option.RequestOption,
+) (*core.Response[any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/hedge-mode/update"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       nil,
+	}, nil
 }
 
 func (r *RawClient) GetConditionalOrders(
-    ctx context.Context,
-    request *gosdk.GetConditionalOrdersRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.GetConditionalOrdersResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/orders/conditional"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.GetConditionalOrdersResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.GetConditionalOrdersResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetConditionalOrdersRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.GetConditionalOrdersResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/orders/conditional"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.GetConditionalOrdersResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.GetConditionalOrdersResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetOcoOrders(
-    ctx context.Context,
-    request *gosdk.GetOcoOrdersRequest,
-    opts ...option.RequestOption,
-) (*core.Response[[]*gosdk.GetOcoOrdersResponseItem], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/orders/oco"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response []*gosdk.GetOcoOrdersResponseItem
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[[]*gosdk.GetOcoOrdersResponseItem]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetOcoOrdersRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.GetOcoOrdersResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/orders/oco"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.GetOcoOrdersResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.GetOcoOrdersResponseItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CreateCollateralOcoOrder(
-    ctx context.Context,
-    request *gosdk.CreateCollateralOcoOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CreateCollateralOcoOrderResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/collateral/oco"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CreateCollateralOcoOrderResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CreateCollateralOcoOrderResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CreateCollateralOcoOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CreateCollateralOcoOrderResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/collateral/oco"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CreateCollateralOcoOrderResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CreateCollateralOcoOrderResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CancelConditionalOrder(
-    ctx context.Context,
-    request *gosdk.CancelConditionalOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/conditional-cancel"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: nil,
-    }, nil
+	ctx context.Context,
+	request *sdk.CancelConditionalOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/conditional-cancel"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       nil,
+	}, nil
 }
 
 func (r *RawClient) CancelOcoOrder(
-    ctx context.Context,
-    request *gosdk.CancelOcoOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CancelOcoOrderResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/oco-cancel"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CancelOcoOrderResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CancelOcoOrderResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CancelOcoOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CancelOcoOrderResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/oco-cancel"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CancelOcoOrderResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CancelOcoOrderResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) CancelOtoOrder(
-    ctx context.Context,
-    request *gosdk.CancelOtoOrderRequest,
-    opts ...option.RequestOption,
-) (*core.Response[any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/order/oto-cancel"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: nil,
-    }, nil
+	ctx context.Context,
+	request *sdk.CancelOtoOrderRequest,
+	opts ...option.RequestOption,
+) (*core.Response[any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/oto-cancel"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       nil,
+	}, nil
 }
-

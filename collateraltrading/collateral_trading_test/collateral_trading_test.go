@@ -3,851 +3,849 @@
 package collateral_trading_test
 
 import (
-    http "net/http"
-    bytes "bytes"
-    json "encoding/json"
-    os "os"
-    testing "testing"
-    client "github.com/whitebit-exchange/go-sdk/client"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    context "context"
-    require "github.com/stretchr/testify/require"
+	bytes "bytes"
+	context "context"
+	json "encoding/json"
+	require "github.com/stretchr/testify/require"
+	http "net/http"
+	os "os"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	client "github.com/whitebit-exchange/go-sdk/client"
+	option "github.com/whitebit-exchange/go-sdk/option"
+	testing "testing"
 )
 
-
-
 func VerifyRequestCount(
-    t *testing.T,
-    testId string,
-    method string,
-    urlPath string,
-    queryParams map[string]string,
-    expected int,
+	t *testing.T,
+	testId string,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
-    var reqBody bytes.Buffer
-    reqBody.WriteString(`{"method":"`)
-    reqBody.WriteString(method)
-    reqBody.WriteString(`","urlPath":"`)
-    reqBody.WriteString(urlPath)
-    reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
-    reqBody.WriteString(testId)
-    reqBody.WriteString(`"}}`)
-    if len(queryParams) > 0 {
-        reqBody.WriteString(`,"queryParameters":{`)
-        first := true
-        for key, value := range queryParams {
-            if !first {
-                reqBody.WriteString(",")
-            }
-            reqBody.WriteString(`"`)
-            reqBody.WriteString(key)
-            reqBody.WriteString(`":{"equalTo":"`)
-            reqBody.WriteString(value)
-            reqBody.WriteString(`"}`)
-            first = false
-        }
-        reqBody.WriteString("}")
-    }
-    reqBody.WriteString("}")
-    resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
-    require.NoError(t, err)
-    var result struct { Requests []interface{} `json:"requests"` }
-    json.NewDecoder(resp.Body).Decode(&result)
-    require.Equal(t, expected, len(result.Requests))
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
+	reqBody.WriteString(testId)
+	reqBody.WriteString(`"}}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
+			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
+		}
+		reqBody.WriteString("}")
+	}
+	reqBody.WriteString("}")
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestCollateralTradingCollateralAccountBalanceWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CollateralAccountBalanceRequest{
-            Ticker: gosdk.String(
-                "BTC",
-            ),
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.CollateralAccountBalance(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCollateralAccountBalanceWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CollateralAccountBalanceRequest{
+		Ticker: sdk.String(
+			"BTC",
+		),
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.CollateralAccountBalance(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCollateralAccountBalanceWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCollateralAccountBalanceWithWireMock", "POST", "/api/v4/collateral-account/balance", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCollateralAccountBalanceWithWireMock", "POST", "/api/v4/collateral-account/balance", nil, 1)
 }
 
 func TestCollateralTradingCollateralAccountBalanceSummaryWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CollateralAccountBalanceSummaryRequest{
-            Ticker: gosdk.String(
-                "BTC",
-            ),
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.CollateralAccountBalanceSummary(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCollateralAccountBalanceSummaryWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CollateralAccountBalanceSummaryRequest{
+		Ticker: sdk.String(
+			"BTC",
+		),
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.CollateralAccountBalanceSummary(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCollateralAccountBalanceSummaryWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCollateralAccountBalanceSummaryWithWireMock", "POST", "/api/v4/collateral-account/balance-summary", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCollateralAccountBalanceSummaryWithWireMock", "POST", "/api/v4/collateral-account/balance-summary", nil, 1)
 }
 
 func TestCollateralTradingCreateCollateralLimitOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateCollateralLimitOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.CreateCollateralLimitOrderRequestSideBuy,
-            Amount: "0.01",
-            Price: "40000",
-            ClientOrderID: gosdk.String(
-                "order1987111",
-            ),
-            StopLoss: gosdk.String(
-                "50000",
-            ),
-            TakeProfit: gosdk.String(
-                "30000",
-            ),
-            PostOnly: gosdk.Bool(
-                false,
-            ),
-            Ioc: gosdk.Bool(
-                false,
-            ),
-            Rpi: gosdk.Bool(
-                true,
-            ),
-            PositionSide: gosdk.CreateCollateralLimitOrderRequestPositionSideLong.Ptr(),
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.CollateralTrading.CreateCollateralLimitOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralLimitOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateCollateralLimitOrderRequest{
+		Market: "BTC_USDT",
+		Side:   sdk.CreateCollateralLimitOrderRequestSideBuy,
+		Amount: "0.01",
+		Price:  "40000",
+		ClientOrderID: sdk.String(
+			"order1987111",
+		),
+		StopLoss: sdk.String(
+			"50000",
+		),
+		TakeProfit: sdk.String(
+			"30000",
+		),
+		PostOnly: sdk.Bool(
+			false,
+		),
+		Ioc: sdk.Bool(
+			false,
+		),
+		Rpi: sdk.Bool(
+			true,
+		),
+		PositionSide: sdk.CreateCollateralLimitOrderRequestPositionSideLong.Ptr(),
+		Request:      "{{request}}",
+		Nonce:        "{{nonce}}",
+	}
+	_, invocationErr := client.CollateralTrading.CreateCollateralLimitOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralLimitOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCreateCollateralLimitOrderWithWireMock", "POST", "/api/v4/order/collateral/limit", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCreateCollateralLimitOrderWithWireMock", "POST", "/api/v4/order/collateral/limit", nil, 1)
 }
 
 func TestCollateralTradingCreateCollateralBulkOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateCollateralBulkOrderRequest{
-            Orders: []*gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-                &gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-                    Market: gosdk.String(
-                        "BTC_PERP",
-                    ),
-                    Side: gosdk.CreateCollateralBulkOrderRequestOrdersItemSideBuy.Ptr(),
-                    Amount: gosdk.String(
-                        "0.02",
-                    ),
-                    Price: gosdk.String(
-                        "40000",
-                    ),
-                    ClientOrderID: gosdk.String(
-                        "",
-                    ),
-                    PostOnly: gosdk.Bool(
-                        false,
-                    ),
-                    Ioc: gosdk.Bool(
-                        false,
-                    ),
-                    Rpi: gosdk.Bool(
-                        true,
-                    ),
-                    PositionSide: gosdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
-                },
-                &gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-                    Market: gosdk.String(
-                        "BTC_USDT",
-                    ),
-                    Side: gosdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
-                    Amount: gosdk.String(
-                        "0.0001",
-                    ),
-                    Price: gosdk.String(
-                        "41000",
-                    ),
-                    ClientOrderID: gosdk.String(
-                        "",
-                    ),
-                    PostOnly: gosdk.Bool(
-                        false,
-                    ),
-                    Ioc: gosdk.Bool(
-                        false,
-                    ),
-                    Rpi: gosdk.Bool(
-                        true,
-                    ),
-                    PositionSide: gosdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
-                },
-                &gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-                    Market: gosdk.String(
-                        "ETH_BTC",
-                    ),
-                    Side: gosdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
-                    Amount: gosdk.String(
-                        "0.02",
-                    ),
-                    Price: gosdk.String(
-                        "0.030",
-                    ),
-                    ClientOrderID: gosdk.String(
-                        "",
-                    ),
-                    PostOnly: gosdk.Bool(
-                        false,
-                    ),
-                    Ioc: gosdk.Bool(
-                        false,
-                    ),
-                    Rpi: gosdk.Bool(
-                        true,
-                    ),
-                    PositionSide: gosdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
-                },
-            },
-            StopOnFail: gosdk.Bool(
-                true,
-            ),
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.CreateCollateralBulkOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralBulkOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateCollateralBulkOrderRequest{
+		Orders: []*sdk.CreateCollateralBulkOrderRequestOrdersItem{
+			&sdk.CreateCollateralBulkOrderRequestOrdersItem{
+				Market: sdk.String(
+					"BTC_PERP",
+				),
+				Side: sdk.CreateCollateralBulkOrderRequestOrdersItemSideBuy.Ptr(),
+				Amount: sdk.String(
+					"0.02",
+				),
+				Price: sdk.String(
+					"40000",
+				),
+				ClientOrderID: sdk.String(
+					"",
+				),
+				PostOnly: sdk.Bool(
+					false,
+				),
+				Ioc: sdk.Bool(
+					false,
+				),
+				Rpi: sdk.Bool(
+					true,
+				),
+				PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+			},
+			&sdk.CreateCollateralBulkOrderRequestOrdersItem{
+				Market: sdk.String(
+					"BTC_USDT",
+				),
+				Side: sdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
+				Amount: sdk.String(
+					"0.0001",
+				),
+				Price: sdk.String(
+					"41000",
+				),
+				ClientOrderID: sdk.String(
+					"",
+				),
+				PostOnly: sdk.Bool(
+					false,
+				),
+				Ioc: sdk.Bool(
+					false,
+				),
+				Rpi: sdk.Bool(
+					true,
+				),
+				PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+			},
+			&sdk.CreateCollateralBulkOrderRequestOrdersItem{
+				Market: sdk.String(
+					"ETH_BTC",
+				),
+				Side: sdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
+				Amount: sdk.String(
+					"0.02",
+				),
+				Price: sdk.String(
+					"0.030",
+				),
+				ClientOrderID: sdk.String(
+					"",
+				),
+				PostOnly: sdk.Bool(
+					false,
+				),
+				Ioc: sdk.Bool(
+					false,
+				),
+				Rpi: sdk.Bool(
+					true,
+				),
+				PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+			},
+		},
+		StopOnFail: sdk.Bool(
+			true,
+		),
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.CreateCollateralBulkOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralBulkOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCreateCollateralBulkOrderWithWireMock", "POST", "/api/v4/order/collateral/bulk", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCreateCollateralBulkOrderWithWireMock", "POST", "/api/v4/order/collateral/bulk", nil, 1)
 }
 
 func TestCollateralTradingCreateCollateralMarketOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateCollateralMarketOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.CreateCollateralMarketOrderRequestSideBuy,
-            Amount: "0.01",
-            ClientOrderID: gosdk.String(
-                "order1987111",
-            ),
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.CollateralTrading.CreateCollateralMarketOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralMarketOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateCollateralMarketOrderRequest{
+		Market: "BTC_USDT",
+		Side:   sdk.CreateCollateralMarketOrderRequestSideBuy,
+		Amount: "0.01",
+		ClientOrderID: sdk.String(
+			"order1987111",
+		),
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.CollateralTrading.CreateCollateralMarketOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralMarketOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCreateCollateralMarketOrderWithWireMock", "POST", "/api/v4/order/collateral/market", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCreateCollateralMarketOrderWithWireMock", "POST", "/api/v4/order/collateral/market", nil, 1)
 }
 
 func TestCollateralTradingCreateCollateralStopLimitOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateCollateralStopLimitOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.CreateCollateralStopLimitOrderRequestSideBuy,
-            Amount: "0.001",
-            Price: "40000",
-            ActivationPrice: "40000",
-            StopLoss: gosdk.String(
-                "30000",
-            ),
-            TakeProfit: gosdk.String(
-                "50000",
-            ),
-            ClientOrderID: gosdk.String(
-                "order1987111",
-            ),
-            PositionSide: gosdk.CreateCollateralStopLimitOrderRequestPositionSideLong.Ptr(),
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.CollateralTrading.CreateCollateralStopLimitOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralStopLimitOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateCollateralStopLimitOrderRequest{
+		Market:          "BTC_USDT",
+		Side:            sdk.CreateCollateralStopLimitOrderRequestSideBuy,
+		Amount:          "0.001",
+		Price:           "40000",
+		ActivationPrice: "40000",
+		StopLoss: sdk.String(
+			"30000",
+		),
+		TakeProfit: sdk.String(
+			"50000",
+		),
+		ClientOrderID: sdk.String(
+			"order1987111",
+		),
+		PositionSide: sdk.CreateCollateralStopLimitOrderRequestPositionSideLong.Ptr(),
+		Request:      "{{request}}",
+		Nonce:        "{{nonce}}",
+	}
+	_, invocationErr := client.CollateralTrading.CreateCollateralStopLimitOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralStopLimitOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCreateCollateralStopLimitOrderWithWireMock", "POST", "/api/v4/order/collateral/stop-limit", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCreateCollateralStopLimitOrderWithWireMock", "POST", "/api/v4/order/collateral/stop-limit", nil, 1)
 }
 
 func TestCollateralTradingCreateCollateralTriggerMarketOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateCollateralTriggerMarketOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.CreateCollateralTriggerMarketOrderRequestSideBuy,
-            Amount: "0.01",
-            ActivationPrice: "40000",
-            ClientOrderID: gosdk.String(
-                "order1987111",
-            ),
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.CollateralTrading.CreateCollateralTriggerMarketOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralTriggerMarketOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateCollateralTriggerMarketOrderRequest{
+		Market:          "BTC_USDT",
+		Side:            sdk.CreateCollateralTriggerMarketOrderRequestSideBuy,
+		Amount:          "0.01",
+		ActivationPrice: "40000",
+		ClientOrderID: sdk.String(
+			"order1987111",
+		),
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.CollateralTrading.CreateCollateralTriggerMarketOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralTriggerMarketOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCreateCollateralTriggerMarketOrderWithWireMock", "POST", "/api/v4/order/collateral/trigger-market", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCreateCollateralTriggerMarketOrderWithWireMock", "POST", "/api/v4/order/collateral/trigger-market", nil, 1)
 }
 
 func TestCollateralTradingCollateralAccountSummaryWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CollateralAccountSummaryRequest{
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.CollateralAccountSummary(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCollateralAccountSummaryWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CollateralAccountSummaryRequest{
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.CollateralAccountSummary(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCollateralAccountSummaryWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCollateralAccountSummaryWithWireMock", "POST", "/api/v4/collateral-account/summary", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCollateralAccountSummaryWithWireMock", "POST", "/api/v4/collateral-account/summary", nil, 1)
 }
 
 func TestCollateralTradingGetOpenPositionsWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetOpenPositionsRequest{
-            Market: gosdk.String(
-                "BTC_USDT",
-            ),
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.GetOpenPositions(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingGetOpenPositionsWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetOpenPositionsRequest{
+		Market: sdk.String(
+			"BTC_USDT",
+		),
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.GetOpenPositions(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetOpenPositionsWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingGetOpenPositionsWithWireMock", "POST", "/api/v4/collateral-account/positions", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetOpenPositionsWithWireMock", "POST", "/api/v4/collateral-account/positions", nil, 1)
 }
 
 func TestCollateralTradingClosePositionWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.ClosePositionRequest{
-            PositionID: 123,
-            PositionSide: gosdk.ClosePositionRequestPositionSideLong.Ptr(),
-            Market: "BTC_USDT",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    invocationErr :=     client.CollateralTrading.ClosePosition(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingClosePositionWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ClosePositionRequest{
+		PositionID:   123,
+		PositionSide: sdk.ClosePositionRequestPositionSideLong.Ptr(),
+		Market:       "BTC_USDT",
+		Request:      "{{request}}",
+		Nonce:        "{{nonce}}",
+	}
+	invocationErr := client.CollateralTrading.ClosePosition(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingClosePositionWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingClosePositionWithWireMock", "POST", "/api/v4/collateral-account/position/close", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingClosePositionWithWireMock", "POST", "/api/v4/collateral-account/position/close", nil, 1)
 }
 
 func TestCollateralTradingGetPositionsHistoryWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetPositionsHistoryRequest{
-            Market: gosdk.String(
-                "BTC_USDT",
-            ),
-            PositionID: gosdk.Int(
-                1,
-            ),
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.GetPositionsHistory(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingGetPositionsHistoryWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetPositionsHistoryRequest{
+		Market: sdk.String(
+			"BTC_USDT",
+		),
+		PositionID: sdk.Int(
+			1,
+		),
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.GetPositionsHistory(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetPositionsHistoryWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingGetPositionsHistoryWithWireMock", "POST", "/api/v4/collateral-account/positions/history", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetPositionsHistoryWithWireMock", "POST", "/api/v4/collateral-account/positions/history", nil, 1)
 }
 
 func TestCollateralTradingGetFundingHistoryWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetFundingHistoryRequest{
-            Market: gosdk.String(
-                "BTC_PERP",
-            ),
-            Limit: gosdk.Int(
-                100,
-            ),
-            Offset: gosdk.Int(
-                0,
-            ),
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.GetFundingHistory(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingGetFundingHistoryWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetFundingHistoryRequest{
+		Market: sdk.String(
+			"BTC_PERP",
+		),
+		Limit: sdk.Int(
+			100,
+		),
+		Offset: sdk.Int(
+			0,
+		),
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.GetFundingHistory(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetFundingHistoryWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingGetFundingHistoryWithWireMock", "POST", "/api/v4/collateral-account/funding-history", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetFundingHistoryWithWireMock", "POST", "/api/v4/collateral-account/funding-history", nil, 1)
 }
 
 func TestCollateralTradingChangeCollateralAccountLeverageWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.ChangeCollateralAccountLeverageRequest{
-            Leverage: 5,
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.CollateralTrading.ChangeCollateralAccountLeverage(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingChangeCollateralAccountLeverageWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ChangeCollateralAccountLeverageRequest{
+		Leverage: 5,
+		Request:  "{{request}}",
+		Nonce:    "{{nonce}}",
+	}
+	_, invocationErr := client.CollateralTrading.ChangeCollateralAccountLeverage(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingChangeCollateralAccountLeverageWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingChangeCollateralAccountLeverageWithWireMock", "POST", "/api/v4/collateral-account/leverage", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingChangeCollateralAccountLeverageWithWireMock", "POST", "/api/v4/collateral-account/leverage", nil, 1)
 }
 
 func TestCollateralTradingGetCollateralHedgeModeWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetCollateralHedgeModeRequest{
-            Request: gosdk.String(
-                "{{request}}",
-            ),
-            Nonce: gosdk.String(
-                "{{nonce}}",
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.GetCollateralHedgeMode(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingGetCollateralHedgeModeWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetCollateralHedgeModeRequest{
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.String(
+			"{{nonce}}",
+		),
+	}
+	_, invocationErr := client.CollateralTrading.GetCollateralHedgeMode(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetCollateralHedgeModeWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingGetCollateralHedgeModeWithWireMock", "POST", "/api/v4/collateral-account/hedge-mode", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetCollateralHedgeModeWithWireMock", "POST", "/api/v4/collateral-account/hedge-mode", nil, 1)
 }
 
 func TestCollateralTradingUpdateHedgeModeWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.UpdateHedgeModeRequest{
-            HedgeMode: true,
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    invocationErr :=     client.CollateralTrading.UpdateHedgeMode(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingUpdateHedgeModeWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.UpdateHedgeModeRequest{
+		HedgeMode: true,
+		Request:   "{{request}}",
+		Nonce:     "{{nonce}}",
+	}
+	invocationErr := client.CollateralTrading.UpdateHedgeMode(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingUpdateHedgeModeWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingUpdateHedgeModeWithWireMock", "POST", "/api/v4/collateral-account/hedge-mode/update", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingUpdateHedgeModeWithWireMock", "POST", "/api/v4/collateral-account/hedge-mode/update", nil, 1)
 }
 
 func TestCollateralTradingGetConditionalOrdersWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetConditionalOrdersRequest{
-            Market: gosdk.String(
-                "BTC_USDT",
-            ),
-            Offset: gosdk.Int(
-                0,
-            ),
-            Limit: gosdk.Int(
-                100,
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.GetConditionalOrders(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingGetConditionalOrdersWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetConditionalOrdersRequest{
+		Market: sdk.String(
+			"BTC_USDT",
+		),
+		Offset: sdk.Int(
+			0,
+		),
+		Limit: sdk.Int(
+			100,
+		),
+	}
+	_, invocationErr := client.CollateralTrading.GetConditionalOrders(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetConditionalOrdersWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingGetConditionalOrdersWithWireMock", "POST", "/api/v4/orders/conditional", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetConditionalOrdersWithWireMock", "POST", "/api/v4/orders/conditional", nil, 1)
 }
 
 func TestCollateralTradingGetOcoOrdersWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetOcoOrdersRequest{
-            Market: gosdk.String(
-                "BTC_USDT",
-            ),
-            Offset: gosdk.Int(
-                0,
-            ),
-            Limit: gosdk.Int(
-                100,
-            ),
-        }
-    _, invocationErr :=     client.CollateralTrading.GetOcoOrders(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingGetOcoOrdersWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetOcoOrdersRequest{
+		Market: sdk.String(
+			"BTC_USDT",
+		),
+		Offset: sdk.Int(
+			0,
+		),
+		Limit: sdk.Int(
+			100,
+		),
+	}
+	_, invocationErr := client.CollateralTrading.GetOcoOrders(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetOcoOrdersWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingGetOcoOrdersWithWireMock", "POST", "/api/v4/orders/oco", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetOcoOrdersWithWireMock", "POST", "/api/v4/orders/oco", nil, 1)
 }
 
 func TestCollateralTradingCreateCollateralOcoOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateCollateralOcoOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.CreateCollateralOcoOrderRequestSideBuy,
-            Amount: "0.001",
-            Price: "40000",
-            ActivationPrice: "41000",
-            StopLimitPrice: "42000",
-            ClientOrderID: gosdk.String(
-                "order1987111",
-            ),
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.CollateralTrading.CreateCollateralOcoOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralOcoOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateCollateralOcoOrderRequest{
+		Market:          "BTC_USDT",
+		Side:            sdk.CreateCollateralOcoOrderRequestSideBuy,
+		Amount:          "0.001",
+		Price:           "40000",
+		ActivationPrice: "41000",
+		StopLimitPrice:  "42000",
+		ClientOrderID: sdk.String(
+			"order1987111",
+		),
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.CollateralTrading.CreateCollateralOcoOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCreateCollateralOcoOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCreateCollateralOcoOrderWithWireMock", "POST", "/api/v4/order/collateral/oco", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCreateCollateralOcoOrderWithWireMock", "POST", "/api/v4/order/collateral/oco", nil, 1)
 }
 
 func TestCollateralTradingCancelConditionalOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CancelConditionalOrderRequest{
-            Market: "BTC_USDT",
-            ID: 117703764514,
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    invocationErr :=     client.CollateralTrading.CancelConditionalOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCancelConditionalOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CancelConditionalOrderRequest{
+		Market:  "BTC_USDT",
+		ID:      117703764514,
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	invocationErr := client.CollateralTrading.CancelConditionalOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCancelConditionalOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCancelConditionalOrderWithWireMock", "POST", "/api/v4/order/conditional-cancel", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCancelConditionalOrderWithWireMock", "POST", "/api/v4/order/conditional-cancel", nil, 1)
 }
 
 func TestCollateralTradingCancelOcoOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CancelOcoOrderRequest{
-            Market: "BTC_USDT",
-            OrderID: 117703764514,
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.CollateralTrading.CancelOcoOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCancelOcoOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CancelOcoOrderRequest{
+		Market:  "BTC_USDT",
+		OrderID: 117703764514,
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.CollateralTrading.CancelOcoOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCancelOcoOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCancelOcoOrderWithWireMock", "POST", "/api/v4/order/oco-cancel", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCancelOcoOrderWithWireMock", "POST", "/api/v4/order/oco-cancel", nil, 1)
 }
 
 func TestCollateralTradingCancelOtoOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CancelOtoOrderRequest{
-            Market: "BTC_USDT",
-            OtoID: 117703764514,
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    invocationErr :=     client.CollateralTrading.CancelOtoOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestCollateralTradingCancelOtoOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CancelOtoOrderRequest{
+		Market:  "BTC_USDT",
+		OtoID:   117703764514,
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	invocationErr := client.CollateralTrading.CancelOtoOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingCancelOtoOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestCollateralTradingCancelOtoOrderWithWireMock", "POST", "/api/v4/order/oto-cancel", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingCancelOtoOrderWithWireMock", "POST", "/api/v4/order/oto-cancel", nil, 1)
 }
-
-

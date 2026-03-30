@@ -3,184 +3,182 @@
 package client
 
 import (
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    core "github.com/whitebit-exchange/go-sdk/core"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    http "net/http"
+	context "context"
+	http "net/http"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type RawClient struct {
-    baseURL string
-    caller *internal.Caller
-    options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
+	options *core.RequestOptions
 }
 
 func NewRawClient(options *core.RequestOptions) *RawClient {
-    return &RawClient{
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &RawClient{
+		options: options,
+		baseURL: options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 func (r *RawClient) ConvertEstimate(
-    ctx context.Context,
-    request *gosdk.ConvertEstimateRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.ConvertEstimateResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/convert/estimate"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.ConvertEstimateResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.ConvertEstimateResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.ConvertEstimateRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.ConvertEstimateResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/convert/estimate"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.ConvertEstimateResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.ConvertEstimateResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) ConvertConfirm(
-    ctx context.Context,
-    request *gosdk.ConvertConfirmRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.ConvertConfirmResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/convert/confirm"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.ConvertConfirmResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.ConvertConfirmResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.ConvertConfirmRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.ConvertConfirmResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/convert/confirm"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.ConvertConfirmResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.ConvertConfirmResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) ConvertHistory(
-    ctx context.Context,
-    request *gosdk.ConvertHistoryRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.ConvertHistoryResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/convert/history"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.ConvertHistoryResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.ConvertHistoryResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.ConvertHistoryRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.ConvertHistoryResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/convert/history"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.ConvertHistoryResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.ConvertHistoryResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
-

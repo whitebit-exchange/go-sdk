@@ -3,580 +3,578 @@
 package spot_trading_test
 
 import (
-    http "net/http"
-    bytes "bytes"
-    json "encoding/json"
-    os "os"
-    testing "testing"
-    client "github.com/whitebit-exchange/go-sdk/client"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    context "context"
-    require "github.com/stretchr/testify/require"
+	bytes "bytes"
+	context "context"
+	json "encoding/json"
+	require "github.com/stretchr/testify/require"
+	http "net/http"
+	os "os"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	client "github.com/whitebit-exchange/go-sdk/client"
+	option "github.com/whitebit-exchange/go-sdk/option"
+	testing "testing"
 )
 
-
-
 func VerifyRequestCount(
-    t *testing.T,
-    testId string,
-    method string,
-    urlPath string,
-    queryParams map[string]string,
-    expected int,
+	t *testing.T,
+	testId string,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
-    var reqBody bytes.Buffer
-    reqBody.WriteString(`{"method":"`)
-    reqBody.WriteString(method)
-    reqBody.WriteString(`","urlPath":"`)
-    reqBody.WriteString(urlPath)
-    reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
-    reqBody.WriteString(testId)
-    reqBody.WriteString(`"}}`)
-    if len(queryParams) > 0 {
-        reqBody.WriteString(`,"queryParameters":{`)
-        first := true
-        for key, value := range queryParams {
-            if !first {
-                reqBody.WriteString(",")
-            }
-            reqBody.WriteString(`"`)
-            reqBody.WriteString(key)
-            reqBody.WriteString(`":{"equalTo":"`)
-            reqBody.WriteString(value)
-            reqBody.WriteString(`"}`)
-            first = false
-        }
-        reqBody.WriteString("}")
-    }
-    reqBody.WriteString("}")
-    resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
-    require.NoError(t, err)
-    var result struct { Requests []interface{} `json:"requests"` }
-    json.NewDecoder(resp.Body).Decode(&result)
-    require.Equal(t, expected, len(result.Requests))
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
+	reqBody.WriteString(testId)
+	reqBody.WriteString(`"}}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
+			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
+		}
+		reqBody.WriteString("}")
+	}
+	reqBody.WriteString("}")
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestSpotTradingTradeAccountBalanceWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.TradeAccountBalanceRequest{}
-    _, invocationErr :=     client.SpotTrading.TradeAccountBalance(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingTradeAccountBalanceWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.TradeAccountBalanceRequest{}
+	_, invocationErr := client.SpotTrading.TradeAccountBalance(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingTradeAccountBalanceWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingTradeAccountBalanceWithWireMock", "POST", "/api/v4/trade-account/balance", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingTradeAccountBalanceWithWireMock", "POST", "/api/v4/trade-account/balance", nil, 1)
 }
 
 func TestSpotTradingCreateLimitOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.LimitOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.LimitOrderRequestSideBuy,
-            Amount: "0.001",
-            Price: "9800",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.CreateLimitOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCreateLimitOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.LimitOrderRequest{
+		Market:  "BTC_USDT",
+		Side:    sdk.LimitOrderRequestSideBuy,
+		Amount:  "0.001",
+		Price:   "9800",
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.CreateLimitOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCreateLimitOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCreateLimitOrderWithWireMock", "POST", "/api/v4/order/new", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCreateLimitOrderWithWireMock", "POST", "/api/v4/order/new", nil, 1)
 }
 
 func TestSpotTradingCreateBulkLimitOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CreateBulkLimitOrderRequest{
-            Orders: []*gosdk.BulkOrderItem{
-                &gosdk.BulkOrderItem{
-                    Side: gosdk.BulkOrderItemSideBuy.Ptr(),
-                    Amount: gosdk.String(
-                        "0.02",
-                    ),
-                    Price: gosdk.String(
-                        "40000",
-                    ),
-                    Market: gosdk.String(
-                        "BTC_USDT",
-                    ),
-                    PostOnly: gosdk.Bool(
-                        false,
-                    ),
-                    Ioc: gosdk.Bool(
-                        false,
-                    ),
-                    ClientOrderID: gosdk.String(
-                        "",
-                    ),
-                    Rpi: gosdk.Bool(
-                        true,
-                    ),
-                },
-                &gosdk.BulkOrderItem{
-                    Side: gosdk.BulkOrderItemSideSell.Ptr(),
-                    Amount: gosdk.String(
-                        "0.0001",
-                    ),
-                    Price: gosdk.String(
-                        "41000",
-                    ),
-                    Market: gosdk.String(
-                        "BTC_USDT",
-                    ),
-                    PostOnly: gosdk.Bool(
-                        false,
-                    ),
-                    Ioc: gosdk.Bool(
-                        false,
-                    ),
-                    ClientOrderID: gosdk.String(
-                        "",
-                    ),
-                    Rpi: gosdk.Bool(
-                        true,
-                    ),
-                },
-                &gosdk.BulkOrderItem{
-                    Side: gosdk.BulkOrderItemSideSell.Ptr(),
-                    Amount: gosdk.String(
-                        "0.02",
-                    ),
-                    Price: gosdk.String(
-                        "41000",
-                    ),
-                    Market: gosdk.String(
-                        "BTC_USDT",
-                    ),
-                    PostOnly: gosdk.Bool(
-                        false,
-                    ),
-                    Ioc: gosdk.Bool(
-                        false,
-                    ),
-                    ClientOrderID: gosdk.String(
-                        "",
-                    ),
-                    Rpi: gosdk.Bool(
-                        true,
-                    ),
-                },
-            },
-        }
-    _, invocationErr :=     client.SpotTrading.CreateBulkLimitOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCreateBulkLimitOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateBulkLimitOrderRequest{
+		Orders: []*sdk.BulkOrderItem{
+			&sdk.BulkOrderItem{
+				Side: sdk.BulkOrderItemSideBuy.Ptr(),
+				Amount: sdk.String(
+					"0.02",
+				),
+				Price: sdk.String(
+					"40000",
+				),
+				Market: sdk.String(
+					"BTC_USDT",
+				),
+				PostOnly: sdk.Bool(
+					false,
+				),
+				Ioc: sdk.Bool(
+					false,
+				),
+				ClientOrderID: sdk.String(
+					"",
+				),
+				Rpi: sdk.Bool(
+					true,
+				),
+			},
+			&sdk.BulkOrderItem{
+				Side: sdk.BulkOrderItemSideSell.Ptr(),
+				Amount: sdk.String(
+					"0.0001",
+				),
+				Price: sdk.String(
+					"41000",
+				),
+				Market: sdk.String(
+					"BTC_USDT",
+				),
+				PostOnly: sdk.Bool(
+					false,
+				),
+				Ioc: sdk.Bool(
+					false,
+				),
+				ClientOrderID: sdk.String(
+					"",
+				),
+				Rpi: sdk.Bool(
+					true,
+				),
+			},
+			&sdk.BulkOrderItem{
+				Side: sdk.BulkOrderItemSideSell.Ptr(),
+				Amount: sdk.String(
+					"0.02",
+				),
+				Price: sdk.String(
+					"41000",
+				),
+				Market: sdk.String(
+					"BTC_USDT",
+				),
+				PostOnly: sdk.Bool(
+					false,
+				),
+				Ioc: sdk.Bool(
+					false,
+				),
+				ClientOrderID: sdk.String(
+					"",
+				),
+				Rpi: sdk.Bool(
+					true,
+				),
+			},
+		},
+	}
+	_, invocationErr := client.SpotTrading.CreateBulkLimitOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCreateBulkLimitOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCreateBulkLimitOrderWithWireMock", "POST", "/api/v4/order/bulk", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCreateBulkLimitOrderWithWireMock", "POST", "/api/v4/order/bulk", nil, 1)
 }
 
 func TestSpotTradingCreateMarketOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.MarketOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.MarketOrderRequestSideBuy,
-            Amount: "100",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.CreateMarketOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCreateMarketOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.MarketOrderRequest{
+		Market:  "BTC_USDT",
+		Side:    sdk.MarketOrderRequestSideBuy,
+		Amount:  "100",
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.CreateMarketOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCreateMarketOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCreateMarketOrderWithWireMock", "POST", "/api/v4/order/market", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCreateMarketOrderWithWireMock", "POST", "/api/v4/order/market", nil, 1)
 }
 
 func TestSpotTradingCreateStockMarketOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.MarketOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.MarketOrderRequestSideBuy,
-            Amount: "100",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.CreateStockMarketOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCreateStockMarketOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.MarketOrderRequest{
+		Market:  "BTC_USDT",
+		Side:    sdk.MarketOrderRequestSideBuy,
+		Amount:  "100",
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.CreateStockMarketOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCreateStockMarketOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCreateStockMarketOrderWithWireMock", "POST", "/api/v4/order/stock_market", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCreateStockMarketOrderWithWireMock", "POST", "/api/v4/order/stock_market", nil, 1)
 }
 
 func TestSpotTradingCreateStopLimitOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.StopLimitOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.StopLimitOrderRequestSideBuy,
-            Amount: "0.001",
-            Price: "9800",
-            ActivationPrice: "10000",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.CreateStopLimitOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCreateStopLimitOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.StopLimitOrderRequest{
+		Market:          "BTC_USDT",
+		Side:            sdk.StopLimitOrderRequestSideBuy,
+		Amount:          "0.001",
+		Price:           "9800",
+		ActivationPrice: "10000",
+		Request:         "{{request}}",
+		Nonce:           "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.CreateStopLimitOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCreateStopLimitOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCreateStopLimitOrderWithWireMock", "POST", "/api/v4/order/stop_limit", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCreateStopLimitOrderWithWireMock", "POST", "/api/v4/order/stop_limit", nil, 1)
 }
 
 func TestSpotTradingCreateStopMarketOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.StopMarketOrderRequest{
-            Market: "BTC_USDT",
-            Side: gosdk.StopMarketOrderRequestSideBuy,
-            Amount: "0.01",
-            ActivationPrice: "10000",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.CreateStopMarketOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCreateStopMarketOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.StopMarketOrderRequest{
+		Market:          "BTC_USDT",
+		Side:            sdk.StopMarketOrderRequestSideBuy,
+		Amount:          "0.01",
+		ActivationPrice: "10000",
+		Request:         "{{request}}",
+		Nonce:           "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.CreateStopMarketOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCreateStopMarketOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCreateStopMarketOrderWithWireMock", "POST", "/api/v4/order/stop_market", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCreateStopMarketOrderWithWireMock", "POST", "/api/v4/order/stop_market", nil, 1)
 }
 
 func TestSpotTradingCancelOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CancelOrderRequest{
-            Market: "BTC_USDT",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.CancelOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCancelOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CancelOrderRequest{
+		Market:  "BTC_USDT",
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.CancelOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCancelOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCancelOrderWithWireMock", "POST", "/api/v4/order/cancel", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCancelOrderWithWireMock", "POST", "/api/v4/order/cancel", nil, 1)
 }
 
 func TestSpotTradingCancelAllOrdersWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.CancelAllOrdersRequest{
-            Market: gosdk.String(
-                "BTC_USDT",
-            ),
-            Type: []gosdk.CancelAllOrdersRequestTypeItem{
-                gosdk.CancelAllOrdersRequestTypeItemSpot,
-                gosdk.CancelAllOrdersRequestTypeItemMargin,
-                gosdk.CancelAllOrdersRequestTypeItemFutures,
-            },
-        }
-    invocationErr :=     client.SpotTrading.CancelAllOrders(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingCancelAllOrdersWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CancelAllOrdersRequest{
+		Market: sdk.String(
+			"BTC_USDT",
+		),
+		Type: []sdk.CancelAllOrdersRequestTypeItem{
+			sdk.CancelAllOrdersRequestTypeItemSpot,
+			sdk.CancelAllOrdersRequestTypeItemMargin,
+			sdk.CancelAllOrdersRequestTypeItemFutures,
+		},
+	}
+	invocationErr := client.SpotTrading.CancelAllOrders(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCancelAllOrdersWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingCancelAllOrdersWithWireMock", "POST", "/api/v4/order/cancel/all", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCancelAllOrdersWithWireMock", "POST", "/api/v4/order/cancel/all", nil, 1)
 }
 
 func TestSpotTradingGetActiveOrdersWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetActiveOrdersRequest{}
-    _, invocationErr :=     client.SpotTrading.GetActiveOrders(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingGetActiveOrdersWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetActiveOrdersRequest{}
+	_, invocationErr := client.SpotTrading.GetActiveOrders(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingGetActiveOrdersWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingGetActiveOrdersWithWireMock", "POST", "/api/v4/orders", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingGetActiveOrdersWithWireMock", "POST", "/api/v4/orders", nil, 1)
 }
 
 func TestSpotTradingGetExecutedOrderHistoryWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetExecutedOrderHistoryRequest{}
-    _, invocationErr :=     client.SpotTrading.GetExecutedOrderHistory(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingGetExecutedOrderHistoryWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetExecutedOrderHistoryRequest{}
+	_, invocationErr := client.SpotTrading.GetExecutedOrderHistory(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingGetExecutedOrderHistoryWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingGetExecutedOrderHistoryWithWireMock", "POST", "/api/v4/trade-account/executed-history", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingGetExecutedOrderHistoryWithWireMock", "POST", "/api/v4/trade-account/executed-history", nil, 1)
 }
 
 func TestSpotTradingGetOrderDealsWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetOrderDealsRequest{
-            OrderID: 3134995325,
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.GetOrderDeals(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingGetOrderDealsWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetOrderDealsRequest{
+		OrderID: 3134995325,
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.GetOrderDeals(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingGetOrderDealsWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingGetOrderDealsWithWireMock", "POST", "/api/v4/trade-account/order", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingGetOrderDealsWithWireMock", "POST", "/api/v4/trade-account/order", nil, 1)
 }
 
 func TestSpotTradingGetOrderHistoryWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetOrderHistoryRequest{}
-    _, invocationErr :=     client.SpotTrading.GetOrderHistory(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingGetOrderHistoryWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetOrderHistoryRequest{}
+	_, invocationErr := client.SpotTrading.GetOrderHistory(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingGetOrderHistoryWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingGetOrderHistoryWithWireMock", "POST", "/api/v4/trade-account/order/history", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingGetOrderHistoryWithWireMock", "POST", "/api/v4/trade-account/order/history", nil, 1)
 }
 
 func TestSpotTradingModifyOrderWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.ModifyOrderRequest{
-            Market: "BTC_USDT",
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.SpotTrading.ModifyOrder(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingModifyOrderWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ModifyOrderRequest{
+		Market:  "BTC_USDT",
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.SpotTrading.ModifyOrder(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingModifyOrderWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingModifyOrderWithWireMock", "POST", "/api/v4/order/modify", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingModifyOrderWithWireMock", "POST", "/api/v4/order/modify", nil, 1)
 }
 
 func TestSpotTradingSetKillSwitchWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.SetKillSwitchRequest{
-            Market: "BTC_USDT",
-            Timeout: "60",
-        }
-    _, invocationErr :=     client.SpotTrading.SetKillSwitch(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingSetKillSwitchWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.SetKillSwitchRequest{
+		Market:  "BTC_USDT",
+		Timeout: "60",
+	}
+	_, invocationErr := client.SpotTrading.SetKillSwitch(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingSetKillSwitchWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingSetKillSwitchWithWireMock", "POST", "/api/v4/order/kill-switch", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingSetKillSwitchWithWireMock", "POST", "/api/v4/order/kill-switch", nil, 1)
 }
 
 func TestSpotTradingGetKillSwitchStatusWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetKillSwitchStatusRequest{}
-    _, invocationErr :=     client.SpotTrading.GetKillSwitchStatus(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestSpotTradingGetKillSwitchStatusWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetKillSwitchStatusRequest{}
+	_, invocationErr := client.SpotTrading.GetKillSwitchStatus(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingGetKillSwitchStatusWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestSpotTradingGetKillSwitchStatusWithWireMock", "POST", "/api/v4/order/kill-switch/status", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingGetKillSwitchStatusWithWireMock", "POST", "/api/v4/order/kill-switch/status", nil, 1)
 }
-
-

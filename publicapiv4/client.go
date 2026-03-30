@@ -3,354 +3,353 @@
 package publicapiv4
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    gosdk "github.com/whitebit-exchange/go-sdk"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint retrieves maintenance status
 func (c *Client) MaintenanceStatus(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (*gosdk.GetAPIV4PublicPlatformStatusResponse, error){
-    response, err := c.WithRawResponse.MaintenanceStatus(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (*sdk.GetAPIV4PublicPlatformStatusResponse, error) {
+	response, err := c.WithRawResponse.MaintenanceStatus(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves all information about available spot and futures markets.
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit 2000 requests/10 sec.
 // </Warning>
 func (c *Client) MarketInfo(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) ([]*gosdk.GetAPIV4PublicMarketsResponseItem, error){
-    response, err := c.WithRawResponse.MarketInfo(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) ([]*sdk.GetAPIV4PublicMarketsResponseItem, error) {
+	response, err := c.WithRawResponse.MarketInfo(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves a 24-hour pricing and volume summary for each market pair available on the exchange.
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
 // </Warning>
 func (c *Client) MarketActivity(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (map[string]*gosdk.GetAPIV4PublicTickerResponseValue, error){
-    response, err := c.WithRawResponse.MarketActivity(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (map[string]*sdk.GetAPIV4PublicTickerResponseValue, error) {
+	response, err := c.WithRawResponse.MarketActivity(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the assets status.
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
 // </Warning>
 func (c *Client) AssetStatusList(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (map[string]*gosdk.Asset, error){
-    response, err := c.WithRawResponse.AssetStatusList(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (map[string]*sdk.Asset, error) {
+	response, err := c.WithRawResponse.AssetStatusList(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the current [order book](/glossary#order-book) as two arrays ([bids](/glossary#bid) / [asks](/glossary#ask)) with additional parameters.
-// 
+//
 // <Note>
 // The API caches the response for 100 ms
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit 600 requests/10 sec.
 // </Warning>
 func (c *Client) Orderbook(
-    ctx context.Context,
-    request *gosdk.GetAPIV4PublicOrderbookMarketRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderbookResponse, error){
-    response, err := c.WithRawResponse.Orderbook(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetAPIV4PublicOrderbookMarketRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderbookResponse, error) {
+	response, err := c.WithRawResponse.Orderbook(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves depth price levels within ±2% of the market last price. Use when lightweight order book data is needed for a narrow price band around the current market price. The ±2% constraint limits the response to price levels near the last traded price, reducing payload size compared to the full order book.
-// 
+//
 // <Note>
 // The API caches the response for 1 sec
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
 // </Warning>
 func (c *Client) Depth(
-    ctx context.Context,
-    request *gosdk.GetAPIV4PublicOrderbookDepthMarketRequest,
-    opts ...option.RequestOption,
-) (*gosdk.OrderbookResponse, error){
-    response, err := c.WithRawResponse.Depth(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetAPIV4PublicOrderbookDepthMarketRequest,
+	opts ...option.RequestOption,
+) (*sdk.OrderbookResponse, error) {
+	response, err := c.WithRawResponse.Depth(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the [trades](/glossary#deal-trade) that have been executed recently on the requested [market](/glossary#market).
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Note>
-//   Public trade data can include executions that originate from RPI orders. Public order book feeds (`depth`, `bookTicker`) exclude RPI orders. RPI orders appear only in private active orders and in the exchange UI order book (web and mobile).
+//
+//	Public trade data can include executions that originate from RPI orders. Public order book feeds (`depth`, `bookTicker`) exclude RPI orders. RPI orders appear only in private active orders and in the exchange UI order book (web and mobile).
+//
 // </Note>
-// 
-// 
+//
 // <Warning>
 // Rate limit 2000 requests/10 sec.
 // </Warning>
 func (c *Client) RecentTrades(
-    ctx context.Context,
-    request *gosdk.GetAPIV4PublicTradesMarketRequest,
-    opts ...option.RequestOption,
-) ([]*gosdk.GetAPIV4PublicTradesMarketResponseItem, error){
-    response, err := c.WithRawResponse.RecentTrades(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetAPIV4PublicTradesMarketRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.GetAPIV4PublicTradesMarketResponseItem, error) {
+	response, err := c.WithRawResponse.RecentTrades(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the list of [fees](/glossary#fee) and min/max amounts for deposits and withdrawals
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/index) for rate limit details.
 // </Warning>
 func (c *Client) Fee(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.Fee(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.Fee(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the current server time.
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit 2000 requests/10 sec.
 // </Warning>
 func (c *Client) ServerTime(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (*gosdk.GetAPIV4PublicTimeResponse, error){
-    response, err := c.WithRawResponse.ServerTime(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (*sdk.GetAPIV4PublicTimeResponse, error) {
+	response, err := c.WithRawResponse.ServerTime(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the current API life-state.
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit 2000 requests/10 sec.
 // </Warning>
 func (c *Client) ServerStatus(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) ([]string, error){
-    response, err := c.WithRawResponse.ServerStatus(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) ([]string, error) {
+	response, err := c.WithRawResponse.ServerStatus(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns the list of [markets](/glossary#market) that are available for [collateral](/glossary#collateral) trading
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit 2000 requests/10 sec.
 // </Warning>
 func (c *Client) CollateralMarketsList(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (*gosdk.GetAPIV4PublicCollateralMarketsResponse, error){
-    response, err := c.WithRawResponse.CollateralMarketsList(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (*sdk.GetAPIV4PublicCollateralMarketsResponse, error) {
+	response, err := c.WithRawResponse.CollateralMarketsList(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns the list of available futures markets.
-// 
+//
 // <Note>
 // The API caches the response for 1 second
 // </Note>
-// 
+//
 // <Warning>
 // Rate limit 2000 requests/10 sec.
 // </Warning>
 func (c *Client) AvailableFuturesMarketsList(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (*gosdk.GetAPIV4PublicFuturesResponse, error){
-    response, err := c.WithRawResponse.AvailableFuturesMarketsList(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (*sdk.GetAPIV4PublicFuturesResponse, error) {
+	response, err := c.WithRawResponse.AvailableFuturesMarketsList(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns the funding rate history for a specified futures market.
-// 
+//
 // <Warning>
 // Rate limit 2000 requests/10 sec.
 // </Warning>
 func (c *Client) FundingHistory(
-    ctx context.Context,
-    request *gosdk.GetAPIV4PublicFundingHistoryMarketRequest,
-    opts ...option.RequestOption,
-) ([]*gosdk.GetAPIV4PublicFundingHistoryMarketResponseItem, error){
-    response, err := c.WithRawResponse.FundingHistory(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetAPIV4PublicFundingHistoryMarketRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.GetAPIV4PublicFundingHistoryMarketResponseItem, error) {
+	response, err := c.WithRawResponse.FundingHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns overall information about the current mining pool state.
-// 
+//
 // Hash rate is expressed in H units.
-// 
+//
 // <Warning>
 // Rate limit 1000 requests/10 sec.
 // </Warning>
 func (c *Client) MiningPoolOverview(
-    ctx context.Context,
-    opts ...option.RequestOption,
-) (*gosdk.GetAPIV4PublicMiningPoolResponse, error){
-    response, err := c.WithRawResponse.MiningPoolOverview(
-        ctx,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (*sdk.GetAPIV4PublicMiningPoolResponse, error) {
+	response, err := c.WithRawResponse.MiningPoolOverview(
+		ctx,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

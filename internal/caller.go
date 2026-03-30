@@ -17,8 +17,8 @@ import (
 
 const (
 	// contentType specifies the JSON Content-Type header value.
-	contentType            = "application/json"
-	contentTypeHeader      = "Content-Type"
+	contentType               = "application/json"
+	contentTypeHeader         = "Content-Type"
 	contentTypeFormURLEncoded = "application/x-www-form-urlencoded"
 )
 

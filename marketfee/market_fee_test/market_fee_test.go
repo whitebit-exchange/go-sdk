@@ -3,89 +3,87 @@
 package market_fee_test
 
 import (
-    http "net/http"
-    bytes "bytes"
-    json "encoding/json"
-    os "os"
-    testing "testing"
-    client "github.com/whitebit-exchange/go-sdk/client"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    context "context"
-    require "github.com/stretchr/testify/require"
+	bytes "bytes"
+	context "context"
+	json "encoding/json"
+	require "github.com/stretchr/testify/require"
+	http "net/http"
+	os "os"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	client "github.com/whitebit-exchange/go-sdk/client"
+	option "github.com/whitebit-exchange/go-sdk/option"
+	testing "testing"
 )
 
-
-
 func VerifyRequestCount(
-    t *testing.T,
-    testId string,
-    method string,
-    urlPath string,
-    queryParams map[string]string,
-    expected int,
+	t *testing.T,
+	testId string,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
-    var reqBody bytes.Buffer
-    reqBody.WriteString(`{"method":"`)
-    reqBody.WriteString(method)
-    reqBody.WriteString(`","urlPath":"`)
-    reqBody.WriteString(urlPath)
-    reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
-    reqBody.WriteString(testId)
-    reqBody.WriteString(`"}}`)
-    if len(queryParams) > 0 {
-        reqBody.WriteString(`,"queryParameters":{`)
-        first := true
-        for key, value := range queryParams {
-            if !first {
-                reqBody.WriteString(",")
-            }
-            reqBody.WriteString(`"`)
-            reqBody.WriteString(key)
-            reqBody.WriteString(`":{"equalTo":"`)
-            reqBody.WriteString(value)
-            reqBody.WriteString(`"}`)
-            first = false
-        }
-        reqBody.WriteString("}")
-    }
-    reqBody.WriteString("}")
-    resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
-    require.NoError(t, err)
-    var result struct { Requests []interface{} `json:"requests"` }
-    json.NewDecoder(resp.Body).Decode(&result)
-    require.Equal(t, expected, len(result.Requests))
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
+	reqBody.WriteString(testId)
+	reqBody.WriteString(`"}}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
+			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
+		}
+		reqBody.WriteString("}")
+	}
+	reqBody.WriteString("}")
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestMarketFeeGetMarketFeeWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetMarketFeeRequest{
-            Market: "BTC_USDT",
-        }
-    _, invocationErr :=     client.MarketFee.GetMarketFee(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestMarketFeeGetMarketFeeWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetMarketFeeRequest{
+		Market: "BTC_USDT",
+	}
+	_, invocationErr := client.MarketFee.GetMarketFee(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestMarketFeeGetMarketFeeWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestMarketFeeGetMarketFeeWithWireMock", "POST", "/api/v4/market/fee", map[string]string{"market": "BTC_USDT"}, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestMarketFeeGetMarketFeeWithWireMock", "POST", "/api/v4/market/fee", map[string]string{"market": "BTC_USDT"}, 1)
 }
-
-

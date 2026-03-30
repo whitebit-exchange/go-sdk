@@ -3,133 +3,131 @@
 package main_account_test
 
 import (
-    http "net/http"
-    bytes "bytes"
-    json "encoding/json"
-    os "os"
-    testing "testing"
-    client "github.com/whitebit-exchange/go-sdk/client"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    context "context"
-    require "github.com/stretchr/testify/require"
+	bytes "bytes"
+	context "context"
+	json "encoding/json"
+	require "github.com/stretchr/testify/require"
+	http "net/http"
+	os "os"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	client "github.com/whitebit-exchange/go-sdk/client"
+	option "github.com/whitebit-exchange/go-sdk/option"
+	testing "testing"
 )
 
-
-
 func VerifyRequestCount(
-    t *testing.T,
-    testId string,
-    method string,
-    urlPath string,
-    queryParams map[string]string,
-    expected int,
+	t *testing.T,
+	testId string,
+	method string,
+	urlPath string,
+	queryParams map[string]string,
+	expected int,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
-    var reqBody bytes.Buffer
-    reqBody.WriteString(`{"method":"`)
-    reqBody.WriteString(method)
-    reqBody.WriteString(`","urlPath":"`)
-    reqBody.WriteString(urlPath)
-    reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
-    reqBody.WriteString(testId)
-    reqBody.WriteString(`"}}`)
-    if len(queryParams) > 0 {
-        reqBody.WriteString(`,"queryParameters":{`)
-        first := true
-        for key, value := range queryParams {
-            if !first {
-                reqBody.WriteString(",")
-            }
-            reqBody.WriteString(`"`)
-            reqBody.WriteString(key)
-            reqBody.WriteString(`":{"equalTo":"`)
-            reqBody.WriteString(value)
-            reqBody.WriteString(`"}`)
-            first = false
-        }
-        reqBody.WriteString("}")
-    }
-    reqBody.WriteString("}")
-    resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
-    require.NoError(t, err)
-    var result struct { Requests []interface{} `json:"requests"` }
-    json.NewDecoder(resp.Body).Decode(&result)
-    require.Equal(t, expected, len(result.Requests))
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WiremockAdminURL := "http://localhost:" + wiremockPort + "/__admin"
+	var reqBody bytes.Buffer
+	reqBody.WriteString(`{"method":"`)
+	reqBody.WriteString(method)
+	reqBody.WriteString(`","urlPath":"`)
+	reqBody.WriteString(urlPath)
+	reqBody.WriteString(`","headers":{"X-Test-Id":{"equalTo":"`)
+	reqBody.WriteString(testId)
+	reqBody.WriteString(`"}}`)
+	if len(queryParams) > 0 {
+		reqBody.WriteString(`,"queryParameters":{`)
+		first := true
+		for key, value := range queryParams {
+			if !first {
+				reqBody.WriteString(",")
+			}
+			reqBody.WriteString(`"`)
+			reqBody.WriteString(key)
+			reqBody.WriteString(`":{"equalTo":"`)
+			reqBody.WriteString(value)
+			reqBody.WriteString(`"}`)
+			first = false
+		}
+		reqBody.WriteString("}")
+	}
+	reqBody.WriteString("}")
+	resp, err := http.Post(WiremockAdminURL+"/requests/find", "application/json", &reqBody)
+	require.NoError(t, err)
+	var result struct {
+		Requests []interface{} `json:"requests"`
+	}
+	json.NewDecoder(resp.Body).Decode(&result)
+	require.Equal(t, expected, len(result.Requests))
 }
 
 func TestMainAccountGetMainBalanceWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetMainBalanceRequest{
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.MainAccount.GetMainBalance(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestMainAccountGetMainBalanceWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetMainBalanceRequest{
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.MainAccount.GetMainBalance(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestMainAccountGetMainBalanceWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestMainAccountGetMainBalanceWithWireMock", "POST", "/api/v4/main-account/balance", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestMainAccountGetMainBalanceWithWireMock", "POST", "/api/v4/main-account/balance", nil, 1)
 }
 
 func TestMainAccountGetDepositWithdrawHistoryWithWireMock(
-    t *testing.T,
+	t *testing.T,
 ) {
-    wiremockPort := os.Getenv("WIREMOCK_PORT")
-    	if wiremockPort == "" {
-    		wiremockPort = "8080"
-    	}
-    	WireMockBaseURL := "http://localhost:" + wiremockPort
-    client := client.NewClient(
-        option.WithBaseURL(WireMockBaseURL),
-    )
-        request := &gosdk.GetDepositWithdrawHistoryRequest{
-            TransactionMethod: gosdk.Int(
-                1,
-            ),
-            Ticker: gosdk.String(
-                "BTC",
-            ),
-            Limit: gosdk.Int(
-                100,
-            ),
-            Offset: gosdk.Int(
-                0,
-            ),
-            Status: []int{
-                3,
-                7,
-            },
-            Request: "{{request}}",
-            Nonce: "{{nonce}}",
-        }
-    _, invocationErr :=     client.MainAccount.GetDepositWithdrawHistory(
-            context.TODO(),
-            request,
-            option.WithHTTPHeader(
-                http.Header{"X-Test-Id": []string{"TestMainAccountGetDepositWithdrawHistoryWithWireMock"}},
-            ),
-        )
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetDepositWithdrawHistoryRequest{
+		TransactionMethod: sdk.Int(
+			1,
+		),
+		Ticker: sdk.String(
+			"BTC",
+		),
+		Limit: sdk.Int(
+			100,
+		),
+		Offset: sdk.Int(
+			0,
+		),
+		Status: []int{
+			3,
+			7,
+		},
+		Request: "{{request}}",
+		Nonce:   "{{nonce}}",
+	}
+	_, invocationErr := client.MainAccount.GetDepositWithdrawHistory(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestMainAccountGetDepositWithdrawHistoryWithWireMock"}},
+		),
+	)
 
-    require.NoError(t, invocationErr, "Client method call should succeed")
-    VerifyRequestCount(t, "TestMainAccountGetDepositWithdrawHistoryWithWireMock", "POST", "/api/v4/main-account/history", nil, 1)
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestMainAccountGetDepositWithdrawHistoryWithWireMock", "POST", "/api/v4/main-account/history", nil, 1)
 }
-
-

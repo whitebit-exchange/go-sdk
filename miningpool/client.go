@@ -3,272 +3,270 @@
 package miningpool
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint returns rewards received from mining.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetMiningRewards(
-    ctx context.Context,
-    request *gosdk.GetMiningRewardsRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMiningRewardsResponse, error){
-    response, err := c.WithRawResponse.GetMiningRewards(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMiningRewardsRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMiningRewardsResponse, error) {
+	response, err := c.WithRawResponse.GetMiningRewards(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint returns hashrate of mining pool account.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) GetMiningHashrate(
-    ctx context.Context,
-    request *gosdk.GetMiningHashrateRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMiningHashrateResponse, error){
-    response, err := c.WithRawResponse.GetMiningHashrate(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMiningHashrateRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMiningHashrateResponse, error) {
+	response, err := c.WithRawResponse.GetMiningHashrate(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Returns the current payout destination setting for a specific mining account belonging to the authenticated user.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) GetMiningPayoutDestination(
-    ctx context.Context,
-    request *gosdk.GetMiningPayoutDestinationRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMiningPayoutDestinationResponse, error){
-    response, err := c.WithRawResponse.GetMiningPayoutDestination(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMiningPayoutDestinationRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMiningPayoutDestinationResponse, error) {
+	response, err := c.WithRawResponse.GetMiningPayoutDestination(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Updates the payout destination for a specific mining account belonging to the authenticated user. Can be set to main balance or an external BTC address.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) SetMiningPayoutDestination(
-    ctx context.Context,
-    request *gosdk.SetMiningPayoutDestinationRequest,
-    opts ...option.RequestOption,
-) (*gosdk.SetMiningPayoutDestinationResponse, error){
-    response, err := c.WithRawResponse.SetMiningPayoutDestination(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.SetMiningPayoutDestinationRequest,
+	opts ...option.RequestOption,
+) (*sdk.SetMiningPayoutDestinationResponse, error) {
+	response, err := c.WithRawResponse.SetMiningPayoutDestination(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Returns fee information and stratum connection details with worker counts for a specific mining account.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) GetMiningMinerInfo(
-    ctx context.Context,
-    request *gosdk.GetMiningMinerInfoRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMiningMinerInfoResponse, error){
-    response, err := c.WithRawResponse.GetMiningMinerInfo(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMiningMinerInfoRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMiningMinerInfoResponse, error) {
+	response, err := c.WithRawResponse.GetMiningMinerInfo(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Returns a paginated list of online worker names for a specific mining account.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) GetMiningWorkerNames(
-    ctx context.Context,
-    request *gosdk.GetMiningWorkerNamesRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMiningWorkerNamesResponse, error){
-    response, err := c.WithRawResponse.GetMiningWorkerNames(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMiningWorkerNamesRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMiningWorkerNamesResponse, error) {
+	response, err := c.WithRawResponse.GetMiningWorkerNames(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Returns hashrate performance history for a specific worker on a mining account.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) GetMiningWorkerHashrate(
-    ctx context.Context,
-    request *gosdk.GetMiningWorkerHashrateRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMiningWorkerHashrateResponse, error){
-    response, err := c.WithRawResponse.GetMiningWorkerHashrate(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMiningWorkerHashrateRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMiningWorkerHashrateResponse, error) {
+	response, err := c.WithRawResponse.GetMiningWorkerHashrate(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Creates a new watcher link for one or more mining accounts, granting specific permissions with a configurable expiration.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) CreateMiningWatcherLink(
-    ctx context.Context,
-    request *gosdk.CreateMiningWatcherLinkRequest,
-    opts ...option.RequestOption,
-) (*gosdk.CreateMiningWatcherLinkResponse, error){
-    response, err := c.WithRawResponse.CreateMiningWatcherLink(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateMiningWatcherLinkRequest,
+	opts ...option.RequestOption,
+) (*sdk.CreateMiningWatcherLinkResponse, error) {
+	response, err := c.WithRawResponse.CreateMiningWatcherLink(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Returns all active watcher links for a specific mining account.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) ListMiningWatcherLinks(
-    ctx context.Context,
-    request *gosdk.ListMiningWatcherLinksRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ListMiningWatcherLinksResponse, error){
-    response, err := c.WithRawResponse.ListMiningWatcherLinks(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ListMiningWatcherLinksRequest,
+	opts ...option.RequestOption,
+) (*sdk.ListMiningWatcherLinksResponse, error) {
+	response, err := c.WithRawResponse.ListMiningWatcherLinks(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Creates a new mining account for the authenticated user. The account name must be unique within the user's accounts.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) CreateMiningAccount(
-    ctx context.Context,
-    request *gosdk.CreateMiningAccountRequest,
-    opts ...option.RequestOption,
-) (*gosdk.CreateMiningAccountResponse, error){
-    response, err := c.WithRawResponse.CreateMiningAccount(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateMiningAccountRequest,
+	opts ...option.RequestOption,
+) (*sdk.CreateMiningAccountResponse, error) {
+	response, err := c.WithRawResponse.CreateMiningAccount(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // Returns a list of mining accounts for the authenticated user. Supports filtering by account name.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
 func (c *Client) GetMiningAccounts(
-    ctx context.Context,
-    request *gosdk.GetMiningAccountsRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMiningAccountsResponse, error){
-    response, err := c.WithRawResponse.GetMiningAccounts(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMiningAccountsRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMiningAccountsResponse, error) {
+	response, err := c.WithRawResponse.GetMiningAccounts(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

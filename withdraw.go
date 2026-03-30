@@ -5,8 +5,8 @@ package api
 import (
 	json "encoding/json"
 	fmt "fmt"
-	internal "github.com/whitebit-exchange/go-sdk/internal"
 	big "math/big"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
 	time "time"
 )
 

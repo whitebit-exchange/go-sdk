@@ -3,58 +3,56 @@
 package marketfee
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // Returns maker and taker fees for a specific market.
-// 
+//
 // The `maker` and `taker` fields represent spot trading fees. The `futures_maker` and `futures_taker` fields represent futures trading fees.
-// 
+//
 // The system calculates the effective futures fee as the lower value between the user-specific custom fee and the market-specific fee.
-// 
+//
 // When the market fee is lower than the assigned custom fee, the system returns the market fee.
-// 
+//
 // Example: If the custom futures taker fee equals `0.026` and the market fee equals `0.02`, the response returns `0.02`.
 func (c *Client) GetMarketFee(
-    ctx context.Context,
-    request *gosdk.GetMarketFeeRequest,
-    opts ...option.RequestOption,
-) (*gosdk.GetMarketFeeResponse, error){
-    response, err := c.WithRawResponse.GetMarketFee(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.GetMarketFeeRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetMarketFeeResponse, error) {
+	response, err := c.WithRawResponse.GetMarketFee(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-

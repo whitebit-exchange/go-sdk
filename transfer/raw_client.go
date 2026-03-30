@@ -3,82 +3,80 @@
 package transfer
 
 import (
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    core "github.com/whitebit-exchange/go-sdk/core"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    http "net/http"
+	context "context"
+	http "net/http"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type RawClient struct {
-    baseURL string
-    caller *internal.Caller
-    options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
+	options *core.RequestOptions
 }
 
 func NewRawClient(options *core.RequestOptions) *RawClient {
-    return &RawClient{
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &RawClient{
+		options: options,
+		baseURL: options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 func (r *RawClient) BetweenBalances(
-    ctx context.Context,
-    request *gosdk.TransferBetweenBalancesRequest,
-    opts ...option.RequestOption,
-) (*core.Response[[]any], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/main-account/transfer"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response []any
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[[]any]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.TransferBetweenBalancesRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]any], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/main-account/transfer"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []any
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]any]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
-

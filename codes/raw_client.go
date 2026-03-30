@@ -3,235 +3,233 @@
 package codes
 
 import (
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    core "github.com/whitebit-exchange/go-sdk/core"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
-    http "net/http"
+	context "context"
+	http "net/http"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type RawClient struct {
-    baseURL string
-    caller *internal.Caller
-    options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
+	options *core.RequestOptions
 }
 
 func NewRawClient(options *core.RequestOptions) *RawClient {
-    return &RawClient{
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &RawClient{
+		options: options,
+		baseURL: options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 func (r *RawClient) CreateCode(
-    ctx context.Context,
-    request *gosdk.CreateCodeRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.CreateCodeResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/main-account/codes"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.CreateCodeResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.CreateCodeResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.CreateCodeRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.CreateCodeResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/main-account/codes"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.CreateCodeResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.CreateCodeResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) ApplyCode(
-    ctx context.Context,
-    request *gosdk.ApplyCodeRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.ApplyCodeResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/main-account/codes/apply"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.ApplyCodeResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.ApplyCodeResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.ApplyCodeRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.ApplyCodeResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/main-account/codes/apply"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.ApplyCodeResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.ApplyCodeResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetMyCodes(
-    ctx context.Context,
-    request *gosdk.GetMyCodesRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.GetMyCodesResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/main-account/codes/my"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.GetMyCodesResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.GetMyCodesResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetMyCodesRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.GetMyCodesResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/main-account/codes/my"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.GetMyCodesResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.GetMyCodesResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
 
 func (r *RawClient) GetCodesHistory(
-    ctx context.Context,
-    request *gosdk.GetCodesHistoryRequest,
-    opts ...option.RequestOption,
-) (*core.Response[*gosdk.GetCodesHistoryResponse], error){
-    options := core.NewRequestOptions(opts...)
-    baseURL := internal.ResolveBaseURL(
-        options.BaseURL,
-        internal.ResolveEnvironmentBaseURL(
-            options.Environment,
-            "Base",
-        ),
-        r.baseURL,
-        internal.ResolveEnvironmentBaseURL(
-            r.options.Environment,
-            "Base",
-        ),
-        "https://whitebit.com",
-    )
-    endpointURL := baseURL + "/api/v4/main-account/codes/history"
-    headers := internal.MergeHeaders(
-        r.options.ToHeader(),
-        options.ToHeader(),
-    )
-    headers.Add("Content-Type", "application/json")
-    var response *gosdk.GetCodesHistoryResponse
-    raw, err := r.caller.Call(
-        ctx,
-        &internal.CallParams{
-            URL: endpointURL,
-            Method: http.MethodPost,
-            Headers: headers,
-            MaxAttempts: options.MaxAttempts,
-            BodyProperties: options.BodyProperties,
-            QueryParameters: options.QueryParameters,
-            Client: options.HTTPClient,
-            Request: request,
-            Response: &response,
-            ErrorDecoder: internal.NewErrorDecoder(gosdk.ErrorCodes),
-        },
-    )
-    if err != nil {
-        return nil, err
-    }
-    return &core.Response[*gosdk.GetCodesHistoryResponse]{
-        StatusCode: raw.StatusCode,
-        Header: raw.Header,
-        Body: response,
-    }, nil
+	ctx context.Context,
+	request *sdk.GetCodesHistoryRequest,
+	opts ...option.RequestOption,
+) (*core.Response[*sdk.GetCodesHistoryResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/main-account/codes/history"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response *sdk.GetCodesHistoryResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[*sdk.GetCodesHistoryResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
 }
-

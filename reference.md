@@ -1,5 +1,5 @@
 # Reference
-<details><summary><code>client.ConvertEstimate(request) -> *gosdk.ConvertEstimateResponse</code></summary>
+<details><summary><code>client.ConvertEstimate(request) -> *sdk.ConvertEstimateResponse</code></summary>
 <dl>
 <dd>
 
@@ -30,10 +30,10 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.ConvertEstimateRequest{
+request := &sdk.ConvertEstimateRequest{
         From: "BTC",
         To: "USDT",
-        Direction: gosdk.ConvertEstimateRequestDirectionTo,
+        Direction: sdk.ConvertEstimateRequestDirectionTo,
         Amount: "35,103.1",
     }
 client.ConvertEstimate(
@@ -71,7 +71,7 @@ client.ConvertEstimate(
 <dl>
 <dd>
 
-**direction:** `*gosdk.ConvertEstimateRequestDirection` — Convert amount direction, defines in which currency corresponding "amount" field is populated. Use "to" in case amount is in "to" currency, use "from" if amount is in "from" currency
+**direction:** `*sdk.ConvertEstimateRequestDirection` — Convert amount direction, defines in which currency corresponding "amount" field is populated. Use "to" in case amount is in "to" currency, use "from" if amount is in "from" currency
     
 </dd>
 </dl>
@@ -107,7 +107,7 @@ client.ConvertEstimate(
 </dl>
 </details>
 
-<details><summary><code>client.ConvertConfirm(request) -> *gosdk.ConvertConfirmResponse</code></summary>
+<details><summary><code>client.ConvertConfirm(request) -> *sdk.ConvertConfirmResponse</code></summary>
 <dl>
 <dd>
 
@@ -138,7 +138,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.ConvertConfirmRequest{
+request := &sdk.ConvertConfirmRequest{
         QuoteID: "4050",
     }
 client.ConvertConfirm(
@@ -188,7 +188,7 @@ client.ConvertConfirm(
 </dl>
 </details>
 
-<details><summary><code>client.ConvertHistory(request) -> *gosdk.ConvertHistoryResponse</code></summary>
+<details><summary><code>client.ConvertHistory(request) -> *sdk.ConvertHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -220,8 +220,8 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.ConvertHistoryRequest{
-        FromTicker: gosdk.String(
+request := &sdk.ConvertHistoryRequest{
+        FromTicker: sdk.String(
             "BTC",
         ),
     }
@@ -360,9 +360,9 @@ The `state` parameter is crucial for security in OAuth flows:
 <dd>
 
 ```go
-request := &gosdk.GetAuthLoginRequest{
+request := &sdk.GetAuthLoginRequest{
         ClientID: "YOUR_CLIENT_ID",
-        State: gosdk.String(
+        State: sdk.String(
             "SECURE_RANDOM_STATE",
         ),
     }
@@ -405,7 +405,7 @@ client.Authentication.OAuth20Authorization(
 </dl>
 </details>
 
-<details><summary><code>client.Authentication.GetAccessToken(request) -> *gosdk.PostOauth2TokenResponse</code></summary>
+<details><summary><code>client.Authentication.GetAccessToken(request) -> *sdk.PostOauth2TokenResponse</code></summary>
 <dl>
 <dd>
 
@@ -442,7 +442,7 @@ The endpoint activates an access token by exchanging an authorization code.
 <dd>
 
 ```go
-request := &gosdk.PostOauth2TokenRequest{
+request := &sdk.PostOauth2TokenRequest{
         ClientID: "YOUR_CLIENT_ID",
         ClientSecret: "YOUR_CLIENT_SECRET",
         Code: "AUTHORIZATION_CODE",
@@ -494,7 +494,7 @@ client.Authentication.GetAccessToken(
 </dl>
 </details>
 
-<details><summary><code>client.Authentication.RefreshToken(request) -> *gosdk.PostOauth2RefreshTokenResponse</code></summary>
+<details><summary><code>client.Authentication.RefreshToken(request) -> *sdk.PostOauth2RefreshTokenResponse</code></summary>
 <dl>
 <dd>
 
@@ -532,7 +532,7 @@ This endpoint creates a new access token using a refresh token.
 <dd>
 
 ```go
-request := &gosdk.PostOauth2RefreshTokenRequest{
+request := &sdk.PostOauth2RefreshTokenRequest{
         ClientID: "YOUR_CLIENT_ID",
         ClientSecret: "YOUR_CLIENT_SECRET",
         Token: "REFRESH_TOKEN",
@@ -952,7 +952,7 @@ client.AccountEndpoints.GetSpotAccountBalance(
 </details>
 
 ## PublicAPIV4
-<details><summary><code>client.PublicAPIV4.MaintenanceStatus() -> *gosdk.GetAPIV4PublicPlatformStatusResponse</code></summary>
+<details><summary><code>client.PublicAPIV4.MaintenanceStatus() -> *sdk.GetAPIV4PublicPlatformStatusResponse</code></summary>
 <dl>
 <dd>
 
@@ -994,7 +994,7 @@ client.PublicAPIV4.MaintenanceStatus(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.MarketInfo() -> []*gosdk.GetAPIV4PublicMarketsResponseItem</code></summary>
+<details><summary><code>client.PublicAPIV4.MarketInfo() -> []*sdk.GetAPIV4PublicMarketsResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -1044,7 +1044,7 @@ client.PublicAPIV4.MarketInfo(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.MarketActivity() -> map[string]*gosdk.GetAPIV4PublicTickerResponseValue</code></summary>
+<details><summary><code>client.PublicAPIV4.MarketActivity() -> map[string]*sdk.GetAPIV4PublicTickerResponseValue</code></summary>
 <dl>
 <dd>
 
@@ -1094,7 +1094,7 @@ client.PublicAPIV4.MarketActivity(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.AssetStatusList() -> map[string]*gosdk.Asset</code></summary>
+<details><summary><code>client.PublicAPIV4.AssetStatusList() -> map[string]*sdk.Asset</code></summary>
 <dl>
 <dd>
 
@@ -1144,7 +1144,7 @@ client.PublicAPIV4.AssetStatusList(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.Orderbook(Market) -> *gosdk.OrderbookResponse</code></summary>
+<details><summary><code>client.PublicAPIV4.Orderbook(Market) -> *sdk.OrderbookResponse</code></summary>
 <dl>
 <dd>
 
@@ -1179,12 +1179,12 @@ Rate limit 600 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetAPIV4PublicOrderbookMarketRequest{
+request := &sdk.GetAPIV4PublicOrderbookMarketRequest{
         Market: "BTC_USDT",
-        Limit: gosdk.Int(
+        Limit: sdk.Int(
             100,
         ),
-        Level: gosdk.Int(
+        Level: sdk.Int(
             2,
         ),
     }
@@ -1235,7 +1235,7 @@ client.PublicAPIV4.Orderbook(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.Depth(Market) -> *gosdk.OrderbookResponse</code></summary>
+<details><summary><code>client.PublicAPIV4.Depth(Market) -> *sdk.OrderbookResponse</code></summary>
 <dl>
 <dd>
 
@@ -1270,7 +1270,7 @@ Rate limit: 2000 requests/10 sec. See [Public API V4 overview](/public/http-v4/i
 <dd>
 
 ```go
-request := &gosdk.GetAPIV4PublicOrderbookDepthMarketRequest{
+request := &sdk.GetAPIV4PublicOrderbookDepthMarketRequest{
         Market: "BTC_USDT",
     }
 client.PublicAPIV4.Depth(
@@ -1304,7 +1304,7 @@ client.PublicAPIV4.Depth(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.RecentTrades(Market) -> []*gosdk.GetAPIV4PublicTradesMarketResponseItem</code></summary>
+<details><summary><code>client.PublicAPIV4.RecentTrades(Market) -> []*sdk.GetAPIV4PublicTradesMarketResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -1344,7 +1344,7 @@ Rate limit 2000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetAPIV4PublicTradesMarketRequest{
+request := &sdk.GetAPIV4PublicTradesMarketRequest{
         Market: "BTC_USDT",
     }
 client.PublicAPIV4.RecentTrades(
@@ -1374,7 +1374,7 @@ client.PublicAPIV4.RecentTrades(
 <dl>
 <dd>
 
-**type_:** `*gosdk.GetAPIV4PublicTradesMarketRequestType` — Can be buy or sell
+**type_:** `*sdk.GetAPIV4PublicTradesMarketRequestType` — Can be buy or sell
     
 </dd>
 </dl>
@@ -1436,7 +1436,7 @@ client.PublicAPIV4.Fee(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.ServerTime() -> *gosdk.GetAPIV4PublicTimeResponse</code></summary>
+<details><summary><code>client.PublicAPIV4.ServerTime() -> *sdk.GetAPIV4PublicTimeResponse</code></summary>
 <dl>
 <dd>
 
@@ -1536,7 +1536,7 @@ client.PublicAPIV4.ServerStatus(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.CollateralMarketsList() -> *gosdk.GetAPIV4PublicCollateralMarketsResponse</code></summary>
+<details><summary><code>client.PublicAPIV4.CollateralMarketsList() -> *sdk.GetAPIV4PublicCollateralMarketsResponse</code></summary>
 <dl>
 <dd>
 
@@ -1586,7 +1586,7 @@ client.PublicAPIV4.CollateralMarketsList(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.AvailableFuturesMarketsList() -> *gosdk.GetAPIV4PublicFuturesResponse</code></summary>
+<details><summary><code>client.PublicAPIV4.AvailableFuturesMarketsList() -> *sdk.GetAPIV4PublicFuturesResponse</code></summary>
 <dl>
 <dd>
 
@@ -1636,7 +1636,7 @@ client.PublicAPIV4.AvailableFuturesMarketsList(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.FundingHistory(Market) -> []*gosdk.GetAPIV4PublicFundingHistoryMarketResponseItem</code></summary>
+<details><summary><code>client.PublicAPIV4.FundingHistory(Market) -> []*sdk.GetAPIV4PublicFundingHistoryMarketResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -1667,18 +1667,18 @@ Rate limit 2000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetAPIV4PublicFundingHistoryMarketRequest{
+request := &sdk.GetAPIV4PublicFundingHistoryMarketRequest{
         Market: "BTC_PERP",
-        StartDate: gosdk.Int(
+        StartDate: sdk.Int(
             1752480000,
         ),
-        EndDate: gosdk.Int(
+        EndDate: sdk.Int(
             1752537600,
         ),
-        Limit: gosdk.Int(
+        Limit: sdk.Int(
             100,
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
     }
@@ -1745,7 +1745,7 @@ client.PublicAPIV4.FundingHistory(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.MiningPoolOverview() -> *gosdk.GetAPIV4PublicMiningPoolResponse</code></summary>
+<details><summary><code>client.PublicAPIV4.MiningPoolOverview() -> *sdk.GetAPIV4PublicMiningPoolResponse</code></summary>
 <dl>
 <dd>
 
@@ -1794,7 +1794,7 @@ client.PublicAPIV4.MiningPoolOverview(
 </details>
 
 ## Main Account
-<details><summary><code>client.MainAccount.GetMainBalance(request) -> map[string]*gosdk.GetMainBalanceResponseValue</code></summary>
+<details><summary><code>client.MainAccount.GetMainBalance(request) -> map[string]*sdk.GetMainBalanceResponseValue</code></summary>
 <dl>
 <dd>
 
@@ -1829,7 +1829,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetMainBalanceRequest{
+request := &sdk.GetMainBalanceRequest{
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -1880,7 +1880,7 @@ client.MainAccount.GetMainBalance(
 </dl>
 </details>
 
-<details><summary><code>client.MainAccount.GetDepositWithdrawHistory(request) -> *gosdk.GetDepositWithdrawHistoryResponse</code></summary>
+<details><summary><code>client.MainAccount.GetDepositWithdrawHistory(request) -> *sdk.GetDepositWithdrawHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -1937,17 +1937,17 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetDepositWithdrawHistoryRequest{
-        TransactionMethod: gosdk.Int(
+request := &sdk.GetDepositWithdrawHistoryRequest{
+        TransactionMethod: sdk.Int(
             1,
         ),
-        Ticker: gosdk.String(
+        Ticker: sdk.String(
             "BTC",
         ),
-        Limit: gosdk.Int(
+        Limit: sdk.Int(
             100,
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
         Status: []int{
@@ -2073,7 +2073,7 @@ Can be used for filtering transactions by status codes.
 </details>
 
 ## Deposit
-<details><summary><code>client.Deposit.GetDepositAddress(request) -> *gosdk.GetDepositAddressResponse</code></summary>
+<details><summary><code>client.Deposit.GetDepositAddress(request) -> *sdk.GetDepositAddressResponse</code></summary>
 <dl>
 <dd>
 
@@ -2140,7 +2140,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetDepositAddressRequest{
+request := &sdk.GetDepositAddressRequest{
         Ticker: "BTC",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -2200,7 +2200,7 @@ client.Deposit.GetDepositAddress(
 </dl>
 </details>
 
-<details><summary><code>client.Deposit.GetFiatDepositURL(request) -> *gosdk.GetFiatDepositURLResponse</code></summary>
+<details><summary><code>client.Deposit.GetFiatDepositURL(request) -> *sdk.GetFiatDepositURLResponse</code></summary>
 <dl>
 <dd>
 
@@ -2339,11 +2339,11 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetFiatDepositURLRequest{
+request := &sdk.GetFiatDepositURLRequest{
         Ticker: "UAH",
         Provider: "VISAMASTER",
         Amount: "100",
-        UniqueID: gosdk.String(
+        UniqueID: sdk.String(
             "{{generateID}}",
         ),
         Request: "{{request}}",
@@ -2400,7 +2400,7 @@ client.Deposit.GetFiatDepositURL(
 <dl>
 <dd>
 
-**customer:** `*gosdk.GetFiatDepositURLRequestCustomer` — Customer information (required for USD/EUR with VISAMASTER [provider](/glossary#provider))
+**customer:** `*sdk.GetFiatDepositURLRequestCustomer` — Customer information (required for USD/EUR with VISAMASTER [provider](/glossary#provider))
     
 </dd>
 </dl>
@@ -2493,7 +2493,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.IssueCardTokenRequest{
+request := &sdk.IssueCardTokenRequest{
         CardNumber: "4111111111111111",
     }
 client.Deposit.IssueCardToken(
@@ -2527,7 +2527,7 @@ client.Deposit.IssueCardToken(
 </dl>
 </details>
 
-<details><summary><code>client.Deposit.RefundDeposit(request) -> *gosdk.RefundDepositResponse</code></summary>
+<details><summary><code>client.Deposit.RefundDeposit(request) -> *sdk.RefundDepositResponse</code></summary>
 <dl>
 <dd>
 
@@ -2592,8 +2592,8 @@ Refund processing does not complete instantly. Use the [refund.successful](/plat
 <dd>
 
 ```go
-request := &gosdk.RefundDepositRequest{
-        TransactionID: gosdk.String(
+request := &sdk.RefundDepositRequest{
+        TransactionID: sdk.String(
             "54bffeb7-7a8f-43f8-bcd8-f14ec10fee85",
         ),
         Address: "0x1234567890abcdef1234567890abcdef12345678",
@@ -2655,7 +2655,7 @@ client.Deposit.RefundDeposit(
 </dl>
 </details>
 
-<details><summary><code>client.Deposit.CreateNewAddress(request) -> *gosdk.CreateNewAddressResponse</code></summary>
+<details><summary><code>client.Deposit.CreateNewAddress(request) -> *sdk.CreateNewAddressResponse</code></summary>
 <dl>
 <dd>
 
@@ -2697,7 +2697,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CreateNewAddressRequest{
+request := &sdk.CreateNewAddressRequest{
         Ticker: "XLM",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -2737,7 +2737,7 @@ client.Deposit.CreateNewAddress(
 <dl>
 <dd>
 
-**type_:** `*gosdk.CreateNewAddressRequestType` — Address type, available for specific currencies list (see address types table in endpoint description)
+**type_:** `*sdk.CreateNewAddressRequestType` — Address type, available for specific currencies list (see address types table in endpoint description)
     
 </dd>
 </dl>
@@ -2766,7 +2766,7 @@ client.Deposit.CreateNewAddress(
 </details>
 
 ## JWT
-<details><summary><code>client.Jwt.IssueJwtToken(request) -> *gosdk.IssueJwtTokenResponse</code></summary>
+<details><summary><code>client.Jwt.IssueJwtToken(request) -> *sdk.IssueJwtTokenResponse</code></summary>
 <dl>
 <dd>
 
@@ -2798,9 +2798,9 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.IssueJwtTokenRequest{
+request := &sdk.IssueJwtTokenRequest{
         Request: "{{request}}",
-        NonceWindow: gosdk.Bool(
+        NonceWindow: sdk.Bool(
             false,
         ),
         Nonce: "{{nonce}}",
@@ -2852,7 +2852,7 @@ client.Jwt.IssueJwtToken(
 </dl>
 </details>
 
-<details><summary><code>client.Jwt.GetWebSocketToken(request) -> *gosdk.GetWebSocketTokenResponse</code></summary>
+<details><summary><code>client.Jwt.GetWebSocketToken(request) -> *sdk.GetWebSocketTokenResponse</code></summary>
 <dl>
 <dd>
 
@@ -2888,7 +2888,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetWebSocketTokenRequest{
+request := &sdk.GetWebSocketTokenRequest{
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -2971,11 +2971,11 @@ Also, fiat currencies can't be withdrawn without KYC verification.
 <dd>
 
 ```go
-request := &gosdk.CreateWithdrawRequest{
+request := &sdk.CreateWithdrawRequest{
         Ticker: "ETH",
         Amount: "0.9",
         Address: "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
-        UniqueID: gosdk.String(
+        UniqueID: sdk.String(
             "24529041",
         ),
         Request: "{{request}}",
@@ -3084,7 +3084,7 @@ Cryptocurrency network. Available for multi network currencies. Example: OMNI
 <dl>
 <dd>
 
-**beneficiary:** `*gosdk.CreateWithdrawRequestBeneficiary` 
+**beneficiary:** `*sdk.CreateWithdrawRequestBeneficiary` 
 
 Beneficiary information data array.
 
@@ -3096,7 +3096,7 @@ Beneficiary information data array.
 <dl>
 <dd>
 
-**travelRule:** `*gosdk.CreateWithdrawRequestTravelRule` 
+**travelRule:** `*sdk.CreateWithdrawRequestTravelRule` 
 
 Travel Rule information data array.
 
@@ -3179,11 +3179,11 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.WithdrawRequest{
+request := &sdk.WithdrawRequest{
         Ticker: "ETH",
         Amount: "0.9",
         Address: "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
-        UniqueID: gosdk.String(
+        UniqueID: sdk.String(
             "24529041",
         ),
         Request: "{{request}}",
@@ -3348,8 +3348,8 @@ Also, fiat currencies can't be transferred without KYC verification.
 <dd>
 
 ```go
-request := &gosdk.TransferBetweenBalancesRequest{
-        Method: gosdk.TransferBetweenBalancesRequestMethodDeposit.Ptr(),
+request := &sdk.TransferBetweenBalancesRequest{
+        Method: sdk.TransferBetweenBalancesRequestMethodDeposit.Ptr(),
         Ticker: "XLM",
         Amount: "0.9",
         Request: "{{request}}",
@@ -3374,7 +3374,7 @@ client.Transfer.BetweenBalances(
 <dl>
 <dd>
 
-**method:** `*gosdk.TransferBetweenBalancesRequestMethod` 
+**method:** `*sdk.TransferBetweenBalancesRequestMethod` 
 
 Transfer method.
 
@@ -3390,7 +3390,7 @@ Example: **deposit** to transfer from [main](/glossary#balance-main) to [trade](
 <dl>
 <dd>
 
-**from:** `*gosdk.TransferBetweenBalancesRequestFrom` 
+**from:** `*sdk.TransferBetweenBalancesRequestFrom` 
 
 Balance FROM which funds will move to. Acceptable values: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade), [**collateral**](/glossary#balance-collateral)
 
@@ -3402,7 +3402,7 @@ Balance FROM which funds will move to. Acceptable values: [**main**](/glossary#b
 <dl>
 <dd>
 
-**to:** `*gosdk.TransferBetweenBalancesRequestTo` 
+**to:** `*sdk.TransferBetweenBalancesRequestTo` 
 
 Balance TO which funds will move to. Acceptable values: [**main**](/glossary#balance-main), [**spot**](/glossary#balance-spotbalance-trade), [**collateral**](/glossary#balance-collateral)
 
@@ -3451,7 +3451,7 @@ Balance TO which funds will move to. Acceptable values: [**main**](/glossary#bal
 </details>
 
 ## Codes
-<details><summary><code>client.Codes.CreateCode(request) -> *gosdk.CreateCodeResponse</code></summary>
+<details><summary><code>client.Codes.CreateCode(request) -> *sdk.CreateCodeResponse</code></summary>
 <dl>
 <dd>
 
@@ -3486,13 +3486,13 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CreateCodeRequest{
+request := &sdk.CreateCodeRequest{
         Ticker: "ETH",
         Amount: "0.002",
-        Passphrase: gosdk.String(
+        Passphrase: sdk.String(
             "some passphrase",
         ),
-        Description: gosdk.String(
+        Description: sdk.String(
             "some description",
         ),
         Request: "{{request}}",
@@ -3569,7 +3569,7 @@ client.Codes.CreateCode(
 </dl>
 </details>
 
-<details><summary><code>client.Codes.ApplyCode(request) -> *gosdk.ApplyCodeResponse</code></summary>
+<details><summary><code>client.Codes.ApplyCode(request) -> *sdk.ApplyCodeResponse</code></summary>
 <dl>
 <dd>
 
@@ -3604,9 +3604,9 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.ApplyCodeRequest{
+request := &sdk.ApplyCodeRequest{
         Code: "WBe11f4fce-2a53-4edc-b195-66b693bd77e3ETH",
-        Passphrase: gosdk.String(
+        Passphrase: sdk.String(
             "some passphrase",
         ),
         Request: "{{request}}",
@@ -3667,7 +3667,7 @@ client.Codes.ApplyCode(
 </dl>
 </details>
 
-<details><summary><code>client.Codes.GetMyCodes(request) -> *gosdk.GetMyCodesResponse</code></summary>
+<details><summary><code>client.Codes.GetMyCodes(request) -> *sdk.GetMyCodesResponse</code></summary>
 <dl>
 <dd>
 
@@ -3702,7 +3702,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetMyCodesRequest{
+request := &sdk.GetMyCodesRequest{
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -3761,7 +3761,7 @@ client.Codes.GetMyCodes(
 </dl>
 </details>
 
-<details><summary><code>client.Codes.GetCodesHistory(request) -> *gosdk.GetCodesHistoryResponse</code></summary>
+<details><summary><code>client.Codes.GetCodesHistory(request) -> *sdk.GetCodesHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -3796,7 +3796,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetCodesHistoryRequest{
+request := &sdk.GetCodesHistoryRequest{
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -3856,7 +3856,7 @@ client.Codes.GetCodesHistory(
 </details>
 
 ## Crypto Lending - Fixed
-<details><summary><code>client.CryptoLendingFixed.GetFixedPlans(request) -> []*gosdk.FixedPlan</code></summary>
+<details><summary><code>client.CryptoLendingFixed.GetFixedPlans(request) -> []*sdk.FixedPlan</code></summary>
 <dl>
 <dd>
 
@@ -3901,8 +3901,8 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetFixedPlansRequest{
-        Ticker: gosdk.String(
+request := &sdk.GetFixedPlansRequest{
+        Ticker: sdk.String(
             "USDT",
         ),
         Request: "{{request}}",
@@ -3955,7 +3955,7 @@ client.CryptoLendingFixed.GetFixedPlans(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFixed.CreateFixedInvestment(request) -> *gosdk.CreateFixedInvestmentResponse</code></summary>
+<details><summary><code>client.CryptoLendingFixed.CreateFixedInvestment(request) -> *sdk.CreateFixedInvestmentResponse</code></summary>
 <dl>
 <dd>
 
@@ -3990,7 +3990,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CreateFixedInvestmentRequest{
+request := &sdk.CreateFixedInvestmentRequest{
         PlanID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
         Amount: "100",
         Request: "{{request}}",
@@ -4086,7 +4086,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CloseFixedInvestmentRequest{
+request := &sdk.CloseFixedInvestmentRequest{
         ID: "0d7b66ff-1909-4938-ab7a-d16d9a64dcd5",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -4138,7 +4138,7 @@ client.CryptoLendingFixed.CloseFixedInvestment(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFixed.GetFixedInvestmentsHistory(request) -> *gosdk.GetFixedInvestmentsHistoryResponse</code></summary>
+<details><summary><code>client.CryptoLendingFixed.GetFixedInvestmentsHistory(request) -> *sdk.GetFixedInvestmentsHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -4173,14 +4173,14 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetFixedInvestmentsHistoryRequest{
-        ID: gosdk.String(
+request := &sdk.GetFixedInvestmentsHistoryRequest{
+        ID: sdk.String(
             "0d7b66ff-1909-4938-ab7a-d16d9a64dcd5",
         ),
-        Ticker: gosdk.String(
+        Ticker: sdk.String(
             "USDT",
         ),
-        Status: gosdk.Int(
+        Status: sdk.Int(
             1,
         ),
         Request: "{{request}}",
@@ -4265,7 +4265,7 @@ client.CryptoLendingFixed.GetFixedInvestmentsHistory(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFixed.GetInterestPaymentHistory(request) -> *gosdk.GetInterestPaymentHistoryResponse</code></summary>
+<details><summary><code>client.CryptoLendingFixed.GetInterestPaymentHistory(request) -> *sdk.GetInterestPaymentHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -4300,11 +4300,11 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetInterestPaymentHistoryRequest{
-        PlanID: gosdk.String(
+request := &sdk.GetInterestPaymentHistoryRequest{
+        PlanID: sdk.String(
             "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
         ),
-        Ticker: gosdk.String(
+        Ticker: sdk.String(
             "USDT",
         ),
         Request: "{{request}}",
@@ -4382,7 +4382,7 @@ client.CryptoLendingFixed.GetInterestPaymentHistory(
 </details>
 
 ## Crypto Lending - Flex
-<details><summary><code>client.CryptoLendingFlex.GetFlexPlans(request) -> []*gosdk.FlexPlan</code></summary>
+<details><summary><code>client.CryptoLendingFlex.GetFlexPlans(request) -> []*sdk.FlexPlan</code></summary>
 <dl>
 <dd>
 
@@ -4419,14 +4419,14 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetFlexPlansRequest{
-        Limit: gosdk.Int(
+request := &sdk.GetFlexPlansRequest{
+        Limit: sdk.Int(
             50,
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
-        Ticker: gosdk.String(
+        Ticker: sdk.String(
             "USDT",
         ),
         Request: "{{request}}",
@@ -4495,7 +4495,7 @@ client.CryptoLendingFlex.GetFlexPlans(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFlex.GetUserFlexInvestments(request) -> *gosdk.GetUserFlexInvestmentsResponse</code></summary>
+<details><summary><code>client.CryptoLendingFlex.GetUserFlexInvestments(request) -> *sdk.GetUserFlexInvestmentsResponse</code></summary>
 <dl>
 <dd>
 
@@ -4530,23 +4530,23 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetUserFlexInvestmentsRequest{
-        Limit: gosdk.Int(
+request := &sdk.GetUserFlexInvestmentsRequest{
+        Limit: sdk.Int(
             100,
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
-        Ticker: gosdk.String(
+        Ticker: sdk.String(
             "USDT",
         ),
-        Plan: gosdk.String(
+        Plan: sdk.String(
             "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
         ),
-        Investment: gosdk.String(
+        Investment: sdk.String(
             "invest_id_123",
         ),
-        InvestmentStatus: gosdk.Int(
+        InvestmentStatus: sdk.Int(
             1,
         ),
         Request: "{{request}}",
@@ -4639,7 +4639,7 @@ client.CryptoLendingFlex.GetUserFlexInvestments(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFlex.GetFlexInvestmentHistory(request) -> *gosdk.GetFlexInvestmentHistoryResponse</code></summary>
+<details><summary><code>client.CryptoLendingFlex.GetFlexInvestmentHistory(request) -> *sdk.GetFlexInvestmentHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -4682,26 +4682,26 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetFlexInvestmentHistoryRequest{
-        Limit: gosdk.Int(
+request := &sdk.GetFlexInvestmentHistoryRequest{
+        Limit: sdk.Int(
             50,
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
-        Plan: gosdk.String(
+        Plan: sdk.String(
             "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
         ),
-        Investment: gosdk.String(
+        Investment: sdk.String(
             "inv_123",
         ),
-        Transaction: gosdk.String(
+        Transaction: sdk.String(
             "tx_456",
         ),
-        DateFrom: gosdk.Int(
+        DateFrom: sdk.Int(
             1640995200,
         ),
-        DateTo: gosdk.Int(
+        DateTo: sdk.Int(
             1641081600,
         ),
         ActionTypes: []int{
@@ -4815,7 +4815,7 @@ client.CryptoLendingFlex.GetFlexInvestmentHistory(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFlex.GetFlexPaymentHistory(request) -> *gosdk.GetFlexPaymentHistoryResponse</code></summary>
+<details><summary><code>client.CryptoLendingFlex.GetFlexPaymentHistory(request) -> *sdk.GetFlexPaymentHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -4852,26 +4852,26 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetFlexPaymentHistoryRequest{
-        Limit: gosdk.Int(
+request := &sdk.GetFlexPaymentHistoryRequest{
+        Limit: sdk.Int(
             50,
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
-        Plan: gosdk.String(
+        Plan: sdk.String(
             "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
         ),
-        Investment: gosdk.String(
+        Investment: sdk.String(
             "inv_123",
         ),
-        Transaction: gosdk.String(
+        Transaction: sdk.String(
             "tx_456",
         ),
-        DateFrom: gosdk.Int(
+        DateFrom: sdk.Int(
             1640995200,
         ),
-        DateTo: gosdk.Int(
+        DateTo: sdk.Int(
             1641081600,
         ),
         Request: "{{request}}",
@@ -4972,7 +4972,7 @@ client.CryptoLendingFlex.GetFlexPaymentHistory(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFlex.CreateFlexInvestment(request) -> *gosdk.CreateFlexInvestmentResponse</code></summary>
+<details><summary><code>client.CryptoLendingFlex.CreateFlexInvestment(request) -> *sdk.CreateFlexInvestmentResponse</code></summary>
 <dl>
 <dd>
 
@@ -5007,10 +5007,10 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CreateFlexInvestmentRequest{
+request := &sdk.CreateFlexInvestmentRequest{
         Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
         Amount: "1000.500000",
-        WithReinvest: gosdk.Bool(
+        WithReinvest: sdk.Bool(
             true,
         ),
         Request: "{{request}}",
@@ -5079,7 +5079,7 @@ client.CryptoLendingFlex.CreateFlexInvestment(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFlex.WithdrawFromFlexInvestment(request) -> *gosdk.WithdrawFromFlexInvestmentResponse</code></summary>
+<details><summary><code>client.CryptoLendingFlex.WithdrawFromFlexInvestment(request) -> *sdk.WithdrawFromFlexInvestmentResponse</code></summary>
 <dl>
 <dd>
 
@@ -5116,7 +5116,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.WithdrawFromFlexInvestmentRequest{
+request := &sdk.WithdrawFromFlexInvestmentRequest{
         Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
         Amount: "500.250000",
         Request: "{{request}}",
@@ -5177,7 +5177,7 @@ client.CryptoLendingFlex.WithdrawFromFlexInvestment(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFlex.CloseFlexInvestment(request) -> *gosdk.CloseFlexInvestmentResponse</code></summary>
+<details><summary><code>client.CryptoLendingFlex.CloseFlexInvestment(request) -> *sdk.CloseFlexInvestmentResponse</code></summary>
 <dl>
 <dd>
 
@@ -5216,7 +5216,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CloseFlexInvestmentRequest{
+request := &sdk.CloseFlexInvestmentRequest{
         Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -5268,7 +5268,7 @@ client.CryptoLendingFlex.CloseFlexInvestment(
 </dl>
 </details>
 
-<details><summary><code>client.CryptoLendingFlex.UpdateFlexAutoReinvestment(request) -> *gosdk.UpdateFlexAutoReinvestmentResponse</code></summary>
+<details><summary><code>client.CryptoLendingFlex.UpdateFlexAutoReinvestment(request) -> *sdk.UpdateFlexAutoReinvestmentResponse</code></summary>
 <dl>
 <dd>
 
@@ -5303,9 +5303,9 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.UpdateFlexAutoReinvestmentRequest{
+request := &sdk.UpdateFlexAutoReinvestmentRequest{
         Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        Enabled: gosdk.Bool(
+        Enabled: sdk.Bool(
             true,
         ),
         Request: "{{request}}",
@@ -5367,7 +5367,7 @@ client.CryptoLendingFlex.UpdateFlexAutoReinvestment(
 </details>
 
 ## Fees
-<details><summary><code>client.Fees.GetFees(request) -> []*gosdk.FeeInfo</code></summary>
+<details><summary><code>client.Fees.GetFees(request) -> []*sdk.FeeInfo</code></summary>
 <dl>
 <dd>
 
@@ -5403,7 +5403,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetFeesRequest{
+request := &sdk.GetFeesRequest{
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -5447,7 +5447,7 @@ client.Fees.GetFees(
 </details>
 
 ## Sub-Account
-<details><summary><code>client.SubAccount.CreateSubAccount(request) -> *gosdk.SubAccount</code></summary>
+<details><summary><code>client.SubAccount.CreateSubAccount(request) -> *sdk.SubAccount</code></summary>
 <dl>
 <dd>
 
@@ -5488,9 +5488,9 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CreateSubAccountRequest{
+request := &sdk.CreateSubAccountRequest{
         Alias: "trading_bot",
-        Permissions: &gosdk.CreateSubAccountRequestPermissions{
+        Permissions: &sdk.CreateSubAccountRequestPermissions{
             SpotEnabled: true,
             CollateralEnabled: false,
         },
@@ -5538,7 +5538,7 @@ client.SubAccount.CreateSubAccount(
 <dl>
 <dd>
 
-**permissions:** `*gosdk.CreateSubAccountRequestPermissions` 
+**permissions:** `*sdk.CreateSubAccountRequestPermissions` 
     
 </dd>
 </dl>
@@ -5585,7 +5585,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.DeleteSubAccountRequest{
+request := &sdk.DeleteSubAccountRequest{
         ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
     }
 client.SubAccount.DeleteSubAccount(
@@ -5654,10 +5654,10 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.EditSubAccountRequest{
+request := &sdk.EditSubAccountRequest{
         ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
         Alias: "training",
-        Permissions: &gosdk.EditSubAccountRequestPermissions{
+        Permissions: &sdk.EditSubAccountRequestPermissions{
             SpotEnabled: true,
             CollateralEnabled: false,
         },
@@ -5697,7 +5697,7 @@ client.SubAccount.EditSubAccount(
 <dl>
 <dd>
 
-**permissions:** `*gosdk.EditSubAccountRequestPermissions` 
+**permissions:** `*sdk.EditSubAccountRequestPermissions` 
     
 </dd>
 </dl>
@@ -5709,7 +5709,7 @@ client.SubAccount.EditSubAccount(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccount.ListSubAccounts(request) -> *gosdk.ListSubAccountsResponse</code></summary>
+<details><summary><code>client.SubAccount.ListSubAccounts(request) -> *sdk.ListSubAccountsResponse</code></summary>
 <dl>
 <dd>
 
@@ -5744,7 +5744,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.ListSubAccountsRequest{}
+request := &sdk.ListSubAccountsRequest{}
 client.SubAccount.ListSubAccounts(
         context.TODO(),
         request,
@@ -5792,7 +5792,7 @@ client.SubAccount.ListSubAccounts(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccount.Transfer(request) -> *gosdk.SubAccountTransferResponse</code></summary>
+<details><summary><code>client.SubAccount.Transfer(request) -> *sdk.SubAccountTransferResponse</code></summary>
 <dl>
 <dd>
 
@@ -5827,9 +5827,9 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.SubAccountTransferRequest{
+request := &sdk.SubAccountTransferRequest{
         ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
-        Direction: gosdk.SubAccountTransferRequestDirectionMainToSub,
+        Direction: sdk.SubAccountTransferRequestDirectionMainToSub,
         Amount: "0.5",
         Ticker: "ETH",
     }
@@ -5860,7 +5860,7 @@ client.SubAccount.Transfer(
 <dl>
 <dd>
 
-**direction:** `*gosdk.SubAccountTransferRequestDirection` — Transfer direction
+**direction:** `*sdk.SubAccountTransferRequestDirection` — Transfer direction
     
 </dd>
 </dl>
@@ -5923,7 +5923,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.BlockSubAccountRequest{
+request := &sdk.BlockSubAccountRequest{
         ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
     }
 client.SubAccount.BlockSubAccount(
@@ -5992,7 +5992,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.UnblockSubAccountRequest{
+request := &sdk.UnblockSubAccountRequest{
         ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
     }
 client.SubAccount.UnblockSubAccount(
@@ -6026,7 +6026,7 @@ client.SubAccount.UnblockSubAccount(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccount.GetSubAccountBalances(request) -> map[string][]*gosdk.GetSubAccountBalancesResponseValueItem</code></summary>
+<details><summary><code>client.SubAccount.GetSubAccountBalances(request) -> map[string][]*sdk.GetSubAccountBalancesResponseValueItem</code></summary>
 <dl>
 <dd>
 
@@ -6061,9 +6061,9 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetSubAccountBalancesRequest{
+request := &sdk.GetSubAccountBalancesRequest{
         ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
-        Ticker: gosdk.String(
+        Ticker: sdk.String(
             "USDC",
         ),
     }
@@ -6106,7 +6106,7 @@ client.SubAccount.GetSubAccountBalances(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccount.GetSubAccountTransferHistory(request) -> *gosdk.GetSubAccountTransferHistoryResponse</code></summary>
+<details><summary><code>client.SubAccount.GetSubAccountTransferHistory(request) -> *sdk.GetSubAccountTransferHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -6141,7 +6141,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetSubAccountTransferHistoryRequest{
+request := &sdk.GetSubAccountTransferHistoryRequest{
         ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
     }
 client.SubAccount.GetSubAccountTransferHistory(
@@ -6171,7 +6171,7 @@ client.SubAccount.GetSubAccountTransferHistory(
 <dl>
 <dd>
 
-**direction:** `*gosdk.GetSubAccountTransferHistoryRequestDirection` — Transfer direction (optional)
+**direction:** `*sdk.GetSubAccountTransferHistoryRequestDirection` — Transfer direction (optional)
     
 </dd>
 </dl>
@@ -6200,7 +6200,7 @@ client.SubAccount.GetSubAccountTransferHistory(
 </details>
 
 ## Sub-Account API Keys
-<details><summary><code>client.SubAccountAPIKeys.CreateSubAccountAPIKey(request) -> *gosdk.SubAccountAPIKey</code></summary>
+<details><summary><code>client.SubAccountAPIKeys.CreateSubAccountAPIKey(request) -> *sdk.SubAccountAPIKey</code></summary>
 <dl>
 <dd>
 
@@ -6235,7 +6235,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CreateSubAccountAPIKeyRequest{
+request := &sdk.CreateSubAccountAPIKeyRequest{
         Type: 1,
         SubAccountID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
     }
@@ -6321,23 +6321,23 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.EditSubAccountAPIKeyRequest{
+request := &sdk.EditSubAccountAPIKeyRequest{
         APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         Title: "Trading Bot Key",
-        URLs: []*gosdk.EditSubAccountAPIKeyRequestURLsItem{
-            &gosdk.EditSubAccountAPIKeyRequestURLsItem{
-                URL: gosdk.String(
+        URLs: []*sdk.EditSubAccountAPIKeyRequestURLsItem{
+            &sdk.EditSubAccountAPIKeyRequestURLsItem{
+                URL: sdk.String(
                     "/api/v4/main-account/withdraw",
                 ),
-                Enable: gosdk.Bool(
+                Enable: sdk.Bool(
                     false,
                 ),
             },
-            &gosdk.EditSubAccountAPIKeyRequestURLsItem{
-                URL: gosdk.String(
+            &sdk.EditSubAccountAPIKeyRequestURLsItem{
+                URL: sdk.String(
                     "/api/v4/main-account/balance",
                 ),
-                Enable: gosdk.Bool(
+                Enable: sdk.Bool(
                     true,
                 ),
             },
@@ -6378,7 +6378,7 @@ client.SubAccountAPIKeys.EditSubAccountAPIKey(
 <dl>
 <dd>
 
-**urls:** `[]*gosdk.EditSubAccountAPIKeyRequestURLsItem` — Array of URL objects for API key restrictions
+**urls:** `[]*sdk.EditSubAccountAPIKeyRequestURLsItem` — Array of URL objects for API key restrictions
     
 </dd>
 </dl>
@@ -6425,7 +6425,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.DeleteSubAccountAPIKeyRequest{
+request := &sdk.DeleteSubAccountAPIKeyRequest{
         APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     }
 client.SubAccountAPIKeys.DeleteSubAccountAPIKey(
@@ -6459,7 +6459,7 @@ client.SubAccountAPIKeys.DeleteSubAccountAPIKey(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccountAPIKeys.ListSubAccountAPIKeys(request) -> *gosdk.ListSubAccountAPIKeysResponse</code></summary>
+<details><summary><code>client.SubAccountAPIKeys.ListSubAccountAPIKeys(request) -> *sdk.ListSubAccountAPIKeysResponse</code></summary>
 <dl>
 <dd>
 
@@ -6495,7 +6495,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.ListSubAccountAPIKeysRequest{}
+request := &sdk.ListSubAccountAPIKeysRequest{}
 client.SubAccountAPIKeys.ListSubAccountAPIKeys(
         context.TODO(),
         request,
@@ -6578,7 +6578,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.ResetSubAccountAPIKeyRequest{
+request := &sdk.ResetSubAccountAPIKeyRequest{
         APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     }
 client.SubAccountAPIKeys.ResetSubAccountAPIKey(
@@ -6612,7 +6612,7 @@ client.SubAccountAPIKeys.ResetSubAccountAPIKey(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccountAPIKeys.ListSubAccountAPIKeyIPAddresses(request) -> *gosdk.ListSubAccountAPIKeyIPAddressesResponse</code></summary>
+<details><summary><code>client.SubAccountAPIKeys.ListSubAccountAPIKeyIPAddresses(request) -> *sdk.ListSubAccountAPIKeyIPAddressesResponse</code></summary>
 <dl>
 <dd>
 
@@ -6647,7 +6647,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.ListSubAccountAPIKeyIPAddressesRequest{
+request := &sdk.ListSubAccountAPIKeyIPAddressesRequest{
         APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     }
 client.SubAccountAPIKeys.ListSubAccountAPIKeyIPAddresses(
@@ -6681,7 +6681,7 @@ client.SubAccountAPIKeys.ListSubAccountAPIKeyIPAddresses(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccountAPIKeys.CreateSubAccountAPIKeyIPAddress(request) -> *gosdk.CreateSubAccountAPIKeyIPAddressResponse</code></summary>
+<details><summary><code>client.SubAccountAPIKeys.CreateSubAccountAPIKeyIPAddress(request) -> *sdk.CreateSubAccountAPIKeyIPAddressResponse</code></summary>
 <dl>
 <dd>
 
@@ -6716,7 +6716,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.CreateSubAccountAPIKeyIPAddressRequest{
+request := &sdk.CreateSubAccountAPIKeyIPAddressRequest{
         APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         IP: "192.168.1.100",
     }
@@ -6759,7 +6759,7 @@ client.SubAccountAPIKeys.CreateSubAccountAPIKeyIPAddress(
 </dl>
 </details>
 
-<details><summary><code>client.SubAccountAPIKeys.DeleteSubAccountAPIKeyIPAddress(request) -> *gosdk.DeleteSubAccountAPIKeyIPAddressResponse</code></summary>
+<details><summary><code>client.SubAccountAPIKeys.DeleteSubAccountAPIKeyIPAddress(request) -> *sdk.DeleteSubAccountAPIKeyIPAddressResponse</code></summary>
 <dl>
 <dd>
 
@@ -6794,7 +6794,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.DeleteSubAccountAPIKeyIPAddressRequest{
+request := &sdk.DeleteSubAccountAPIKeyIPAddressRequest{
         APIKeyID: "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
         IP: "192.168.1.100",
     }
@@ -6838,7 +6838,7 @@ client.SubAccountAPIKeys.DeleteSubAccountAPIKeyIPAddress(
 </details>
 
 ## Mining Pool
-<details><summary><code>client.MiningPool.GetMiningRewards(request) -> *gosdk.GetMiningRewardsResponse</code></summary>
+<details><summary><code>client.MiningPool.GetMiningRewards(request) -> *sdk.GetMiningRewardsResponse</code></summary>
 <dl>
 <dd>
 
@@ -6873,7 +6873,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetMiningRewardsRequest{}
+request := &sdk.GetMiningRewardsRequest{}
 client.MiningPool.GetMiningRewards(
         context.TODO(),
         request,
@@ -6937,7 +6937,7 @@ client.MiningPool.GetMiningRewards(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.GetMiningHashrate(request) -> *gosdk.GetMiningHashrateResponse</code></summary>
+<details><summary><code>client.MiningPool.GetMiningHashrate(request) -> *sdk.GetMiningHashrateResponse</code></summary>
 <dl>
 <dd>
 
@@ -6972,7 +6972,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetMiningHashrateRequest{
+request := &sdk.GetMiningHashrateRequest{
         Account: "miner123",
     }
 client.MiningPool.GetMiningHashrate(
@@ -7018,7 +7018,7 @@ client.MiningPool.GetMiningHashrate(
 <dl>
 <dd>
 
-**interval:** `*gosdk.GetMiningHashrateRequestInterval` — Timestamp interval
+**interval:** `*sdk.GetMiningHashrateRequestInterval` — Timestamp interval
     
 </dd>
 </dl>
@@ -7030,7 +7030,7 @@ client.MiningPool.GetMiningHashrate(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.GetMiningPayoutDestination(request) -> *gosdk.GetMiningPayoutDestinationResponse</code></summary>
+<details><summary><code>client.MiningPool.GetMiningPayoutDestination(request) -> *sdk.GetMiningPayoutDestinationResponse</code></summary>
 <dl>
 <dd>
 
@@ -7061,7 +7061,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetMiningPayoutDestinationRequest{
+request := &sdk.GetMiningPayoutDestinationRequest{
         AccountName: "my_miner_01",
     }
 client.MiningPool.GetMiningPayoutDestination(
@@ -7095,7 +7095,7 @@ client.MiningPool.GetMiningPayoutDestination(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.SetMiningPayoutDestination(request) -> *gosdk.SetMiningPayoutDestinationResponse</code></summary>
+<details><summary><code>client.MiningPool.SetMiningPayoutDestination(request) -> *sdk.SetMiningPayoutDestinationResponse</code></summary>
 <dl>
 <dd>
 
@@ -7126,9 +7126,9 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.SetMiningPayoutDestinationRequest{
+request := &sdk.SetMiningPayoutDestinationRequest{
         AccountName: "my_miner_01",
-        Destination: gosdk.SetMiningPayoutDestinationRequestDestinationMainBalance,
+        Destination: sdk.SetMiningPayoutDestinationRequestDestinationMainBalance,
     }
 client.MiningPool.SetMiningPayoutDestination(
         context.TODO(),
@@ -7157,7 +7157,7 @@ client.MiningPool.SetMiningPayoutDestination(
 <dl>
 <dd>
 
-**destination:** `*gosdk.SetMiningPayoutDestinationRequestDestination` — Payout destination type
+**destination:** `*sdk.SetMiningPayoutDestinationRequestDestination` — Payout destination type
     
 </dd>
 </dl>
@@ -7177,7 +7177,7 @@ client.MiningPool.SetMiningPayoutDestination(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.GetMiningMinerInfo(request) -> *gosdk.GetMiningMinerInfoResponse</code></summary>
+<details><summary><code>client.MiningPool.GetMiningMinerInfo(request) -> *sdk.GetMiningMinerInfoResponse</code></summary>
 <dl>
 <dd>
 
@@ -7208,7 +7208,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetMiningMinerInfoRequest{
+request := &sdk.GetMiningMinerInfoRequest{
         Account: "my_miner_01",
     }
 client.MiningPool.GetMiningMinerInfo(
@@ -7242,7 +7242,7 @@ client.MiningPool.GetMiningMinerInfo(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.GetMiningWorkerNames(request) -> *gosdk.GetMiningWorkerNamesResponse</code></summary>
+<details><summary><code>client.MiningPool.GetMiningWorkerNames(request) -> *sdk.GetMiningWorkerNamesResponse</code></summary>
 <dl>
 <dd>
 
@@ -7273,7 +7273,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetMiningWorkerNamesRequest{
+request := &sdk.GetMiningWorkerNamesRequest{
         Account: "my_miner_01",
     }
 client.MiningPool.GetMiningWorkerNames(
@@ -7323,7 +7323,7 @@ client.MiningPool.GetMiningWorkerNames(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.GetMiningWorkerHashrate(request) -> *gosdk.GetMiningWorkerHashrateResponse</code></summary>
+<details><summary><code>client.MiningPool.GetMiningWorkerHashrate(request) -> *sdk.GetMiningWorkerHashrateResponse</code></summary>
 <dl>
 <dd>
 
@@ -7354,7 +7354,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetMiningWorkerHashrateRequest{
+request := &sdk.GetMiningWorkerHashrateRequest{
         Account: "my_miner_01",
         Worker: "worker_001",
     }
@@ -7393,7 +7393,7 @@ client.MiningPool.GetMiningWorkerHashrate(
 <dl>
 <dd>
 
-**interval:** `*gosdk.GetMiningWorkerHashrateRequestInterval` — Time frame granularity
+**interval:** `*sdk.GetMiningWorkerHashrateRequestInterval` — Time frame granularity
     
 </dd>
 </dl>
@@ -7421,7 +7421,7 @@ client.MiningPool.GetMiningWorkerHashrate(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.CreateMiningWatcherLink(request) -> *gosdk.CreateMiningWatcherLinkResponse</code></summary>
+<details><summary><code>client.MiningPool.CreateMiningWatcherLink(request) -> *sdk.CreateMiningWatcherLinkResponse</code></summary>
 <dl>
 <dd>
 
@@ -7452,17 +7452,17 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CreateMiningWatcherLinkRequest{
+request := &sdk.CreateMiningWatcherLinkRequest{
         Accounts: []string{
             "my_miner_01",
             "my_miner_02",
         },
         Name: "monitoring_link",
-        Permissions: []gosdk.CreateMiningWatcherLinkRequestPermissionsItem{
-            gosdk.CreateMiningWatcherLinkRequestPermissionsItemDashboard,
-            gosdk.CreateMiningWatcherLinkRequestPermissionsItemWorkers,
+        Permissions: []sdk.CreateMiningWatcherLinkRequestPermissionsItem{
+            sdk.CreateMiningWatcherLinkRequestPermissionsItemDashboard,
+            sdk.CreateMiningWatcherLinkRequestPermissionsItemWorkers,
         },
-        LiveUntil: gosdk.CreateMiningWatcherLinkRequestLiveUntilOneH,
+        LiveUntil: sdk.CreateMiningWatcherLinkRequestLiveUntilOneH,
     }
 client.MiningPool.CreateMiningWatcherLink(
         context.TODO(),
@@ -7499,7 +7499,7 @@ client.MiningPool.CreateMiningWatcherLink(
 <dl>
 <dd>
 
-**permissions:** `[]*gosdk.CreateMiningWatcherLinkRequestPermissionsItem` — Array of permissions
+**permissions:** `[]*sdk.CreateMiningWatcherLinkRequestPermissionsItem` — Array of permissions
     
 </dd>
 </dl>
@@ -7507,7 +7507,7 @@ client.MiningPool.CreateMiningWatcherLink(
 <dl>
 <dd>
 
-**liveUntil:** `*gosdk.CreateMiningWatcherLinkRequestLiveUntil` — Expiration period
+**liveUntil:** `*sdk.CreateMiningWatcherLinkRequestLiveUntil` — Expiration period
     
 </dd>
 </dl>
@@ -7519,7 +7519,7 @@ client.MiningPool.CreateMiningWatcherLink(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.ListMiningWatcherLinks(request) -> *gosdk.ListMiningWatcherLinksResponse</code></summary>
+<details><summary><code>client.MiningPool.ListMiningWatcherLinks(request) -> *sdk.ListMiningWatcherLinksResponse</code></summary>
 <dl>
 <dd>
 
@@ -7550,7 +7550,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.ListMiningWatcherLinksRequest{
+request := &sdk.ListMiningWatcherLinksRequest{
         Account: "my_miner_01",
     }
 client.MiningPool.ListMiningWatcherLinks(
@@ -7584,7 +7584,7 @@ client.MiningPool.ListMiningWatcherLinks(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.CreateMiningAccount(request) -> *gosdk.CreateMiningAccountResponse</code></summary>
+<details><summary><code>client.MiningPool.CreateMiningAccount(request) -> *sdk.CreateMiningAccountResponse</code></summary>
 <dl>
 <dd>
 
@@ -7615,7 +7615,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CreateMiningAccountRequest{
+request := &sdk.CreateMiningAccountRequest{
         Name: "my_miner_01",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -7675,7 +7675,7 @@ client.MiningPool.CreateMiningAccount(
 </dl>
 </details>
 
-<details><summary><code>client.MiningPool.GetMiningAccounts(request) -> *gosdk.GetMiningAccountsResponse</code></summary>
+<details><summary><code>client.MiningPool.GetMiningAccounts(request) -> *sdk.GetMiningAccountsResponse</code></summary>
 <dl>
 <dd>
 
@@ -7706,7 +7706,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetMiningAccountsRequest{
+request := &sdk.GetMiningAccountsRequest{
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -7758,7 +7758,7 @@ client.MiningPool.GetMiningAccounts(
 </details>
 
 ## Credit Line
-<details><summary><code>client.CreditLine.GetCreditLineInfo(request) -> *gosdk.CreditLine</code></summary>
+<details><summary><code>client.CreditLine.GetCreditLineInfo(request) -> *sdk.CreditLine</code></summary>
 <dl>
 <dd>
 
@@ -7794,7 +7794,7 @@ The API does not cache the response.
 <dd>
 
 ```go
-request := &gosdk.GetCreditLineInfoRequest{
+request := &sdk.GetCreditLineInfoRequest{
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -7885,14 +7885,14 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CollateralAccountBalanceRequest{
-        Ticker: gosdk.String(
+request := &sdk.CollateralAccountBalanceRequest{
+        Ticker: sdk.String(
             "BTC",
         ),
-        Request: gosdk.String(
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -7947,7 +7947,7 @@ If not specified, returns balances for all assets.
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CollateralAccountBalanceSummary(request) -> []*gosdk.CollateralAccountBalanceSummaryResponseItem</code></summary>
+<details><summary><code>client.CollateralTrading.CollateralAccountBalanceSummary(request) -> []*sdk.CollateralAccountBalanceSummaryResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -7994,14 +7994,14 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CollateralAccountBalanceSummaryRequest{
-        Ticker: gosdk.String(
+request := &sdk.CollateralAccountBalanceSummaryRequest{
+        Ticker: sdk.String(
             "BTC",
         ),
-        Request: gosdk.String(
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -8056,7 +8056,7 @@ If not specified, returns summary for all assets.
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CreateCollateralLimitOrder(request) -> *gosdk.CreateCollateralLimitOrderResponse</code></summary>
+<details><summary><code>client.CollateralTrading.CreateCollateralLimitOrder(request) -> *sdk.CreateCollateralLimitOrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -8105,30 +8105,30 @@ For open long position use **buy**, for short **sell**. To close current positio
 <dd>
 
 ```go
-request := &gosdk.CreateCollateralLimitOrderRequest{
+request := &sdk.CreateCollateralLimitOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.CreateCollateralLimitOrderRequestSideBuy,
+        Side: sdk.CreateCollateralLimitOrderRequestSideBuy,
         Amount: "0.01",
         Price: "40000",
-        ClientOrderID: gosdk.String(
+        ClientOrderID: sdk.String(
             "order1987111",
         ),
-        StopLoss: gosdk.String(
+        StopLoss: sdk.String(
             "50000",
         ),
-        TakeProfit: gosdk.String(
+        TakeProfit: sdk.String(
             "30000",
         ),
-        PostOnly: gosdk.Bool(
+        PostOnly: sdk.Bool(
             false,
         ),
-        Ioc: gosdk.Bool(
+        Ioc: sdk.Bool(
             false,
         ),
-        Rpi: gosdk.Bool(
+        Rpi: sdk.Bool(
             true,
         ),
-        PositionSide: gosdk.CreateCollateralLimitOrderRequestPositionSideLong.Ptr(),
+        PositionSide: sdk.CreateCollateralLimitOrderRequestPositionSideLong.Ptr(),
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -8159,7 +8159,7 @@ client.CollateralTrading.CreateCollateralLimitOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.CreateCollateralLimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell'. For open long position use **buy**, for short **sell**.
+**side:** `*sdk.CreateCollateralLimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell'. For open long position use **buy**, for short **sell**.
     
 </dd>
 </dl>
@@ -8243,7 +8243,7 @@ RPI orders are post-only by design and cannot be used with `ioc=true`. The API r
 <dl>
 <dd>
 
-**positionSide:** `*gosdk.CreateCollateralLimitOrderRequestPositionSide` — Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
+**positionSide:** `*sdk.CreateCollateralLimitOrderRequestPositionSide` — Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
     
 </dd>
 </dl>
@@ -8271,7 +8271,7 @@ RPI orders are post-only by design and cannot be used with `ioc=true`. The API r
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CreateCollateralBulkOrder(request) -> []*gosdk.CreateCollateralBulkOrderResponseItem</code></summary>
+<details><summary><code>client.CollateralTrading.CreateCollateralBulkOrder(request) -> []*sdk.CreateCollateralBulkOrderResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -8302,91 +8302,91 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CreateCollateralBulkOrderRequest{
-        Orders: []*gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-            &gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-                Market: gosdk.String(
+request := &sdk.CreateCollateralBulkOrderRequest{
+        Orders: []*sdk.CreateCollateralBulkOrderRequestOrdersItem{
+            &sdk.CreateCollateralBulkOrderRequestOrdersItem{
+                Market: sdk.String(
                     "BTC_PERP",
                 ),
-                Side: gosdk.CreateCollateralBulkOrderRequestOrdersItemSideBuy.Ptr(),
-                Amount: gosdk.String(
+                Side: sdk.CreateCollateralBulkOrderRequestOrdersItemSideBuy.Ptr(),
+                Amount: sdk.String(
                     "0.02",
                 ),
-                Price: gosdk.String(
+                Price: sdk.String(
                     "40000",
                 ),
-                ClientOrderID: gosdk.String(
+                ClientOrderID: sdk.String(
                     "",
                 ),
-                PostOnly: gosdk.Bool(
+                PostOnly: sdk.Bool(
                     false,
                 ),
-                Ioc: gosdk.Bool(
+                Ioc: sdk.Bool(
                     false,
                 ),
-                Rpi: gosdk.Bool(
+                Rpi: sdk.Bool(
                     true,
                 ),
-                PositionSide: gosdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+                PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
             },
-            &gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-                Market: gosdk.String(
+            &sdk.CreateCollateralBulkOrderRequestOrdersItem{
+                Market: sdk.String(
                     "BTC_USDT",
                 ),
-                Side: gosdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
-                Amount: gosdk.String(
+                Side: sdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
+                Amount: sdk.String(
                     "0.0001",
                 ),
-                Price: gosdk.String(
+                Price: sdk.String(
                     "41000",
                 ),
-                ClientOrderID: gosdk.String(
+                ClientOrderID: sdk.String(
                     "",
                 ),
-                PostOnly: gosdk.Bool(
+                PostOnly: sdk.Bool(
                     false,
                 ),
-                Ioc: gosdk.Bool(
+                Ioc: sdk.Bool(
                     false,
                 ),
-                Rpi: gosdk.Bool(
+                Rpi: sdk.Bool(
                     true,
                 ),
-                PositionSide: gosdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+                PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
             },
-            &gosdk.CreateCollateralBulkOrderRequestOrdersItem{
-                Market: gosdk.String(
+            &sdk.CreateCollateralBulkOrderRequestOrdersItem{
+                Market: sdk.String(
                     "ETH_BTC",
                 ),
-                Side: gosdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
-                Amount: gosdk.String(
+                Side: sdk.CreateCollateralBulkOrderRequestOrdersItemSideSell.Ptr(),
+                Amount: sdk.String(
                     "0.02",
                 ),
-                Price: gosdk.String(
+                Price: sdk.String(
                     "0.030",
                 ),
-                ClientOrderID: gosdk.String(
+                ClientOrderID: sdk.String(
                     "",
                 ),
-                PostOnly: gosdk.Bool(
+                PostOnly: sdk.Bool(
                     false,
                 ),
-                Ioc: gosdk.Bool(
+                Ioc: sdk.Bool(
                     false,
                 ),
-                Rpi: gosdk.Bool(
+                Rpi: sdk.Bool(
                     true,
                 ),
-                PositionSide: gosdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+                PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
             },
         },
-        StopOnFail: gosdk.Bool(
+        StopOnFail: sdk.Bool(
             true,
         ),
-        Request: gosdk.String(
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -8409,7 +8409,7 @@ client.CollateralTrading.CreateCollateralBulkOrder(
 <dl>
 <dd>
 
-**orders:** `[]*gosdk.CreateCollateralBulkOrderRequestOrdersItem` 
+**orders:** `[]*sdk.CreateCollateralBulkOrderRequestOrdersItem` 
     
 </dd>
 </dl>
@@ -8451,7 +8451,7 @@ When false (default): All orders in the bulk request are processed regardless of
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CreateCollateralMarketOrder(request) -> *gosdk.CreateCollateralMarketOrderResponse</code></summary>
+<details><summary><code>client.CollateralTrading.CreateCollateralMarketOrder(request) -> *sdk.CreateCollateralMarketOrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -8482,11 +8482,11 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CreateCollateralMarketOrderRequest{
+request := &sdk.CreateCollateralMarketOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.CreateCollateralMarketOrderRequestSideBuy,
+        Side: sdk.CreateCollateralMarketOrderRequestSideBuy,
         Amount: "0.01",
-        ClientOrderID: gosdk.String(
+        ClientOrderID: sdk.String(
             "order1987111",
         ),
         Request: "{{request}}",
@@ -8519,7 +8519,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.CreateCollateralMarketOrderRequestSide` 
+**side:** `*sdk.CreateCollateralMarketOrderRequestSide` 
     
 </dd>
 </dl>
@@ -8559,7 +8559,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-**positionSide:** `*gosdk.CreateCollateralMarketOrderRequestPositionSide` 
+**positionSide:** `*sdk.CreateCollateralMarketOrderRequestPositionSide` 
     
 </dd>
 </dl>
@@ -8587,7 +8587,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CreateCollateralStopLimitOrder(request) -> *gosdk.CreateCollateralStopLimitOrderResponse</code></summary>
+<details><summary><code>client.CollateralTrading.CreateCollateralStopLimitOrder(request) -> *sdk.CreateCollateralStopLimitOrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -8618,22 +8618,22 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CreateCollateralStopLimitOrderRequest{
+request := &sdk.CreateCollateralStopLimitOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.CreateCollateralStopLimitOrderRequestSideBuy,
+        Side: sdk.CreateCollateralStopLimitOrderRequestSideBuy,
         Amount: "0.001",
         Price: "40000",
         ActivationPrice: "40000",
-        StopLoss: gosdk.String(
+        StopLoss: sdk.String(
             "30000",
         ),
-        TakeProfit: gosdk.String(
+        TakeProfit: sdk.String(
             "50000",
         ),
-        ClientOrderID: gosdk.String(
+        ClientOrderID: sdk.String(
             "order1987111",
         ),
-        PositionSide: gosdk.CreateCollateralStopLimitOrderRequestPositionSideLong.Ptr(),
+        PositionSide: sdk.CreateCollateralStopLimitOrderRequestPositionSideLong.Ptr(),
         Request: "{{request}}",
         Nonce: "{{nonce}}",
     }
@@ -8664,7 +8664,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.CreateCollateralStopLimitOrderRequestSide` 
+**side:** `*sdk.CreateCollateralStopLimitOrderRequestSide` 
     
 </dd>
 </dl>
@@ -8720,7 +8720,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**positionSide:** `*gosdk.CreateCollateralStopLimitOrderRequestPositionSide` 
+**positionSide:** `*sdk.CreateCollateralStopLimitOrderRequestPositionSide` 
     
 </dd>
 </dl>
@@ -8748,7 +8748,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CreateCollateralTriggerMarketOrder(request) -> *gosdk.CreateCollateralTriggerMarketOrderResponse</code></summary>
+<details><summary><code>client.CollateralTrading.CreateCollateralTriggerMarketOrder(request) -> *sdk.CreateCollateralTriggerMarketOrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -8779,12 +8779,12 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CreateCollateralTriggerMarketOrderRequest{
+request := &sdk.CreateCollateralTriggerMarketOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.CreateCollateralTriggerMarketOrderRequestSideBuy,
+        Side: sdk.CreateCollateralTriggerMarketOrderRequestSideBuy,
         Amount: "0.01",
         ActivationPrice: "40000",
-        ClientOrderID: gosdk.String(
+        ClientOrderID: sdk.String(
             "order1987111",
         ),
         Request: "{{request}}",
@@ -8817,7 +8817,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.CreateCollateralTriggerMarketOrderRequestSide` 
+**side:** `*sdk.CreateCollateralTriggerMarketOrderRequestSide` 
     
 </dd>
 </dl>
@@ -8865,7 +8865,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**positionSide:** `*gosdk.CreateCollateralTriggerMarketOrderRequestPositionSide` 
+**positionSide:** `*sdk.CreateCollateralTriggerMarketOrderRequestPositionSide` 
     
 </dd>
 </dl>
@@ -8893,7 +8893,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CollateralAccountSummary(request) -> *gosdk.CollateralAccountSummaryResponse</code></summary>
+<details><summary><code>client.CollateralTrading.CollateralAccountSummary(request) -> *sdk.CollateralAccountSummaryResponse</code></summary>
 <dl>
 <dd>
 
@@ -8924,11 +8924,11 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CollateralAccountSummaryRequest{
-        Request: gosdk.String(
+request := &sdk.CollateralAccountSummaryRequest{
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -8971,7 +8971,7 @@ client.CollateralTrading.CollateralAccountSummary(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.GetOpenPositions(request) -> []*gosdk.GetOpenPositionsResponseItem</code></summary>
+<details><summary><code>client.CollateralTrading.GetOpenPositions(request) -> []*sdk.GetOpenPositionsResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -9002,14 +9002,14 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetOpenPositionsRequest{
-        Market: gosdk.String(
+request := &sdk.GetOpenPositionsRequest{
+        Market: sdk.String(
             "BTC_USDT",
         ),
-        Request: gosdk.String(
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -9095,9 +9095,9 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.ClosePositionRequest{
+request := &sdk.ClosePositionRequest{
         PositionID: 123,
-        PositionSide: gosdk.ClosePositionRequestPositionSideLong.Ptr(),
+        PositionSide: sdk.ClosePositionRequestPositionSideLong.Ptr(),
         Market: "BTC_USDT",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -9129,7 +9129,7 @@ client.CollateralTrading.ClosePosition(
 <dl>
 <dd>
 
-**positionSide:** `*gosdk.ClosePositionRequestPositionSide` 
+**positionSide:** `*sdk.ClosePositionRequestPositionSide` 
     
 </dd>
 </dl>
@@ -9165,7 +9165,7 @@ client.CollateralTrading.ClosePosition(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.GetPositionsHistory(request) -> []*gosdk.GetPositionsHistoryResponseItem</code></summary>
+<details><summary><code>client.CollateralTrading.GetPositionsHistory(request) -> []*sdk.GetPositionsHistoryResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -9196,17 +9196,17 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetPositionsHistoryRequest{
-        Market: gosdk.String(
+request := &sdk.GetPositionsHistoryRequest{
+        Market: sdk.String(
             "BTC_USDT",
         ),
-        PositionID: gosdk.Int(
+        PositionID: sdk.Int(
             1,
         ),
-        Request: gosdk.String(
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -9265,7 +9265,7 @@ client.CollateralTrading.GetPositionsHistory(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.GetFundingHistory(request) -> *gosdk.GetFundingHistoryResponse</code></summary>
+<details><summary><code>client.CollateralTrading.GetFundingHistory(request) -> *sdk.GetFundingHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -9296,20 +9296,20 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetFundingHistoryRequest{
-        Market: gosdk.String(
+request := &sdk.GetFundingHistoryRequest{
+        Market: sdk.String(
             "BTC_PERP",
         ),
-        Limit: gosdk.Int(
+        Limit: sdk.Int(
             100,
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
-        Request: gosdk.String(
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -9380,7 +9380,7 @@ If not specified, returns funding history for all markets.
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.ChangeCollateralAccountLeverage(request) -> *gosdk.ChangeCollateralAccountLeverageResponse</code></summary>
+<details><summary><code>client.CollateralTrading.ChangeCollateralAccountLeverage(request) -> *sdk.ChangeCollateralAccountLeverageResponse</code></summary>
 <dl>
 <dd>
 
@@ -9411,7 +9411,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.ChangeCollateralAccountLeverageRequest{
+request := &sdk.ChangeCollateralAccountLeverageRequest{
         Leverage: 5,
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -9463,7 +9463,7 @@ client.CollateralTrading.ChangeCollateralAccountLeverage(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.GetCollateralHedgeMode(request) -> *gosdk.GetCollateralHedgeModeResponse</code></summary>
+<details><summary><code>client.CollateralTrading.GetCollateralHedgeMode(request) -> *sdk.GetCollateralHedgeModeResponse</code></summary>
 <dl>
 <dd>
 
@@ -9494,11 +9494,11 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetCollateralHedgeModeRequest{
-        Request: gosdk.String(
+request := &sdk.GetCollateralHedgeModeRequest{
+        Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: gosdk.String(
+        Nonce: sdk.String(
             "{{nonce}}",
         ),
     }
@@ -9572,7 +9572,7 @@ Rate limit: 1000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.UpdateHedgeModeRequest{
+request := &sdk.UpdateHedgeModeRequest{
         HedgeMode: true,
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -9624,7 +9624,7 @@ client.CollateralTrading.UpdateHedgeMode(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.GetConditionalOrders(request) -> *gosdk.GetConditionalOrdersResponse</code></summary>
+<details><summary><code>client.CollateralTrading.GetConditionalOrders(request) -> *sdk.GetConditionalOrdersResponse</code></summary>
 <dl>
 <dd>
 
@@ -9655,14 +9655,14 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetConditionalOrdersRequest{
-        Market: gosdk.String(
+request := &sdk.GetConditionalOrdersRequest{
+        Market: sdk.String(
             "BTC_USDT",
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
-        Limit: gosdk.Int(
+        Limit: sdk.Int(
             100,
         ),
     }
@@ -9729,7 +9729,7 @@ client.CollateralTrading.GetConditionalOrders(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.GetOcoOrders(request) -> []*gosdk.GetOcoOrdersResponseItem</code></summary>
+<details><summary><code>client.CollateralTrading.GetOcoOrders(request) -> []*sdk.GetOcoOrdersResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -9760,14 +9760,14 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetOcoOrdersRequest{
-        Market: gosdk.String(
+request := &sdk.GetOcoOrdersRequest{
+        Market: sdk.String(
             "BTC_USDT",
         ),
-        Offset: gosdk.Int(
+        Offset: sdk.Int(
             0,
         ),
-        Limit: gosdk.Int(
+        Limit: sdk.Int(
             100,
         ),
     }
@@ -9834,7 +9834,7 @@ client.CollateralTrading.GetOcoOrders(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CreateCollateralOcoOrder(request) -> *gosdk.CreateCollateralOcoOrderResponse</code></summary>
+<details><summary><code>client.CollateralTrading.CreateCollateralOcoOrder(request) -> *sdk.CreateCollateralOcoOrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -9865,14 +9865,14 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CreateCollateralOcoOrderRequest{
+request := &sdk.CreateCollateralOcoOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.CreateCollateralOcoOrderRequestSideBuy,
+        Side: sdk.CreateCollateralOcoOrderRequestSideBuy,
         Amount: "0.001",
         Price: "40000",
         ActivationPrice: "41000",
         StopLimitPrice: "42000",
-        ClientOrderID: gosdk.String(
+        ClientOrderID: sdk.String(
             "order1987111",
         ),
         Request: "{{request}}",
@@ -9905,7 +9905,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.CreateCollateralOcoOrderRequestSide` 
+**side:** `*sdk.CreateCollateralOcoOrderRequestSide` 
     
 </dd>
 </dl>
@@ -10004,7 +10004,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CancelConditionalOrderRequest{
+request := &sdk.CancelConditionalOrderRequest{
         Market: "BTC_USDT",
         ID: 117703764514,
         Request: "{{request}}",
@@ -10065,7 +10065,7 @@ client.CollateralTrading.CancelConditionalOrder(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CancelOcoOrder(request) -> *gosdk.CancelOcoOrderResponse</code></summary>
+<details><summary><code>client.CollateralTrading.CancelOcoOrder(request) -> *sdk.CancelOcoOrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -10096,7 +10096,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CancelOcoOrderRequest{
+request := &sdk.CancelOcoOrderRequest{
         Market: "BTC_USDT",
         OrderID: 117703764514,
         Request: "{{request}}",
@@ -10188,7 +10188,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CancelOtoOrderRequest{
+request := &sdk.CancelOtoOrderRequest{
         Market: "BTC_USDT",
         OtoID: 117703764514,
         Request: "{{request}}",
@@ -10250,7 +10250,7 @@ client.CollateralTrading.CancelOtoOrder(
 </details>
 
 ## Market Fee
-<details><summary><code>client.MarketFee.GetMarketFee() -> *gosdk.GetMarketFeeResponse</code></summary>
+<details><summary><code>client.MarketFee.GetMarketFee() -> *sdk.GetMarketFeeResponse</code></summary>
 <dl>
 <dd>
 
@@ -10285,7 +10285,7 @@ Example: If the custom futures taker fee equals `0.026` and the market fee equal
 <dd>
 
 ```go
-request := &gosdk.GetMarketFeeRequest{
+request := &sdk.GetMarketFeeRequest{
         Market: "BTC_USDT",
     }
 client.MarketFee.GetMarketFee(
@@ -10328,7 +10328,7 @@ Example: BTC_USDT
 </details>
 
 ## Spot Trading
-<details><summary><code>client.SpotTrading.TradeAccountBalance(request) -> map[string]*gosdk.TradeAccountBalanceResponseValue</code></summary>
+<details><summary><code>client.SpotTrading.TradeAccountBalance(request) -> map[string]*sdk.TradeAccountBalanceResponseValue</code></summary>
 <dl>
 <dd>
 
@@ -10391,7 +10391,7 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.TradeAccountBalanceRequest{}
+request := &sdk.TradeAccountBalanceRequest{}
 client.SpotTrading.TradeAccountBalance(
         context.TODO(),
         request,
@@ -10439,7 +10439,7 @@ client.SpotTrading.TradeAccountBalance(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CreateLimitOrder(request) -> *gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.CreateLimitOrder(request) -> *sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -10658,9 +10658,9 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.LimitOrderRequest{
+request := &sdk.LimitOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.LimitOrderRequestSideBuy,
+        Side: sdk.LimitOrderRequestSideBuy,
         Amount: "0.001",
         Price: "9800",
         Request: "{{request}}",
@@ -10693,7 +10693,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.LimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
+**side:** `*sdk.LimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
     
 </dd>
 </dl>
@@ -10756,7 +10756,7 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 <dl>
 <dd>
 
-**stp:** `*gosdk.LimitOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
+**stp:** `*sdk.LimitOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
     
 </dd>
 </dl>
@@ -10801,7 +10801,7 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CreateBulkLimitOrder(request) -> gosdk.BulkLimitOrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.CreateBulkLimitOrder(request) -> sdk.BulkLimitOrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -10904,77 +10904,77 @@ Individual order errors (in multiply response):
 <dd>
 
 ```go
-request := &gosdk.CreateBulkLimitOrderRequest{
-        Orders: []*gosdk.BulkOrderItem{
-            &gosdk.BulkOrderItem{
-                Side: gosdk.BulkOrderItemSideBuy.Ptr(),
-                Amount: gosdk.String(
+request := &sdk.CreateBulkLimitOrderRequest{
+        Orders: []*sdk.BulkOrderItem{
+            &sdk.BulkOrderItem{
+                Side: sdk.BulkOrderItemSideBuy.Ptr(),
+                Amount: sdk.String(
                     "0.02",
                 ),
-                Price: gosdk.String(
+                Price: sdk.String(
                     "40000",
                 ),
-                Market: gosdk.String(
+                Market: sdk.String(
                     "BTC_USDT",
                 ),
-                PostOnly: gosdk.Bool(
+                PostOnly: sdk.Bool(
                     false,
                 ),
-                Ioc: gosdk.Bool(
+                Ioc: sdk.Bool(
                     false,
                 ),
-                ClientOrderID: gosdk.String(
+                ClientOrderID: sdk.String(
                     "",
                 ),
-                Rpi: gosdk.Bool(
+                Rpi: sdk.Bool(
                     true,
                 ),
             },
-            &gosdk.BulkOrderItem{
-                Side: gosdk.BulkOrderItemSideSell.Ptr(),
-                Amount: gosdk.String(
+            &sdk.BulkOrderItem{
+                Side: sdk.BulkOrderItemSideSell.Ptr(),
+                Amount: sdk.String(
                     "0.0001",
                 ),
-                Price: gosdk.String(
+                Price: sdk.String(
                     "41000",
                 ),
-                Market: gosdk.String(
+                Market: sdk.String(
                     "BTC_USDT",
                 ),
-                PostOnly: gosdk.Bool(
+                PostOnly: sdk.Bool(
                     false,
                 ),
-                Ioc: gosdk.Bool(
+                Ioc: sdk.Bool(
                     false,
                 ),
-                ClientOrderID: gosdk.String(
+                ClientOrderID: sdk.String(
                     "",
                 ),
-                Rpi: gosdk.Bool(
+                Rpi: sdk.Bool(
                     true,
                 ),
             },
-            &gosdk.BulkOrderItem{
-                Side: gosdk.BulkOrderItemSideSell.Ptr(),
-                Amount: gosdk.String(
+            &sdk.BulkOrderItem{
+                Side: sdk.BulkOrderItemSideSell.Ptr(),
+                Amount: sdk.String(
                     "0.02",
                 ),
-                Price: gosdk.String(
+                Price: sdk.String(
                     "41000",
                 ),
-                Market: gosdk.String(
+                Market: sdk.String(
                     "BTC_USDT",
                 ),
-                PostOnly: gosdk.Bool(
+                PostOnly: sdk.Bool(
                     false,
                 ),
-                Ioc: gosdk.Bool(
+                Ioc: sdk.Bool(
                     false,
                 ),
-                ClientOrderID: gosdk.String(
+                ClientOrderID: sdk.String(
                     "",
                 ),
-                Rpi: gosdk.Bool(
+                Rpi: sdk.Bool(
                     true,
                 ),
             },
@@ -10999,7 +10999,7 @@ client.SpotTrading.CreateBulkLimitOrder(
 <dl>
 <dd>
 
-**orders:** `[]*gosdk.BulkOrderItem` — Array of limit orders
+**orders:** `[]*sdk.BulkOrderItem` — Array of limit orders
     
 </dd>
 </dl>
@@ -11041,7 +11041,7 @@ When false (default): All orders in the bulk request are processed regardless of
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CreateMarketOrder(request) -> *gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.CreateMarketOrder(request) -> *sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -11178,9 +11178,9 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.MarketOrderRequest{
+request := &sdk.MarketOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.MarketOrderRequestSideBuy,
+        Side: sdk.MarketOrderRequestSideBuy,
         Amount: "100",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -11204,7 +11204,7 @@ client.SpotTrading.CreateMarketOrder(
 <dl>
 <dd>
 
-**request:** `*gosdk.MarketOrderRequest` 
+**request:** `*sdk.MarketOrderRequest` 
     
 </dd>
 </dl>
@@ -11216,7 +11216,7 @@ client.SpotTrading.CreateMarketOrder(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CreateStockMarketOrder(request) -> *gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.CreateStockMarketOrder(request) -> *sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -11341,9 +11341,9 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.MarketOrderRequest{
+request := &sdk.MarketOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.MarketOrderRequestSideBuy,
+        Side: sdk.MarketOrderRequestSideBuy,
         Amount: "100",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -11367,7 +11367,7 @@ client.SpotTrading.CreateStockMarketOrder(
 <dl>
 <dd>
 
-**request:** `*gosdk.MarketOrderRequest` 
+**request:** `*sdk.MarketOrderRequest` 
     
 </dd>
 </dl>
@@ -11379,7 +11379,7 @@ client.SpotTrading.CreateStockMarketOrder(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CreateStopLimitOrder(request) -> *gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.CreateStopLimitOrder(request) -> *sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -11539,9 +11539,9 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.StopLimitOrderRequest{
+request := &sdk.StopLimitOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.StopLimitOrderRequestSideBuy,
+        Side: sdk.StopLimitOrderRequestSideBuy,
         Amount: "0.001",
         Price: "9800",
         ActivationPrice: "10000",
@@ -11575,7 +11575,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.StopLimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
+**side:** `*sdk.StopLimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
     
 </dd>
 </dl>
@@ -11623,7 +11623,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**stp:** `*gosdk.StopLimitOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
+**stp:** `*sdk.StopLimitOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
     
 </dd>
 </dl>
@@ -11651,7 +11651,7 @@ client.SpotTrading.CreateStopLimitOrder(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CreateStopMarketOrder(request) -> *gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.CreateStopMarketOrder(request) -> *sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -11811,9 +11811,9 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.StopMarketOrderRequest{
+request := &sdk.StopMarketOrderRequest{
         Market: "BTC_USDT",
-        Side: gosdk.StopMarketOrderRequestSideBuy,
+        Side: sdk.StopMarketOrderRequestSideBuy,
         Amount: "0.01",
         ActivationPrice: "10000",
         Request: "{{request}}",
@@ -11846,7 +11846,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**side:** `*gosdk.StopMarketOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
+**side:** `*sdk.StopMarketOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
     
 </dd>
 </dl>
@@ -11878,7 +11878,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**stp:** `*gosdk.StopMarketOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
+**stp:** `*sdk.StopMarketOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
     
 </dd>
 </dl>
@@ -11906,7 +11906,7 @@ client.SpotTrading.CreateStopMarketOrder(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CancelOrder(request) -> *gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.CancelOrder(request) -> *sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -12014,7 +12014,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CancelOrderRequest{
+request := &sdk.CancelOrderRequest{
         Market: "BTC_USDT",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -12153,14 +12153,14 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.CancelAllOrdersRequest{
-        Market: gosdk.String(
+request := &sdk.CancelAllOrdersRequest{
+        Market: sdk.String(
             "BTC_USDT",
         ),
-        Type: []gosdk.CancelAllOrdersRequestTypeItem{
-            gosdk.CancelAllOrdersRequestTypeItemSpot,
-            gosdk.CancelAllOrdersRequestTypeItemMargin,
-            gosdk.CancelAllOrdersRequestTypeItemFutures,
+        Type: []sdk.CancelAllOrdersRequestTypeItem{
+            sdk.CancelAllOrdersRequestTypeItemSpot,
+            sdk.CancelAllOrdersRequestTypeItemMargin,
+            sdk.CancelAllOrdersRequestTypeItemFutures,
         },
     }
 client.SpotTrading.CancelAllOrders(
@@ -12190,7 +12190,7 @@ client.SpotTrading.CancelAllOrders(
 <dl>
 <dd>
 
-**type_:** `[]*gosdk.CancelAllOrdersRequestTypeItem` — Order types value. Example: 'spot', 'margin', 'futures'
+**type_:** `[]*sdk.CancelAllOrdersRequestTypeItem` — Order types value. Example: 'spot', 'margin', 'futures'
     
 </dd>
 </dl>
@@ -12218,7 +12218,7 @@ client.SpotTrading.CancelAllOrders(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.GetActiveOrders(request) -> []*gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.GetActiveOrders(request) -> []*sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -12276,7 +12276,7 @@ Search across all markets is available only if client_order_id and order_id are 
 <dd>
 
 ```go
-request := &gosdk.GetActiveOrdersRequest{}
+request := &sdk.GetActiveOrdersRequest{}
 client.SpotTrading.GetActiveOrders(
         context.TODO(),
         request,
@@ -12356,7 +12356,7 @@ client.SpotTrading.GetActiveOrders(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.GetExecutedOrderHistory(request) -> []*gosdk.GetExecutedOrderHistoryResponseItem</code></summary>
+<details><summary><code>client.SpotTrading.GetExecutedOrderHistory(request) -> []*sdk.GetExecutedOrderHistoryResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -12414,7 +12414,7 @@ The endpoint can retrieve data not older than 6 months from current month. For o
 <dd>
 
 ```go
-request := &gosdk.GetExecutedOrderHistoryRequest{}
+request := &sdk.GetExecutedOrderHistoryRequest{}
 client.SpotTrading.GetExecutedOrderHistory(
         context.TODO(),
         request,
@@ -12502,7 +12502,7 @@ client.SpotTrading.GetExecutedOrderHistory(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.GetOrderDeals(request) -> *gosdk.GetOrderDealsResponse</code></summary>
+<details><summary><code>client.SpotTrading.GetOrderDeals(request) -> *sdk.GetOrderDealsResponse</code></summary>
 <dl>
 <dd>
 
@@ -12533,7 +12533,7 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetOrderDealsRequest{
+request := &sdk.GetOrderDealsRequest{
         OrderID: 3134995325,
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -12601,7 +12601,7 @@ client.SpotTrading.GetOrderDeals(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.GetOrderHistory(request) -> map[string][]*gosdk.GetOrderHistoryResponseValueItem</code></summary>
+<details><summary><code>client.SpotTrading.GetOrderHistory(request) -> map[string][]*sdk.GetOrderHistoryResponseValueItem</code></summary>
 <dl>
 <dd>
 
@@ -12632,7 +12632,7 @@ Rate limit: 12000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetOrderHistoryRequest{}
+request := &sdk.GetOrderHistoryRequest{}
 client.SpotTrading.GetOrderHistory(
         context.TODO(),
         request,
@@ -12696,7 +12696,7 @@ client.SpotTrading.GetOrderHistory(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.ModifyOrder(request) -> *gosdk.OrderResponse</code></summary>
+<details><summary><code>client.SpotTrading.ModifyOrder(request) -> *sdk.OrderResponse</code></summary>
 <dl>
 <dd>
 
@@ -12776,7 +12776,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.ModifyOrderRequest{
+request := &sdk.ModifyOrderRequest{
         Market: "BTC_USDT",
         Request: "{{request}}",
         Nonce: "{{nonce}}",
@@ -12876,7 +12876,7 @@ client.SpotTrading.ModifyOrder(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.SetKillSwitch(request) -> *gosdk.SetKillSwitchResponse</code></summary>
+<details><summary><code>client.SpotTrading.SetKillSwitch(request) -> *sdk.SetKillSwitchResponse</code></summary>
 <dl>
 <dd>
 
@@ -12950,7 +12950,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.SetKillSwitchRequest{
+request := &sdk.SetKillSwitchRequest{
         Market: "BTC_USDT",
         Timeout: "60",
     }
@@ -12989,7 +12989,7 @@ client.SpotTrading.SetKillSwitch(
 <dl>
 <dd>
 
-**types:** `[]*gosdk.SetKillSwitchRequestTypesItem` — Order types value. Example: 'spot', 'margin', 'futures' or null
+**types:** `[]*sdk.SetKillSwitchRequestTypesItem` — Order types value. Example: 'spot', 'margin', 'futures' or null
     
 </dd>
 </dl>
@@ -13017,7 +13017,7 @@ client.SpotTrading.SetKillSwitch(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.GetKillSwitchStatus(request) -> []*gosdk.GetKillSwitchStatusResponseItem</code></summary>
+<details><summary><code>client.SpotTrading.GetKillSwitchStatus(request) -> []*sdk.GetKillSwitchStatusResponseItem</code></summary>
 <dl>
 <dd>
 
@@ -13065,7 +13065,7 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &gosdk.GetKillSwitchStatusRequest{}
+request := &sdk.GetKillSwitchStatusRequest{}
 client.SpotTrading.GetKillSwitchStatus(
         context.TODO(),
         request,

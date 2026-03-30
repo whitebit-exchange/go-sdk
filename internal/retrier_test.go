@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/whitebit-exchange/go-sdk/core"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/whitebit-exchange/go-sdk/core"
 )
 
 type RetryTestCase struct {
@@ -292,7 +292,7 @@ func TestRetryDelayTiming(t *testing.T) {
 			name:       "x-ratelimit-reset with future timestamp",
 			headerName: "x-ratelimit-reset",
 			headerValueFunc: func() string {
-				return fmt.Sprintf("%d", time.Now().Add(3 * time.Second).Unix())
+				return fmt.Sprintf("%d", time.Now().Add(3*time.Second).Unix())
 			},
 			expectedMinMs: 1500,
 			expectedMaxMs: 4500,

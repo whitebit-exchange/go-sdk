@@ -4,8 +4,8 @@ package client
 
 import (
 	assert "github.com/stretchr/testify/assert"
-	option "github.com/whitebit-exchange/go-sdk/option"
 	http "net/http"
+	option "github.com/whitebit-exchange/go-sdk/option"
 	testing "testing"
 	time "time"
 )

@@ -3,234 +3,232 @@
 package subaccountapikeys
 
 import (
-    core "github.com/whitebit-exchange/go-sdk/core"
-    internal "github.com/whitebit-exchange/go-sdk/internal"
-    context "context"
-    gosdk "github.com/whitebit-exchange/go-sdk"
-    option "github.com/whitebit-exchange/go-sdk/option"
+	context "context"
+	sdk "github.com/whitebit-exchange/go-sdk"
+	core "github.com/whitebit-exchange/go-sdk/core"
+	internal "github.com/whitebit-exchange/go-sdk/internal"
+	option "github.com/whitebit-exchange/go-sdk/option"
 )
 
-
 type Client struct {
-    WithRawResponse *RawClient
+	WithRawResponse *RawClient
 
-    options *core.RequestOptions
-    baseURL string
-    caller *internal.Caller
+	options *core.RequestOptions
+	baseURL string
+	caller  *internal.Caller
 }
 
 func NewClient(options *core.RequestOptions) *Client {
-    return &Client{
-        WithRawResponse: NewRawClient(options),
-        options: options,
-        baseURL: options.BaseURL,
-        caller: internal.NewCaller(
-            &internal.CallerParams{
-                Client: options.HTTPClient,
-                MaxAttempts: options.MaxAttempts,
-            },
-        ),
-    }
+	return &Client{
+		WithRawResponse: NewRawClient(options),
+		options:         options,
+		baseURL:         options.BaseURL,
+		caller: internal.NewCaller(
+			&internal.CallerParams{
+				Client:      options.HTTPClient,
+				MaxAttempts: options.MaxAttempts,
+			},
+		),
+	}
 }
 
 // The endpoint creates a new API key for a [sub-account](/glossary#sub-account).
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) CreateSubAccountAPIKey(
-    ctx context.Context,
-    request *gosdk.CreateSubAccountAPIKeyRequest,
-    opts ...option.RequestOption,
-) (*gosdk.SubAccountAPIKey, error){
-    response, err := c.WithRawResponse.CreateSubAccountAPIKey(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateSubAccountAPIKeyRequest,
+	opts ...option.RequestOption,
+) (*sdk.SubAccountAPIKey, error) {
+	response, err := c.WithRawResponse.CreateSubAccountAPIKey(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint updates an existing [sub-account](/glossary#sub-account) API key.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) EditSubAccountAPIKey(
-    ctx context.Context,
-    request *gosdk.EditSubAccountAPIKeyRequest,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.EditSubAccountAPIKey(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.EditSubAccountAPIKeyRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.EditSubAccountAPIKey(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint deletes a [sub-account](/glossary#sub-account) API key.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) DeleteSubAccountAPIKey(
-    ctx context.Context,
-    request *gosdk.DeleteSubAccountAPIKeyRequest,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.DeleteSubAccountAPIKey(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.DeleteSubAccountAPIKeyRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.DeleteSubAccountAPIKey(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves a list of API keys for a [sub-account](/glossary#sub-account).
 // Note: For security reasons, the apiSecret field returns an empty string.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) ListSubAccountAPIKeys(
-    ctx context.Context,
-    request *gosdk.ListSubAccountAPIKeysRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ListSubAccountAPIKeysResponse, error){
-    response, err := c.WithRawResponse.ListSubAccountAPIKeys(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ListSubAccountAPIKeysRequest,
+	opts ...option.RequestOption,
+) (*sdk.ListSubAccountAPIKeysResponse, error) {
+	response, err := c.WithRawResponse.ListSubAccountAPIKeys(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint resets (regenerates) an existing [sub-account](/glossary#sub-account) API key.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) ResetSubAccountAPIKey(
-    ctx context.Context,
-    request *gosdk.ResetSubAccountAPIKeyRequest,
-    opts ...option.RequestOption,
-) (map[string]any, error){
-    response, err := c.WithRawResponse.ResetSubAccountAPIKey(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ResetSubAccountAPIKeyRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.ResetSubAccountAPIKey(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint retrieves the list of IP addresses allowed for a [sub-account](/glossary#sub-account) API key.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) ListSubAccountAPIKeyIPAddresses(
-    ctx context.Context,
-    request *gosdk.ListSubAccountAPIKeyIPAddressesRequest,
-    opts ...option.RequestOption,
-) (*gosdk.ListSubAccountAPIKeyIPAddressesResponse, error){
-    response, err := c.WithRawResponse.ListSubAccountAPIKeyIPAddresses(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.ListSubAccountAPIKeyIPAddressesRequest,
+	opts ...option.RequestOption,
+) (*sdk.ListSubAccountAPIKeyIPAddressesResponse, error) {
+	response, err := c.WithRawResponse.ListSubAccountAPIKeyIPAddresses(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint adds a new IP address to the allowed list for a [sub-account](/glossary#sub-account) API key.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) CreateSubAccountAPIKeyIPAddress(
-    ctx context.Context,
-    request *gosdk.CreateSubAccountAPIKeyIPAddressRequest,
-    opts ...option.RequestOption,
-) (*gosdk.CreateSubAccountAPIKeyIPAddressResponse, error){
-    response, err := c.WithRawResponse.CreateSubAccountAPIKeyIPAddress(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.CreateSubAccountAPIKeyIPAddressRequest,
+	opts ...option.RequestOption,
+) (*sdk.CreateSubAccountAPIKeyIPAddressResponse, error) {
+	response, err := c.WithRawResponse.CreateSubAccountAPIKeyIPAddress(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
 
 // The endpoint removes an IP address from the allowed list for a [sub-account](/glossary#sub-account) API key.
-// 
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
-// 
+//
 // <Note>
 // The API does not cache the response.
 // </Note>
 func (c *Client) DeleteSubAccountAPIKeyIPAddress(
-    ctx context.Context,
-    request *gosdk.DeleteSubAccountAPIKeyIPAddressRequest,
-    opts ...option.RequestOption,
-) (*gosdk.DeleteSubAccountAPIKeyIPAddressResponse, error){
-    response, err := c.WithRawResponse.DeleteSubAccountAPIKeyIPAddress(
-        ctx,
-        request,
-        opts...,
-    )
-    if err != nil {
-        return nil, err
-    }
-    return response.Body, nil
+	ctx context.Context,
+	request *sdk.DeleteSubAccountAPIKeyIPAddressRequest,
+	opts ...option.RequestOption,
+) (*sdk.DeleteSubAccountAPIKeyIPAddressResponse, error) {
+	response, err := c.WithRawResponse.DeleteSubAccountAPIKeyIPAddress(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
 }
-
