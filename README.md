@@ -1,214 +1,126 @@
-### A Golang SDK for [whitebit](https://www.whitebit.com)
+<h1 align="center">WhiteBit Go SDK</h1>
 
-For best compatibility, please use Go >= 1.18
+<p align="center">
+  <strong>Official Go SDK for the WhiteBit API — trade, query, and manage your crypto portfolio programmatically.</strong>
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-Please read [whitebit API document](https://whitebit-exchange.github.io/api-docs/) before continuing.
-
-### API List
-
-- [Private API](https://whitebit-exchange.github.io/api-docs/private/http-trade-v4/)
-- [Public API](https://whitebit-exchange.github.io/api-docs/public/http-v4/)
-- [Public WebSocket API](https://whitebit-exchange.github.io/api-docs/private/websocket/)
-- [Private WebSocket API](https://whitebit-exchange.github.io/api-docs/private/websocket/)
-
-v4 is the preferred one to use
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-≥ 1.21-00ADD8?style=flat-square&logo=go" alt="Go ≥ 1.21" />
+  <img src="https://img.shields.io/badge/license-Apache_2.0-green?style=flat-square" alt="Apache 2.0 license" />
+</p>
 
 ---
-## Disclaimer
-“You acknowledge that the software is provided “as is”. Author makes no representations or warranties with respect to
-the software whether express or implied, including but not limited to, implied warranties of merchantability and fitness
-for a particular purpose. author makes no representation or warranty that: (i) the use and distribution of the software
-will be uninterrupted or error free, and (ii) any use and distribution of the software is free from infringement of any
-third party intellectual property rights. It shall be your sole responsibility to make such determination before the use
-of software. Author disclaims any liability in case any such use and distribution infringe any third party’s
-intellectual property rights. Author hereby disclaims any warranty and liability whatsoever for any development created
-by or for you with respect to your customers. You acknowledge that you have relied on no warranties and that no
-warranties are made by author or granted by law whenever it is permitted by law.”
+
+## Prerequisites
+
+| Requirement | Details |
+|-------------|---------|
+| **Go ≥ 1.21** | Required runtime |
+| **WhiteBit account** | Sign up at [whitebit.com](https://whitebit.com) |
+| **WhiteBit API key** | Profile → API keys → Create key (Read and/or Trade permissions) |
+
 ---
-### Installation
-```shell
+
+## Installation
+
+```bash
 go get github.com/whitebit-exchange/go-sdk
 ```
+
 ---
-### REST API
 
-#### Setup
+## Quick Start
 
-Init client for API services. Get APIKey/SecretKey from your whitebit account.
+### 1. Get your API credentials
 
-```golang
-client := whitebit.NewClient(
-    "", //your api key
-    "", //your secret key
+1. Log in to [whitebit.com](https://whitebit.com) → **Profile → API keys**
+2. Create a new key — choose **Read** and/or **Trade** permissions as needed
+3. Copy your **API Key** and **Token**
+
+> Public endpoints (market data, tickers, order book) work without credentials. Private endpoints (account, trading) require both.
+
+### 2. Initialize the client
+
+```go
+import (
+    "context"
+    whitebitclient "github.com/whitebit-exchange/go-sdk/client"
+    "github.com/whitebit-exchange/go-sdk/option"
 )
+
+client := whitebitclient.NewClient(
+    option.WithTxcApikey("YOUR_API_KEY"),
+    option.WithToken("YOUR_TOKEN"),
+)
+ctx := context.Background()
 ```
-Following are some simple examples. 
 
-See the **examples** folder for full references.
+---
 
-#### Create Spot Limit Order
+## Usage Examples
 
-```golang
-// Create order/spot service
-service := spot.NewService(client)
+```go
+// Market data (no credentials required)
+tickers, _ := client.PublicAPIV4.GetMarketActivity(ctx)
+depth, _   := client.PublicAPIV4.GetOrderbook(ctx, &publicapiv4.GetOrderbookRequest{Market: "BTC_USDT"})
 
-//Create OrderLimit params
-// Call SDK function CreateLimitOrder
-response, err := service.CreateLimitOrder(spot.LimitOrderParams{
+// Account
+balance, _ := client.AccountEndpoints.GetTradingBalance(ctx)
+
+// Spot trading
+order, _   := client.SpotTrading.CreateLimitOrder(ctx, &spottrading.CreateLimitOrderRequest{
     Market: "BTC_USDT",
-    Amount: "0.001",
-    Side:   order.SideBuy,
-    Price:  "12000",
+    Side:   "buy",
+    Amount: "0.01",
+    Price:  "95000",
+})
+client.SpotTrading.CancelOrder(ctx, &spottrading.CancelOrderRequest{
+    Market:  "BTC_USDT",
+    OrderId: order.OrderId,
 })
 
-if err != nil {
-    fmt.Println(err.Error())
-}
-
-fmt.Printf("%#v\n", response)
+// Main account — transfer & withdraw
+client.Transfer.Transfer(ctx, &transfer.TransferRequest{From: "main", To: "spot", Ticker: "USDT", Amount: "100"})
+client.Withdraw.CreateWithdraw(ctx, &withdraw.CreateWithdrawRequest{Ticker: "USDT", Amount: "500", Address: "0x..."})
 ```
 
-#### Get Order Info
-
-```golang
-// Create a client with your own apiKey and apiSecret
-client := whitebit.NewClient(
-    "",
-    "",
-)
-
-// Create assets trade
-service := trade.NewService(client)
-
-fmt.Println("========================= GetOrderInfo ========================= ")
-// Call SDK function GetOrder
-
-response, err := service.GetOrder(3263845935, 100, 0)
-
-if err != nil {
-    fmt.Println(err.Error())
-}
-
-fmt.Printf("%#v\n", response)
-```
-
-#### Get Futures Markets
-You don't need the APIKey and SecretKey to use public API
-```golang
-// Create a client with your own apiKey and apiSecret
-client := whitebit.NewClient(
-    "",
-    "",
-)
-
-// Create a futures service
-service := futures.NewService(client)
-
-fmt.Println("========================= GetFuturesMarkets ========================= ")
-// Call SDK function GetFuturesMarkets
-response, err := service.GetFuturesMarkets()
-
-if err != nil {
-    fmt.Println(err.Error())
-}
-
-fmt.Printf("%#v\n", response)
-```
-
-#### Get Server Time and Ping
-You don't need the APIKey and SecretKey to use public API
-```golang
-// Create a client with your own apiKey and apiSecret
-client := whitebit.NewClient(
-    "",
-    "",
-)
-
-fmt.Println("========================= Ping ========================= ")
-// Create a server service
-service := server.NewService(client)
-
-// Call SDK function Ping
-response, err := service.Ping()
-
-if err != nil {
-    fmt.Println(err.Error())
-}
-
-fmt.Printf("%#v\n", response)
-
-fmt.Println("========================= GetTime ========================= ")
-// Call SDK function GetTime
-resp, err := service.GetTime()
-
-if err != nil {
-    fmt.Println(err.Error())
-}
-
-fmt.Printf("%#v\n", resp)
-```
 ---
-### Websocket
-Get websocket token from your whitebit account.
-```golang
-// Create a client with your own apiKey and apiSecret (need for authorize websocket connecting)
-client := whitebit.NewClient("publicKey", "secretKey")
 
-// Create new service
-service := server.NewService(client)
+## Available Modules
 
-// Call SDK function GetWsToken - you can use this token all time
-token, err := service.GetWsToken()
-if err != nil {
-	log.Fatal(err)
-}
-```
-Init websocket stream with error handler.
-```golang
-// Create ctx and cancel for close websocket connect
-ctx, cancel := context.WithCancel(context.Background())
+| Module | Description |
+|--------|-------------|
+| `PublicAPIV4` | Tickers, order book, trade history, klines, assets |
+| `SpotTrading` | Limit, market, stop-limit, stop-market, bulk orders |
+| `CollateralTrading` | Collateral orders, OCO, positions |
+| `AccountEndpoints` | Trading balance, open orders, order history |
+| `MainAccount` | Main balances, deposit addresses, fee info |
+| `Transfer` | Transfer between main and trade accounts |
+| `Withdraw` | Withdrawal requests |
+| `Codes` | WhiteBit codes — create, apply, history |
+| `CryptoLendingFixed` | Fixed lending plans |
+| `CryptoLendingFlex` | Flex lending plans |
+| `Fees` | Trading fees |
+| `SubAccount` | Sub-account management |
+| `MiningPool` | Hashrate and rewards |
 
-streamService, err := stream.NewStream(ctx, token, func(err error) {
-    fmt.Println(err)
-	switch err.(type) {
-	case *net.OpError:
-		{
-		fmt.Println(err.Error())
-		time.Sleep(time.Second)
-		}
-	}
-})
-```
-Subscribe example
-```golang
-// Create handler for processing websocket LastPriceUpdateEvent
-lastPriceHandler := func(event stream.LastPriceUpdateEvent) {
-	fmt.Printf("%#v\n", event)
-}
+---
 
-// Subscribe on market last price events
-err = streamService.Subscribe(stream.NewLastPriceSubscription(lastPriceHandler, []string{"BTC_USDT"}))
+## Resources
 
-time.Sleep(time.Second * 10)
-// unsubscribe example if you need
-err = streamService.Unsubscribe(stream.NewLastPriceUnsubscribe())
-if err != nil {
-    log.Fatal(err)
-}
-```
-Query example
-```golang
-streamService.Query(stream.NewLastPriceCommand("BTC_USDT"), func(command stream.Command, response []byte) {
-	var result string
-	err = json.Unmarshal(response, &result)
-	if err != nil {
-		print(err.Error())
-		return
-	}
-	fmt.Println(command, result)
-})
+| | |
+|---|---|
+| [WhiteBIT API Documentation](https://docs.whitebit.com) | Official API reference |
+| [API Platform Overview](https://docs.whitebit.com/private/http-trade-v4/) | REST, WebSocket, authentication, rate limits |
+| [Use with AI](https://github.com/whitebit-exchange/whitebit-mcp) | Use API docs with Claude, Cursor, VS Code via MCP |
+| [GitHub Repository](https://github.com/whitebit-exchange/go-sdk) | Source code |
+| [Releases](https://github.com/whitebit-exchange/go-sdk/releases) | Binaries and changelog |
+| [Contributing](CONTRIBUTING.md) | Development setup and contribution guide |
+| [Report an Issue](https://github.com/whitebit-exchange/go-sdk/issues) | Bug reports and feature requests |
+| [WhiteBIT Exchange](https://whitebit.com) | The exchange |
 
-```
+---
 
+## License
+
+[Apache 2.0](LICENSE.md)
