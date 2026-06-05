@@ -41,25 +41,43 @@ go get github.com/whitebit-exchange/go-sdk
 
 ### 2. Initialize the client
 
+**Public endpoints only** (market data, tickers, order book):
+
+```go
+import (
+    "context"
+    whitebitclient "github.com/whitebit-exchange/go-sdk/client"
+)
+
+client := whitebitclient.NewClient()
+```
+
+**Private endpoints** (account, trading — requires HMAC signing):
+
 ```go
 import (
     "context"
     whitebitclient "github.com/whitebit-exchange/go-sdk/client"
     "github.com/whitebit-exchange/go-sdk/option"
+    wbauth "github.com/whitebit-exchange/go-sdk/auth"
 )
 
 client := whitebitclient.NewClient(
     option.WithTxcApikey("YOUR_API_KEY"),
-    option.WithToken("YOUR_TOKEN"),
+    option.WithHTTPClient(wbauth.NewHmacClient("YOUR_API_SECRET")),
 )
-ctx := context.Background()
 ```
+
+> **Note:** WhiteBit private endpoints use HMAC-SHA512 signing (`X-TXC-PAYLOAD` + `X-TXC-SIGNATURE`).
+> `wbauth.NewHmacClient` handles this automatically — no manual signing needed.
 
 ---
 
 ## Usage Examples
 
 ```go
+ctx := context.Background()
+
 // Market data (no credentials required)
 tickers, _ := client.PublicAPIV4.GetMarketActivity(ctx)
 depth, _   := client.PublicAPIV4.GetOrderbook(ctx, &publicapiv4.GetOrderbookRequest{Market: "BTC_USDT"})
