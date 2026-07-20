@@ -11,6 +11,97 @@ import (
 )
 
 var (
+	createExpressWithdrawTokenRequestFieldTicker     = big.NewInt(1 << 0)
+	createExpressWithdrawTokenRequestFieldAmount     = big.NewInt(1 << 1)
+	createExpressWithdrawTokenRequestFieldExternalID = big.NewInt(1 << 2)
+	createExpressWithdrawTokenRequestFieldRequest    = big.NewInt(1 << 3)
+	createExpressWithdrawTokenRequestFieldNonce      = big.NewInt(1 << 4)
+)
+
+type CreateExpressWithdrawTokenRequest struct {
+	// Currency [ticker](/glossary#ticker) to charge. Example: USDT
+	//
+	// ⚠️ The ticker must be a withdrawal-enabled cryptocurrency; the endpoint rejects [fiat](/glossary#fiat) tickers. Use [Asset Status endpoint](/public/http-v4/asset-status-list) to check the withdrawal status of a currency.
+	Ticker string `json:"ticker" url:"-"`
+	// Amount to charge in the specified [ticker](/glossary#ticker). Numeric string.
+	//
+	// ⚠️ The amount converted to USDT-equivalent must not exceed 10,000; the endpoint rejects larger amounts with error code `191`.
+	Amount string `json:"amount" url:"-"`
+	// Partner-side reference for the payment (order or invoice identifier), unique per partner account. The identifier powers idempotency and replay protection: a pending `externalId` with an identical `ticker` and `amount` returns the same token; the endpoint rejects an already-paid `externalId` with error code `19`.
+	ExternalID string `json:"externalId" url:"-"`
+	// Request signature
+	Request string `json:"request" url:"-"`
+	// Unique request identifier
+	Nonce int `json:"nonce" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (c *CreateExpressWithdrawTokenRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetTicker sets the Ticker field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateExpressWithdrawTokenRequest) SetTicker(ticker string) {
+	c.Ticker = ticker
+	c.require(createExpressWithdrawTokenRequestFieldTicker)
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateExpressWithdrawTokenRequest) SetAmount(amount string) {
+	c.Amount = amount
+	c.require(createExpressWithdrawTokenRequestFieldAmount)
+}
+
+// SetExternalID sets the ExternalID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateExpressWithdrawTokenRequest) SetExternalID(externalID string) {
+	c.ExternalID = externalID
+	c.require(createExpressWithdrawTokenRequestFieldExternalID)
+}
+
+// SetRequest sets the Request field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateExpressWithdrawTokenRequest) SetRequest(request string) {
+	c.Request = request
+	c.require(createExpressWithdrawTokenRequestFieldRequest)
+}
+
+// SetNonce sets the Nonce field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateExpressWithdrawTokenRequest) SetNonce(nonce int) {
+	c.Nonce = nonce
+	c.require(createExpressWithdrawTokenRequestFieldNonce)
+}
+
+func (c *CreateExpressWithdrawTokenRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateExpressWithdrawTokenRequest
+	var body unmarshaler
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	*c = CreateExpressWithdrawTokenRequest(body)
+	return nil
+}
+
+func (c *CreateExpressWithdrawTokenRequest) MarshalJSON() ([]byte, error) {
+	type embed CreateExpressWithdrawTokenRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+var (
 	createWithdrawRequestFieldTicker             = big.NewInt(1 << 0)
 	createWithdrawRequestFieldAmount             = big.NewInt(1 << 1)
 	createWithdrawRequestFieldAddress            = big.NewInt(1 << 2)
@@ -19,11 +110,12 @@ var (
 	createWithdrawRequestFieldProvider           = big.NewInt(1 << 5)
 	createWithdrawRequestFieldNetwork            = big.NewInt(1 << 6)
 	createWithdrawRequestFieldPartialEnable      = big.NewInt(1 << 7)
-	createWithdrawRequestFieldBeneficiary        = big.NewInt(1 << 8)
-	createWithdrawRequestFieldTravelRule         = big.NewInt(1 << 9)
-	createWithdrawRequestFieldPaymentDescription = big.NewInt(1 << 10)
-	createWithdrawRequestFieldRequest            = big.NewInt(1 << 11)
-	createWithdrawRequestFieldNonce              = big.NewInt(1 << 12)
+	createWithdrawRequestFieldCustomerIP         = big.NewInt(1 << 8)
+	createWithdrawRequestFieldBeneficiary        = big.NewInt(1 << 9)
+	createWithdrawRequestFieldTravelRule         = big.NewInt(1 << 10)
+	createWithdrawRequestFieldPaymentDescription = big.NewInt(1 << 11)
+	createWithdrawRequestFieldRequest            = big.NewInt(1 << 12)
+	createWithdrawRequestFieldNonce              = big.NewInt(1 << 13)
 )
 
 type CreateWithdrawRequest struct {
@@ -39,10 +131,10 @@ type CreateWithdrawRequest struct {
 	//
 	// ⚠️ Required if currency is memoable.
 	Memo *string `json:"memo,omitempty" url:"-"`
-	// Unique transaction identifier.
+	// Unique transaction identifier. Any string up to 255 characters; not validated as a UUID.
 	//
 	// ⚠️ Generate a new unique ID for each withdrawal request.
-	UniqueID *string `json:"unique_id,omitempty" url:"-"`
+	UniqueID string `json:"uniqueId" url:"-"`
 	// [Fiat](/glossary#fiat) currency [provider](/glossary#provider). Example: VISAMASTER
 	//
 	// ⚠️ Required for fiat currencies. Currency provider should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response.
@@ -53,13 +145,23 @@ type CreateWithdrawRequest struct {
 	Network *string `json:"network,omitempty" url:"-"`
 	// Optional parameter for [FIAT](/glossary#fiat) withdrawals with increased Maximum Limit if set as "true". To use this parameter, the application must support "Partially successful" withdrawal status and latest updates in deposit/withdrawal history.
 	PartialEnable *bool `json:"partialEnable,omitempty" url:"-"`
-	// Beneficiary information data array.
+	// End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed.
 	//
-	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
+	// ⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider).
+	CustomerIP *string `json:"customerIp,omitempty" url:"-"`
+	// Beneficiary information.
+	//
+	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
+	//
+	// Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `tin` is required for UAH_IBAN; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
 	Beneficiary *CreateWithdrawRequestBeneficiary `json:"beneficiary,omitempty" url:"-"`
-	// Travel Rule information data array.
+	// Travel Rule information for regulatory compliance.
 	//
 	// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
+	//
+	// See [Travel Rule Overview](/api-reference/travel-rule/overview) for complete documentation.
+	//
+	// **Legacy format:** The API still accepts the old flat format (`type`, `vasp`, `name`, `address` fields), but this format will not pass Travel Rule verification. To complete Travel Rule compliance, use the new structured format with `walletType`, `beneficiary`, and `vasp` objects.
 	TravelRule *CreateWithdrawRequestTravelRule `json:"travelRule,omitempty" url:"-"`
 	// Description of withdrawal destination
 	//
@@ -68,7 +170,7 @@ type CreateWithdrawRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -111,7 +213,7 @@ func (c *CreateWithdrawRequest) SetMemo(memo *string) {
 
 // SetUniqueID sets the UniqueID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateWithdrawRequest) SetUniqueID(uniqueID *string) {
+func (c *CreateWithdrawRequest) SetUniqueID(uniqueID string) {
 	c.UniqueID = uniqueID
 	c.require(createWithdrawRequestFieldUniqueID)
 }
@@ -135,6 +237,13 @@ func (c *CreateWithdrawRequest) SetNetwork(network *string) {
 func (c *CreateWithdrawRequest) SetPartialEnable(partialEnable *bool) {
 	c.PartialEnable = partialEnable
 	c.require(createWithdrawRequestFieldPartialEnable)
+}
+
+// SetCustomerIP sets the CustomerIP field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequest) SetCustomerIP(customerIP *string) {
+	c.CustomerIP = customerIP
+	c.require(createWithdrawRequestFieldCustomerIP)
 }
 
 // SetBeneficiary sets the Beneficiary field and marks it as non-optional;
@@ -167,7 +276,7 @@ func (c *CreateWithdrawRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateWithdrawRequest) SetNonce(nonce string) {
+func (c *CreateWithdrawRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createWithdrawRequestFieldNonce)
 }
@@ -202,10 +311,11 @@ var (
 	withdrawRequestFieldProvider      = big.NewInt(1 << 5)
 	withdrawRequestFieldNetwork       = big.NewInt(1 << 6)
 	withdrawRequestFieldPartialEnable = big.NewInt(1 << 7)
-	withdrawRequestFieldBeneficiary   = big.NewInt(1 << 8)
-	withdrawRequestFieldTravelRule    = big.NewInt(1 << 9)
-	withdrawRequestFieldRequest       = big.NewInt(1 << 10)
-	withdrawRequestFieldNonce         = big.NewInt(1 << 11)
+	withdrawRequestFieldCustomerIP    = big.NewInt(1 << 8)
+	withdrawRequestFieldBeneficiary   = big.NewInt(1 << 9)
+	withdrawRequestFieldTravelRule    = big.NewInt(1 << 10)
+	withdrawRequestFieldRequest       = big.NewInt(1 << 11)
+	withdrawRequestFieldNonce         = big.NewInt(1 << 12)
 )
 
 type WithdrawRequest struct {
@@ -217,14 +327,16 @@ type WithdrawRequest struct {
 	Address string `json:"address" url:"-"`
 	// Required if currency is memoable. See [memo](/glossary#memodestination-tag) for details.
 	Memo *string `json:"memo,omitempty" url:"-"`
-	// Unique transaction identifier. ⚠️ Generate a new unique ID for each withdrawal request.
-	UniqueID *string `json:"unique_id,omitempty" url:"-"`
+	// Unique transaction identifier. Any string up to 255 characters; not validated as a UUID. ⚠️ Generate a new unique ID for each withdrawal request.
+	UniqueID string `json:"uniqueId" url:"-"`
 	// [Fiat](/glossary#fiat) currency [provider](/glossary#provider). Example: VISAMASTER ⚠️ Currency provider should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response. Required if currency is fiat.
 	Provider *string `json:"provider,omitempty" url:"-"`
 	// Cryptocurrency network. Available for [multinetwork](/glossary#multinetwork) currencies. Example: OMNI ⚠️ Currency network should be taken from [Asset Status endpoint](/public/http-v4/asset-status-list) response. Default for USDT is ERC20
 	Network *string `json:"network,omitempty" url:"-"`
 	// Optional parameter for [FIAT](/glossary#fiat) withdrawals with increased Maximum Limit if set as "true". To use this parameter, the application must support "Partially successful" withdrawal status and latest updates in deposit/withdrawal history.
 	PartialEnable *bool `json:"partialEnable,omitempty" url:"-"`
+	// End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed. ⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider).
+	CustomerIP *string `json:"customerIp,omitempty" url:"-"`
 	// Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
 	Beneficiary map[string]interface{} `json:"beneficiary,omitempty" url:"-"`
 	// Travel Rule information data. Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
@@ -232,7 +344,7 @@ type WithdrawRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -275,7 +387,7 @@ func (w *WithdrawRequest) SetMemo(memo *string) {
 
 // SetUniqueID sets the UniqueID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (w *WithdrawRequest) SetUniqueID(uniqueID *string) {
+func (w *WithdrawRequest) SetUniqueID(uniqueID string) {
 	w.UniqueID = uniqueID
 	w.require(withdrawRequestFieldUniqueID)
 }
@@ -301,6 +413,13 @@ func (w *WithdrawRequest) SetPartialEnable(partialEnable *bool) {
 	w.require(withdrawRequestFieldPartialEnable)
 }
 
+// SetCustomerIP sets the CustomerIP field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (w *WithdrawRequest) SetCustomerIP(customerIP *string) {
+	w.CustomerIP = customerIP
+	w.require(withdrawRequestFieldCustomerIP)
+}
+
 // SetBeneficiary sets the Beneficiary field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (w *WithdrawRequest) SetBeneficiary(beneficiary map[string]interface{}) {
@@ -324,7 +443,7 @@ func (w *WithdrawRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (w *WithdrawRequest) SetNonce(nonce string) {
+func (w *WithdrawRequest) SetNonce(nonce int) {
 	w.Nonce = nonce
 	w.require(withdrawRequestFieldNonce)
 }
@@ -350,16 +469,121 @@ func (w *WithdrawRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-// Beneficiary information data array.
-//
-// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
 var (
-	createWithdrawRequestBeneficiaryFieldFirstName = big.NewInt(1 << 0)
-	createWithdrawRequestBeneficiaryFieldLastName  = big.NewInt(1 << 1)
-	createWithdrawRequestBeneficiaryFieldTin       = big.NewInt(1 << 2)
-	createWithdrawRequestBeneficiaryFieldPhone     = big.NewInt(1 << 3)
-	createWithdrawRequestBeneficiaryFieldEmail     = big.NewInt(1 << 4)
-	createWithdrawRequestBeneficiaryFieldBirthDate = big.NewInt(1 << 5)
+	createExpressWithdrawTokenResponseFieldURL      = big.NewInt(1 << 0)
+	createExpressWithdrawTokenResponseFieldExpireAt = big.NewInt(1 << 1)
+)
+
+type CreateExpressWithdrawTokenResponse struct {
+	// URL to present to the paying user (redirect, deep link, or QR code). The value is the WhiteBIT-hosted web confirmation page by default, or a mobile deep link when one is configured for the partner at onboarding; in both cases the unique token travels in the `token` query parameter. Treat the value as opaque.
+	URL *string `json:"url,omitempty" url:"url,omitempty"`
+	// Absolute token expiry timestamp in `YYYY-MM-DD HH:MM:SS` format (UTC). The authoritative expiry: each token expires 90 seconds after creation.
+	ExpireAt *string `json:"expireAt,omitempty" url:"expireAt,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CreateExpressWithdrawTokenResponse) GetURL() *string {
+	if c == nil {
+		return nil
+	}
+	return c.URL
+}
+
+func (c *CreateExpressWithdrawTokenResponse) GetExpireAt() *string {
+	if c == nil {
+		return nil
+	}
+	return c.ExpireAt
+}
+
+func (c *CreateExpressWithdrawTokenResponse) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CreateExpressWithdrawTokenResponse) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateExpressWithdrawTokenResponse) SetURL(url *string) {
+	c.URL = url
+	c.require(createExpressWithdrawTokenResponseFieldURL)
+}
+
+// SetExpireAt sets the ExpireAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateExpressWithdrawTokenResponse) SetExpireAt(expireAt *string) {
+	c.ExpireAt = expireAt
+	c.require(createExpressWithdrawTokenResponseFieldExpireAt)
+}
+
+func (c *CreateExpressWithdrawTokenResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateExpressWithdrawTokenResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CreateExpressWithdrawTokenResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CreateExpressWithdrawTokenResponse) MarshalJSON() ([]byte, error) {
+	type embed CreateExpressWithdrawTokenResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CreateExpressWithdrawTokenResponse) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Beneficiary information.
+//
+// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
+//
+// Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `tin` is required for UAH_IBAN; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
+var (
+	createWithdrawRequestBeneficiaryFieldFirstName          = big.NewInt(1 << 0)
+	createWithdrawRequestBeneficiaryFieldLastName           = big.NewInt(1 << 1)
+	createWithdrawRequestBeneficiaryFieldTin                = big.NewInt(1 << 2)
+	createWithdrawRequestBeneficiaryFieldPhone              = big.NewInt(1 << 3)
+	createWithdrawRequestBeneficiaryFieldEmail              = big.NewInt(1 << 4)
+	createWithdrawRequestBeneficiaryFieldBirthDate          = big.NewInt(1 << 5)
+	createWithdrawRequestBeneficiaryFieldCode               = big.NewInt(1 << 6)
+	createWithdrawRequestBeneficiaryFieldCardToken          = big.NewInt(1 << 7)
+	createWithdrawRequestBeneficiaryFieldCardTokenSave      = big.NewInt(1 << 8)
+	createWithdrawRequestBeneficiaryFieldFingerprintSession = big.NewInt(1 << 9)
+	createWithdrawRequestBeneficiaryFieldCard               = big.NewInt(1 << 10)
+	createWithdrawRequestBeneficiaryFieldAddress            = big.NewInt(1 << 11)
+	createWithdrawRequestBeneficiaryFieldBank               = big.NewInt(1 << 12)
 )
 
 type CreateWithdrawRequestBeneficiary struct {
@@ -385,8 +609,22 @@ type CreateWithdrawRequestBeneficiary struct {
 	Email *string `json:"email,omitempty" url:"email,omitempty"`
 	// Beneficiary birth date. Format: YYYY-MM-DD.
 	//
-	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER
+	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, or when withdrawing through Mercuryo.
 	BirthDate *time.Time `json:"birthDate,omitempty" url:"birthDate,omitempty" format:"date"`
+	// Beneficiary verification code returned by a prior verification step. Used by some card-acquiring flows that require a one-time verification challenge before settlement.
+	Code *string `json:"code,omitempty" url:"code,omitempty"`
+	// Tokenized payment-card identifier for card-acquiring rails. Use instead of raw PAN; obtain from the card-tokenisation endpoint or from a prior successful settlement on the same card.
+	CardToken *string `json:"cardToken,omitempty" url:"cardToken,omitempty"`
+	// If `true`, request the acquiring provider to persist the card token for reuse on subsequent withdrawals to the same beneficiary.
+	CardTokenSave *bool `json:"cardTokenSave,omitempty" url:"cardTokenSave,omitempty"`
+	// Anti-fraud device-fingerprint session identifier captured at the partner's checkout surface and forwarded to the acquiring provider. Required by some VISAMASTER configurations.
+	FingerprintSession *string `json:"fingerprintSession,omitempty" url:"fingerprintSession,omitempty"`
+	// Card details for card-acquiring rails. Use `cardToken` instead when available; raw card details apply only when a fresh card is being added.
+	Card *CreateWithdrawRequestBeneficiaryCard `json:"card,omitempty" url:"card,omitempty"`
+	// Beneficiary postal address. Required for several VISAMASTER/SEPA configurations.
+	Address *CreateWithdrawRequestBeneficiaryAddress `json:"address,omitempty" url:"address,omitempty"`
+	// Beneficiary bank details for bank-rail withdrawals (used when the destination is an account number rather than an IBAN).
+	Bank *CreateWithdrawRequestBeneficiaryBank `json:"bank,omitempty" url:"bank,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -435,6 +673,55 @@ func (c *CreateWithdrawRequestBeneficiary) GetBirthDate() *time.Time {
 		return nil
 	}
 	return c.BirthDate
+}
+
+func (c *CreateWithdrawRequestBeneficiary) GetCode() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Code
+}
+
+func (c *CreateWithdrawRequestBeneficiary) GetCardToken() *string {
+	if c == nil {
+		return nil
+	}
+	return c.CardToken
+}
+
+func (c *CreateWithdrawRequestBeneficiary) GetCardTokenSave() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.CardTokenSave
+}
+
+func (c *CreateWithdrawRequestBeneficiary) GetFingerprintSession() *string {
+	if c == nil {
+		return nil
+	}
+	return c.FingerprintSession
+}
+
+func (c *CreateWithdrawRequestBeneficiary) GetCard() *CreateWithdrawRequestBeneficiaryCard {
+	if c == nil {
+		return nil
+	}
+	return c.Card
+}
+
+func (c *CreateWithdrawRequestBeneficiary) GetAddress() *CreateWithdrawRequestBeneficiaryAddress {
+	if c == nil {
+		return nil
+	}
+	return c.Address
+}
+
+func (c *CreateWithdrawRequestBeneficiary) GetBank() *CreateWithdrawRequestBeneficiaryBank {
+	if c == nil {
+		return nil
+	}
+	return c.Bank
 }
 
 func (c *CreateWithdrawRequestBeneficiary) GetExtraProperties() map[string]interface{} {
@@ -490,6 +777,55 @@ func (c *CreateWithdrawRequestBeneficiary) SetBirthDate(birthDate *time.Time) {
 	c.require(createWithdrawRequestBeneficiaryFieldBirthDate)
 }
 
+// SetCode sets the Code field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiary) SetCode(code *string) {
+	c.Code = code
+	c.require(createWithdrawRequestBeneficiaryFieldCode)
+}
+
+// SetCardToken sets the CardToken field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiary) SetCardToken(cardToken *string) {
+	c.CardToken = cardToken
+	c.require(createWithdrawRequestBeneficiaryFieldCardToken)
+}
+
+// SetCardTokenSave sets the CardTokenSave field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiary) SetCardTokenSave(cardTokenSave *bool) {
+	c.CardTokenSave = cardTokenSave
+	c.require(createWithdrawRequestBeneficiaryFieldCardTokenSave)
+}
+
+// SetFingerprintSession sets the FingerprintSession field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiary) SetFingerprintSession(fingerprintSession *string) {
+	c.FingerprintSession = fingerprintSession
+	c.require(createWithdrawRequestBeneficiaryFieldFingerprintSession)
+}
+
+// SetCard sets the Card field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiary) SetCard(card *CreateWithdrawRequestBeneficiaryCard) {
+	c.Card = card
+	c.require(createWithdrawRequestBeneficiaryFieldCard)
+}
+
+// SetAddress sets the Address field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiary) SetAddress(address *CreateWithdrawRequestBeneficiaryAddress) {
+	c.Address = address
+	c.require(createWithdrawRequestBeneficiaryFieldAddress)
+}
+
+// SetBank sets the Bank field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiary) SetBank(bank *CreateWithdrawRequestBeneficiaryBank) {
+	c.Bank = bank
+	c.require(createWithdrawRequestBeneficiaryFieldBank)
+}
+
 func (c *CreateWithdrawRequestBeneficiary) UnmarshalJSON(data []byte) error {
 	type embed CreateWithdrawRequestBeneficiary
 	var unmarshaler = struct {
@@ -537,33 +873,26 @@ func (c *CreateWithdrawRequestBeneficiary) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// Travel Rule information data array.
-//
-// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
+// Beneficiary postal address. Required for several VISAMASTER/SEPA configurations.
 var (
-	createWithdrawRequestTravelRuleFieldType    = big.NewInt(1 << 0)
-	createWithdrawRequestTravelRuleFieldVasp    = big.NewInt(1 << 1)
-	createWithdrawRequestTravelRuleFieldName    = big.NewInt(1 << 2)
-	createWithdrawRequestTravelRuleFieldAddress = big.NewInt(1 << 3)
+	createWithdrawRequestBeneficiaryAddressFieldLine1   = big.NewInt(1 << 0)
+	createWithdrawRequestBeneficiaryAddressFieldLine2   = big.NewInt(1 << 1)
+	createWithdrawRequestBeneficiaryAddressFieldCity    = big.NewInt(1 << 2)
+	createWithdrawRequestBeneficiaryAddressFieldZip     = big.NewInt(1 << 3)
+	createWithdrawRequestBeneficiaryAddressFieldCountry = big.NewInt(1 << 4)
 )
 
-type CreateWithdrawRequestTravelRule struct {
-	// Travel rule receiver type. Values: "individual" or "entity"
-	//
-	// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
-	Type *CreateWithdrawRequestTravelRuleType `json:"type,omitempty" url:"type,omitempty"`
-	// Travel rule destination platform (VASP) name.
-	//
-	// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
-	Vasp *string `json:"vasp,omitempty" url:"vasp,omitempty"`
-	// Travel rule. If individual - first_name ; if entity - entity_name
-	//
-	// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
-	Name *string `json:"name,omitempty" url:"name,omitempty"`
-	// Travel rule. If individual - last_name ; if entity - entity_address
-	//
-	// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
-	Address *string `json:"address,omitempty" url:"address,omitempty"`
+type CreateWithdrawRequestBeneficiaryAddress struct {
+	// Street address line 1.
+	Line1 *string `json:"line1,omitempty" url:"line1,omitempty"`
+	// Street address line 2.
+	Line2 *string `json:"line2,omitempty" url:"line2,omitempty"`
+	// City.
+	City *string `json:"city,omitempty" url:"city,omitempty"`
+	// Postal / ZIP code.
+	Zip *string `json:"zip,omitempty" url:"zip,omitempty"`
+	// ISO country code.
+	Country *string `json:"country,omitempty" url:"country,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -572,32 +901,490 @@ type CreateWithdrawRequestTravelRule struct {
 	rawJSON         json.RawMessage
 }
 
-func (c *CreateWithdrawRequestTravelRule) GetType() *CreateWithdrawRequestTravelRuleType {
+func (c *CreateWithdrawRequestBeneficiaryAddress) GetLine1() *string {
 	if c == nil {
 		return nil
 	}
-	return c.Type
+	return c.Line1
 }
 
-func (c *CreateWithdrawRequestTravelRule) GetVasp() *string {
+func (c *CreateWithdrawRequestBeneficiaryAddress) GetLine2() *string {
 	if c == nil {
 		return nil
 	}
-	return c.Vasp
+	return c.Line2
 }
 
-func (c *CreateWithdrawRequestTravelRule) GetName() *string {
+func (c *CreateWithdrawRequestBeneficiaryAddress) GetCity() *string {
+	if c == nil {
+		return nil
+	}
+	return c.City
+}
+
+func (c *CreateWithdrawRequestBeneficiaryAddress) GetZip() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Zip
+}
+
+func (c *CreateWithdrawRequestBeneficiaryAddress) GetCountry() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Country
+}
+
+func (c *CreateWithdrawRequestBeneficiaryAddress) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CreateWithdrawRequestBeneficiaryAddress) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetLine1 sets the Line1 field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryAddress) SetLine1(line1 *string) {
+	c.Line1 = line1
+	c.require(createWithdrawRequestBeneficiaryAddressFieldLine1)
+}
+
+// SetLine2 sets the Line2 field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryAddress) SetLine2(line2 *string) {
+	c.Line2 = line2
+	c.require(createWithdrawRequestBeneficiaryAddressFieldLine2)
+}
+
+// SetCity sets the City field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryAddress) SetCity(city *string) {
+	c.City = city
+	c.require(createWithdrawRequestBeneficiaryAddressFieldCity)
+}
+
+// SetZip sets the Zip field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryAddress) SetZip(zip *string) {
+	c.Zip = zip
+	c.require(createWithdrawRequestBeneficiaryAddressFieldZip)
+}
+
+// SetCountry sets the Country field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryAddress) SetCountry(country *string) {
+	c.Country = country
+	c.require(createWithdrawRequestBeneficiaryAddressFieldCountry)
+}
+
+func (c *CreateWithdrawRequestBeneficiaryAddress) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateWithdrawRequestBeneficiaryAddress
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CreateWithdrawRequestBeneficiaryAddress(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CreateWithdrawRequestBeneficiaryAddress) MarshalJSON() ([]byte, error) {
+	type embed CreateWithdrawRequestBeneficiaryAddress
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CreateWithdrawRequestBeneficiaryAddress) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Beneficiary bank details for bank-rail withdrawals (used when the destination is an account number rather than an IBAN).
+var (
+	createWithdrawRequestBeneficiaryBankFieldRoutingNumber = big.NewInt(1 << 0)
+	createWithdrawRequestBeneficiaryBankFieldName          = big.NewInt(1 << 1)
+	createWithdrawRequestBeneficiaryBankFieldAddress       = big.NewInt(1 << 2)
+	createWithdrawRequestBeneficiaryBankFieldCountry       = big.NewInt(1 << 3)
+)
+
+type CreateWithdrawRequestBeneficiaryBank struct {
+	// Bank routing number (ABA, BSB, sort code, or equivalent for the destination country).
+	RoutingNumber *string `json:"routingNumber,omitempty" url:"routingNumber,omitempty"`
+	// Bank name.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// Bank postal address.
+	Address *string `json:"address,omitempty" url:"address,omitempty"`
+	// Bank country (ISO code).
+	Country *string `json:"country,omitempty" url:"country,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) GetRoutingNumber() *string {
+	if c == nil {
+		return nil
+	}
+	return c.RoutingNumber
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) GetName() *string {
 	if c == nil {
 		return nil
 	}
 	return c.Name
 }
 
-func (c *CreateWithdrawRequestTravelRule) GetAddress() *string {
+func (c *CreateWithdrawRequestBeneficiaryBank) GetAddress() *string {
 	if c == nil {
 		return nil
 	}
 	return c.Address
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) GetCountry() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Country
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetRoutingNumber sets the RoutingNumber field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryBank) SetRoutingNumber(routingNumber *string) {
+	c.RoutingNumber = routingNumber
+	c.require(createWithdrawRequestBeneficiaryBankFieldRoutingNumber)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryBank) SetName(name *string) {
+	c.Name = name
+	c.require(createWithdrawRequestBeneficiaryBankFieldName)
+}
+
+// SetAddress sets the Address field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryBank) SetAddress(address *string) {
+	c.Address = address
+	c.require(createWithdrawRequestBeneficiaryBankFieldAddress)
+}
+
+// SetCountry sets the Country field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryBank) SetCountry(country *string) {
+	c.Country = country
+	c.require(createWithdrawRequestBeneficiaryBankFieldCountry)
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateWithdrawRequestBeneficiaryBank
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CreateWithdrawRequestBeneficiaryBank(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) MarshalJSON() ([]byte, error) {
+	type embed CreateWithdrawRequestBeneficiaryBank
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CreateWithdrawRequestBeneficiaryBank) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Card details for card-acquiring rails. Use `cardToken` instead when available; raw card details apply only when a fresh card is being added.
+var (
+	createWithdrawRequestBeneficiaryCardFieldSave      = big.NewInt(1 << 0)
+	createWithdrawRequestBeneficiaryCardFieldName      = big.NewInt(1 << 1)
+	createWithdrawRequestBeneficiaryCardFieldFirstName = big.NewInt(1 << 2)
+	createWithdrawRequestBeneficiaryCardFieldLastName  = big.NewInt(1 << 3)
+	createWithdrawRequestBeneficiaryCardFieldNumber    = big.NewInt(1 << 4)
+	createWithdrawRequestBeneficiaryCardFieldMonth     = big.NewInt(1 << 5)
+	createWithdrawRequestBeneficiaryCardFieldYear      = big.NewInt(1 << 6)
+)
+
+type CreateWithdrawRequestBeneficiaryCard struct {
+	// If `true`, persist the card for reuse on subsequent withdrawals.
+	Save *bool `json:"save,omitempty" url:"save,omitempty"`
+	// Cardholder name as embossed on the card.
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// Cardholder first name.
+	FirstName *string `json:"firstName,omitempty" url:"firstName,omitempty"`
+	// Cardholder last name.
+	LastName *string `json:"lastName,omitempty" url:"lastName,omitempty"`
+	// Primary Account Number (PAN). Treat as PCI-scope sensitive data on the partner side.
+	Number *string `json:"number,omitempty" url:"number,omitempty"`
+	// Card expiry month as a two-digit string (`01`-`12`).
+	Month *string `json:"month,omitempty" url:"month,omitempty"`
+	// Card expiry year as a four-digit string.
+	Year *string `json:"year,omitempty" url:"year,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetSave() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.Save
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Name
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetFirstName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.FirstName
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetLastName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.LastName
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetNumber() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Number
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetMonth() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Month
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetYear() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Year
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetSave sets the Save field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryCard) SetSave(save *bool) {
+	c.Save = save
+	c.require(createWithdrawRequestBeneficiaryCardFieldSave)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryCard) SetName(name *string) {
+	c.Name = name
+	c.require(createWithdrawRequestBeneficiaryCardFieldName)
+}
+
+// SetFirstName sets the FirstName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryCard) SetFirstName(firstName *string) {
+	c.FirstName = firstName
+	c.require(createWithdrawRequestBeneficiaryCardFieldFirstName)
+}
+
+// SetLastName sets the LastName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryCard) SetLastName(lastName *string) {
+	c.LastName = lastName
+	c.require(createWithdrawRequestBeneficiaryCardFieldLastName)
+}
+
+// SetNumber sets the Number field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryCard) SetNumber(number *string) {
+	c.Number = number
+	c.require(createWithdrawRequestBeneficiaryCardFieldNumber)
+}
+
+// SetMonth sets the Month field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryCard) SetMonth(month *string) {
+	c.Month = month
+	c.require(createWithdrawRequestBeneficiaryCardFieldMonth)
+}
+
+// SetYear sets the Year field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestBeneficiaryCard) SetYear(year *string) {
+	c.Year = year
+	c.require(createWithdrawRequestBeneficiaryCardFieldYear)
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateWithdrawRequestBeneficiaryCard
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CreateWithdrawRequestBeneficiaryCard(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) MarshalJSON() ([]byte, error) {
+	type embed CreateWithdrawRequestBeneficiaryCard
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CreateWithdrawRequestBeneficiaryCard) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Travel Rule information for regulatory compliance.
+//
+// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
+//
+// See [Travel Rule Overview](/api-reference/travel-rule/overview) for complete documentation.
+//
+// **Legacy format:** The API still accepts the old flat format (`type`, `vasp`, `name`, `address` fields), but this format will not pass Travel Rule verification. To complete Travel Rule compliance, use the new structured format with `walletType`, `beneficiary`, and `vasp` objects.
+var (
+	createWithdrawRequestTravelRuleFieldWalletType  = big.NewInt(1 << 0)
+	createWithdrawRequestTravelRuleFieldBeneficiary = big.NewInt(1 << 1)
+	createWithdrawRequestTravelRuleFieldVaspData    = big.NewInt(1 << 2)
+)
+
+type CreateWithdrawRequestTravelRule struct {
+	// Destination wallet type:
+	// - `hosted` - VASP-hosted wallet (exchange, custodian). Requires `vasp` object.
+	// - `unhosted` - Self-custody wallet (hardware, software). No `vasp` required.
+	WalletType *CreateWithdrawRequestTravelRuleWalletType `json:"walletType,omitempty" url:"walletType,omitempty"`
+	// Beneficiary information.
+	Beneficiary *CreateWithdrawRequestTravelRuleBeneficiary `json:"beneficiary,omitempty" url:"beneficiary,omitempty"`
+	// VASP (Virtual Asset Service Provider) information. Required if `walletType` is `hosted`.
+	//
+	// Use `vaspId` if the destination VASP is in the list from [Get VASPs](/api-reference/travel-rule/get-vasps), otherwise use `vaspName`.
+	VaspData *CreateWithdrawRequestTravelRuleVaspData `json:"vaspData,omitempty" url:"vaspData,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CreateWithdrawRequestTravelRule) GetWalletType() *CreateWithdrawRequestTravelRuleWalletType {
+	if c == nil {
+		return nil
+	}
+	return c.WalletType
+}
+
+func (c *CreateWithdrawRequestTravelRule) GetBeneficiary() *CreateWithdrawRequestTravelRuleBeneficiary {
+	if c == nil {
+		return nil
+	}
+	return c.Beneficiary
+}
+
+func (c *CreateWithdrawRequestTravelRule) GetVaspData() *CreateWithdrawRequestTravelRuleVaspData {
+	if c == nil {
+		return nil
+	}
+	return c.VaspData
 }
 
 func (c *CreateWithdrawRequestTravelRule) GetExtraProperties() map[string]interface{} {
@@ -611,32 +1398,25 @@ func (c *CreateWithdrawRequestTravelRule) require(field *big.Int) {
 	c.explicitFields.Or(c.explicitFields, field)
 }
 
-// SetType sets the Type field and marks it as non-optional;
+// SetWalletType sets the WalletType field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateWithdrawRequestTravelRule) SetType(type_ *CreateWithdrawRequestTravelRuleType) {
-	c.Type = type_
-	c.require(createWithdrawRequestTravelRuleFieldType)
+func (c *CreateWithdrawRequestTravelRule) SetWalletType(walletType *CreateWithdrawRequestTravelRuleWalletType) {
+	c.WalletType = walletType
+	c.require(createWithdrawRequestTravelRuleFieldWalletType)
 }
 
-// SetVasp sets the Vasp field and marks it as non-optional;
+// SetBeneficiary sets the Beneficiary field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateWithdrawRequestTravelRule) SetVasp(vasp *string) {
-	c.Vasp = vasp
-	c.require(createWithdrawRequestTravelRuleFieldVasp)
+func (c *CreateWithdrawRequestTravelRule) SetBeneficiary(beneficiary *CreateWithdrawRequestTravelRuleBeneficiary) {
+	c.Beneficiary = beneficiary
+	c.require(createWithdrawRequestTravelRuleFieldBeneficiary)
 }
 
-// SetName sets the Name field and marks it as non-optional;
+// SetVaspData sets the VaspData field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateWithdrawRequestTravelRule) SetName(name *string) {
-	c.Name = name
-	c.require(createWithdrawRequestTravelRuleFieldName)
-}
-
-// SetAddress sets the Address field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateWithdrawRequestTravelRule) SetAddress(address *string) {
-	c.Address = address
-	c.require(createWithdrawRequestTravelRuleFieldAddress)
+func (c *CreateWithdrawRequestTravelRule) SetVaspData(vaspData *CreateWithdrawRequestTravelRuleVaspData) {
+	c.VaspData = vaspData
+	c.require(createWithdrawRequestTravelRuleFieldVaspData)
 }
 
 func (c *CreateWithdrawRequestTravelRule) UnmarshalJSON(data []byte) error {
@@ -678,27 +1458,449 @@ func (c *CreateWithdrawRequestTravelRule) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// Travel rule receiver type. Values: "individual" or "entity"
-//
-// ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
-type CreateWithdrawRequestTravelRuleType string
-
-const (
-	CreateWithdrawRequestTravelRuleTypeIndividual CreateWithdrawRequestTravelRuleType = "individual"
-	CreateWithdrawRequestTravelRuleTypeEntity     CreateWithdrawRequestTravelRuleType = "entity"
+// Beneficiary information.
+var (
+	createWithdrawRequestTravelRuleBeneficiaryFieldType             = big.NewInt(1 << 0)
+	createWithdrawRequestTravelRuleBeneficiaryFieldFirstName        = big.NewInt(1 << 1)
+	createWithdrawRequestTravelRuleBeneficiaryFieldLastName         = big.NewInt(1 << 2)
+	createWithdrawRequestTravelRuleBeneficiaryFieldFullName         = big.NewInt(1 << 3)
+	createWithdrawRequestTravelRuleBeneficiaryFieldResidenceCountry = big.NewInt(1 << 4)
+	createWithdrawRequestTravelRuleBeneficiaryFieldAddress          = big.NewInt(1 << 5)
 )
 
-func NewCreateWithdrawRequestTravelRuleTypeFromString(s string) (CreateWithdrawRequestTravelRuleType, error) {
+type CreateWithdrawRequestTravelRuleBeneficiary struct {
+	// Beneficiary type:
+	// - `individual` - Natural person. Requires `firstName`, `lastName`.
+	// - `entity` - Legal entity. Requires `fullName`.
+	Type *CreateWithdrawRequestTravelRuleBeneficiaryType `json:"type,omitempty" url:"type,omitempty"`
+	// First name. Required if `type` is `individual`.
+	FirstName *string `json:"firstName,omitempty" url:"firstName,omitempty"`
+	// Last name. Required if `type` is `individual`.
+	LastName *string `json:"lastName,omitempty" url:"lastName,omitempty"`
+	// Full legal name. Required if `type` is `entity`.
+	FullName *string `json:"fullName,omitempty" url:"fullName,omitempty"`
+	// Beneficiary's country of residence. ISO 3166-1 alpha-3 code (3 letters).
+	ResidenceCountry *string `json:"residenceCountry,omitempty" url:"residenceCountry,omitempty"`
+	// Physical address.
+	Address *CreateWithdrawRequestTravelRuleBeneficiaryAddress `json:"address,omitempty" url:"address,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) GetType() *CreateWithdrawRequestTravelRuleBeneficiaryType {
+	if c == nil {
+		return nil
+	}
+	return c.Type
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) GetFirstName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.FirstName
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) GetLastName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.LastName
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) GetFullName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.FullName
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) GetResidenceCountry() *string {
+	if c == nil {
+		return nil
+	}
+	return c.ResidenceCountry
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) GetAddress() *CreateWithdrawRequestTravelRuleBeneficiaryAddress {
+	if c == nil {
+		return nil
+	}
+	return c.Address
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) SetType(type_ *CreateWithdrawRequestTravelRuleBeneficiaryType) {
+	c.Type = type_
+	c.require(createWithdrawRequestTravelRuleBeneficiaryFieldType)
+}
+
+// SetFirstName sets the FirstName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) SetFirstName(firstName *string) {
+	c.FirstName = firstName
+	c.require(createWithdrawRequestTravelRuleBeneficiaryFieldFirstName)
+}
+
+// SetLastName sets the LastName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) SetLastName(lastName *string) {
+	c.LastName = lastName
+	c.require(createWithdrawRequestTravelRuleBeneficiaryFieldLastName)
+}
+
+// SetFullName sets the FullName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) SetFullName(fullName *string) {
+	c.FullName = fullName
+	c.require(createWithdrawRequestTravelRuleBeneficiaryFieldFullName)
+}
+
+// SetResidenceCountry sets the ResidenceCountry field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) SetResidenceCountry(residenceCountry *string) {
+	c.ResidenceCountry = residenceCountry
+	c.require(createWithdrawRequestTravelRuleBeneficiaryFieldResidenceCountry)
+}
+
+// SetAddress sets the Address field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) SetAddress(address *CreateWithdrawRequestTravelRuleBeneficiaryAddress) {
+	c.Address = address
+	c.require(createWithdrawRequestTravelRuleBeneficiaryFieldAddress)
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateWithdrawRequestTravelRuleBeneficiary
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CreateWithdrawRequestTravelRuleBeneficiary(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) MarshalJSON() ([]byte, error) {
+	type embed CreateWithdrawRequestTravelRuleBeneficiary
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiary) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Physical address.
+var (
+	createWithdrawRequestTravelRuleBeneficiaryAddressFieldCountry      = big.NewInt(1 << 0)
+	createWithdrawRequestTravelRuleBeneficiaryAddressFieldCity         = big.NewInt(1 << 1)
+	createWithdrawRequestTravelRuleBeneficiaryAddressFieldPostCode     = big.NewInt(1 << 2)
+	createWithdrawRequestTravelRuleBeneficiaryAddressFieldAddressLine1 = big.NewInt(1 << 3)
+)
+
+type CreateWithdrawRequestTravelRuleBeneficiaryAddress struct {
+	// ISO 3166-1 alpha-3 country code.
+	Country *string `json:"country,omitempty" url:"country,omitempty"`
+	// City name.
+	City *string `json:"city,omitempty" url:"city,omitempty"`
+	// Postal code.
+	PostCode *string `json:"postCode,omitempty" url:"postCode,omitempty"`
+	// Street address.
+	AddressLine1 *string `json:"addressLine1,omitempty" url:"addressLine1,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) GetCountry() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Country
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) GetCity() *string {
+	if c == nil {
+		return nil
+	}
+	return c.City
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) GetPostCode() *string {
+	if c == nil {
+		return nil
+	}
+	return c.PostCode
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) GetAddressLine1() *string {
+	if c == nil {
+		return nil
+	}
+	return c.AddressLine1
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetCountry sets the Country field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) SetCountry(country *string) {
+	c.Country = country
+	c.require(createWithdrawRequestTravelRuleBeneficiaryAddressFieldCountry)
+}
+
+// SetCity sets the City field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) SetCity(city *string) {
+	c.City = city
+	c.require(createWithdrawRequestTravelRuleBeneficiaryAddressFieldCity)
+}
+
+// SetPostCode sets the PostCode field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) SetPostCode(postCode *string) {
+	c.PostCode = postCode
+	c.require(createWithdrawRequestTravelRuleBeneficiaryAddressFieldPostCode)
+}
+
+// SetAddressLine1 sets the AddressLine1 field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) SetAddressLine1(addressLine1 *string) {
+	c.AddressLine1 = addressLine1
+	c.require(createWithdrawRequestTravelRuleBeneficiaryAddressFieldAddressLine1)
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateWithdrawRequestTravelRuleBeneficiaryAddress
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CreateWithdrawRequestTravelRuleBeneficiaryAddress(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) MarshalJSON() ([]byte, error) {
+	type embed CreateWithdrawRequestTravelRuleBeneficiaryAddress
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CreateWithdrawRequestTravelRuleBeneficiaryAddress) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Beneficiary type:
+// - `individual` - Natural person. Requires `firstName`, `lastName`.
+// - `entity` - Legal entity. Requires `fullName`.
+type CreateWithdrawRequestTravelRuleBeneficiaryType string
+
+const (
+	CreateWithdrawRequestTravelRuleBeneficiaryTypeIndividual CreateWithdrawRequestTravelRuleBeneficiaryType = "individual"
+	CreateWithdrawRequestTravelRuleBeneficiaryTypeEntity     CreateWithdrawRequestTravelRuleBeneficiaryType = "entity"
+)
+
+func NewCreateWithdrawRequestTravelRuleBeneficiaryTypeFromString(s string) (CreateWithdrawRequestTravelRuleBeneficiaryType, error) {
 	switch s {
 	case "individual":
-		return CreateWithdrawRequestTravelRuleTypeIndividual, nil
+		return CreateWithdrawRequestTravelRuleBeneficiaryTypeIndividual, nil
 	case "entity":
-		return CreateWithdrawRequestTravelRuleTypeEntity, nil
+		return CreateWithdrawRequestTravelRuleBeneficiaryTypeEntity, nil
 	}
-	var t CreateWithdrawRequestTravelRuleType
+	var t CreateWithdrawRequestTravelRuleBeneficiaryType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
 }
 
-func (c CreateWithdrawRequestTravelRuleType) Ptr() *CreateWithdrawRequestTravelRuleType {
+func (c CreateWithdrawRequestTravelRuleBeneficiaryType) Ptr() *CreateWithdrawRequestTravelRuleBeneficiaryType {
+	return &c
+}
+
+// VASP (Virtual Asset Service Provider) information. Required if `walletType` is `hosted`.
+//
+// Use `vaspId` if the destination VASP is in the list from [Get VASPs](/api-reference/travel-rule/get-vasps), otherwise use `vaspName`.
+var (
+	createWithdrawRequestTravelRuleVaspDataFieldVaspID   = big.NewInt(1 << 0)
+	createWithdrawRequestTravelRuleVaspDataFieldVaspName = big.NewInt(1 << 1)
+)
+
+type CreateWithdrawRequestTravelRuleVaspData struct {
+	// VASP ID from the [Get VASPs](/api-reference/travel-rule/get-vasps) endpoint. Use this if the VASP is in the list.
+	VaspID *string `json:"vaspId,omitempty" url:"vaspId,omitempty"`
+	// VASP name as a string. Use this if the VASP is not in the list.
+	VaspName *string `json:"vaspName,omitempty" url:"vaspName,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *CreateWithdrawRequestTravelRuleVaspData) GetVaspID() *string {
+	if c == nil {
+		return nil
+	}
+	return c.VaspID
+}
+
+func (c *CreateWithdrawRequestTravelRuleVaspData) GetVaspName() *string {
+	if c == nil {
+		return nil
+	}
+	return c.VaspName
+}
+
+func (c *CreateWithdrawRequestTravelRuleVaspData) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *CreateWithdrawRequestTravelRuleVaspData) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetVaspID sets the VaspID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleVaspData) SetVaspID(vaspID *string) {
+	c.VaspID = vaspID
+	c.require(createWithdrawRequestTravelRuleVaspDataFieldVaspID)
+}
+
+// SetVaspName sets the VaspName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateWithdrawRequestTravelRuleVaspData) SetVaspName(vaspName *string) {
+	c.VaspName = vaspName
+	c.require(createWithdrawRequestTravelRuleVaspDataFieldVaspName)
+}
+
+func (c *CreateWithdrawRequestTravelRuleVaspData) UnmarshalJSON(data []byte) error {
+	type unmarshaler CreateWithdrawRequestTravelRuleVaspData
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = CreateWithdrawRequestTravelRuleVaspData(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *CreateWithdrawRequestTravelRuleVaspData) MarshalJSON() ([]byte, error) {
+	type embed CreateWithdrawRequestTravelRuleVaspData
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *CreateWithdrawRequestTravelRuleVaspData) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Destination wallet type:
+// - `hosted` - VASP-hosted wallet (exchange, custodian). Requires `vasp` object.
+// - `unhosted` - Self-custody wallet (hardware, software). No `vasp` required.
+type CreateWithdrawRequestTravelRuleWalletType string
+
+const (
+	CreateWithdrawRequestTravelRuleWalletTypeHosted   CreateWithdrawRequestTravelRuleWalletType = "hosted"
+	CreateWithdrawRequestTravelRuleWalletTypeUnhosted CreateWithdrawRequestTravelRuleWalletType = "unhosted"
+)
+
+func NewCreateWithdrawRequestTravelRuleWalletTypeFromString(s string) (CreateWithdrawRequestTravelRuleWalletType, error) {
+	switch s {
+	case "hosted":
+		return CreateWithdrawRequestTravelRuleWalletTypeHosted, nil
+	case "unhosted":
+		return CreateWithdrawRequestTravelRuleWalletTypeUnhosted, nil
+	}
+	var t CreateWithdrawRequestTravelRuleWalletType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CreateWithdrawRequestTravelRuleWalletType) Ptr() *CreateWithdrawRequestTravelRuleWalletType {
 	return &c
 }

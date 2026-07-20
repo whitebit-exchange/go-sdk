@@ -32,7 +32,7 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
-// The endpoint returns a current [collateral balance](/glossary#balance-collateral).
+// The endpoint returns the current [collateral balance](/glossary#balance-collateral) for one or all assets. The response maps each asset ticker to its collateral balance amount. Use the optional `ticker` parameter to filter results to a single asset.
 //
 // <Note>
 // The API does not cache the response.
@@ -71,7 +71,7 @@ func (c *Client) CollateralAccountBalance(
 	return response.Body, nil
 }
 
-// The endpoint retrieves collateral account balance summary with detailed breakdown per asset.
+// The endpoint returns a detailed [collateral balance](/glossary#balance-collateral) summary with a per-asset breakdown. Each record includes the current balance, borrowed amount, and available balance with and without borrowing capacity. Use the optional `ticker` parameter to filter results to a single asset.
 //
 // <Note>
 // The API does not cache the response.
@@ -110,7 +110,14 @@ func (c *Client) CollateralAccountBalanceSummary(
 	return response.Body, nil
 }
 
-// The endpoint creates [limit order](/glossary#limit-order) using [collateral balance](/glossary#balance-collateral).
+// The endpoint creates a [limit order](/glossary#limit-order) using [collateral balance](/glossary#balance-collateral). The order executes at the specified price or better. Use `buy` to open or increase a long position and `sell` to open or increase a short position. To close a position, place an opposite-side order matching the position amount.
+//
+// **Order validation rules** (per-market, from `GET /api/v4/public/markets`):
+// - `amount` must have at most `stockPrec` decimal places
+// - `price` must have at most `moneyPrec` decimal places
+// - `amount` must be ≥ `minAmount`
+// - `amount × price` must be ≥ `minTotal`
+// - `amount × price` must be ≤ `maxTotal` (when `maxTotal` is not `"0"`)
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
@@ -121,17 +128,26 @@ func (c *Client) CollateralAccountBalanceSummary(
 // </Note>
 //
 // <Note>
-//   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+//   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
 //
 // </Note>
 //
 // <Accordion title="Error Codes">
-//   - `30` - default validation error code
+//   - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
 //   - `31` - market validation failed
 //   - `32` - amount validation failed
 //   - `33` - price validation failed
-//   - `36` - client_order_id validation failed
-//   - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+//   - `36` - clientOrderId validation failed
+//   - `37` - `ioc=true` cannot be combined with `postOnly=true`
+//   - `40` - `ioc=true` cannot be combined with `rpi=true`
+//   - `43` - `rpi=true` is not allowed for the account
+//   - `10` - insufficient balance to place the order
+//   - `111` - resulting position would exceed the market maximum
+//   - `112` - pending orders value would exceed the allowed maximum
+//   - `113` - position side cannot be changed while open positions or orders exist
+//   - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+//   - `115` - order would open a position in the opposite direction (one-way mode)
+//   - `116` - reduce-only validation failed (no position exists or order side matches position direction)
 //
 // </Accordion>
 func (c *Client) CreateCollateralLimitOrder(
@@ -150,11 +166,28 @@ func (c *Client) CreateCollateralLimitOrder(
 	return response.Body, nil
 }
 
-// The endpoint creates multiple collateral limit orders.
+// The endpoint creates multiple collateral [limit orders](/glossary#limit-order) in a single request. Each order in the `orders` array is validated and processed individually. The `stopOnFail` parameter controls whether processing stops at the first failure or continues through all orders. The response array contains a result or error object for each submitted order, in the same order as the request.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (per-order). Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+//   - `31` - market validation failed
+//   - `32` - amount validation failed
+//   - `33` - price validation failed
+//   - `36` - clientOrderId validation failed
+//   - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+//   - `10` - insufficient balance to place the order
+//   - `111` - resulting position would exceed the market maximum
+//   - `112` - pending orders value would exceed the allowed maximum
+//   - `113` - position side cannot be changed while open positions or orders exist
+//   - `114` - hedge mode position side does not match (per-order; sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+//   - `115` - order would open a position in the opposite direction (one-way mode)
+//   - `116` - reduce-only validation failed (no position exists or order side matches position direction). For bulk orders, this error appears per-order inside the response array.
+//
+// </Accordion>
 func (c *Client) CreateCollateralBulkOrder(
 	ctx context.Context,
 	request *sdk.CreateCollateralBulkOrderRequest,
@@ -171,11 +204,26 @@ func (c *Client) CreateCollateralBulkOrder(
 	return response.Body, nil
 }
 
-// The endpoint creates a collateral market order.
+// The endpoint creates a [market order](/glossary#market-order) using [collateral balance](/glossary#balance-collateral). The order executes immediately at the best available market price. Optionally attach `stopLoss` and `takeProfit` prices to create an [OTO](/glossary#one-triggers-the-other-oto) order that activates after the market order fills.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+//   - `31` - market validation failed
+//   - `32` - amount validation failed
+//   - `36` - clientOrderId validation failed
+//   - `10` - insufficient balance to place the order
+//   - `111` - resulting position would exceed the market maximum
+//   - `112` - pending orders value would exceed the allowed maximum
+//   - `113` - position side cannot be changed while open positions or orders exist
+//   - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+//   - `115` - order would open a position in the opposite direction (one-way mode)
+//   - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+//
+// </Accordion>
 func (c *Client) CreateCollateralMarketOrder(
 	ctx context.Context,
 	request *sdk.CreateCollateralMarketOrderRequest,
@@ -192,11 +240,27 @@ func (c *Client) CreateCollateralMarketOrder(
 	return response.Body, nil
 }
 
-// The endpoint creates a collateral stop-limit order.
+// The endpoint creates a collateral [stop-limit order](/glossary#stop-limit-order) using [collateral balance](/glossary#balance-collateral). The order remains inactive until the market price reaches `activation_price`, then places a limit order at `price`. Optionally attach `stopLoss` and `takeProfit` prices to create an [OTO](/glossary#one-triggers-the-other-oto) order that activates after the stop-limit order fills.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+//   - `31` - market validation failed
+//   - `32` - amount validation failed
+//   - `33` - price validation failed
+//   - `36` - clientOrderId validation failed
+//   - `10` - insufficient balance to place the order
+//   - `111` - resulting position would exceed the market maximum
+//   - `112` - pending orders value would exceed the allowed maximum
+//   - `113` - position side cannot be changed while open positions or orders exist
+//   - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+//   - `115` - order would open a position in the opposite direction (one-way mode)
+//   - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+//
+// </Accordion>
 func (c *Client) CreateCollateralStopLimitOrder(
 	ctx context.Context,
 	request *sdk.CreateCollateralStopLimitOrderRequest,
@@ -213,11 +277,26 @@ func (c *Client) CreateCollateralStopLimitOrder(
 	return response.Body, nil
 }
 
-// The endpoint creates a collateral trigger market order.
+// The endpoint creates a collateral trigger [market order](/glossary#market-order) using [collateral balance](/glossary#balance-collateral). The order remains inactive until the market price reaches `activation_price`, then executes immediately at the best available market price. Optionally attach `stopLoss` and `takeProfit` prices to create an [OTO](/glossary#one-triggers-the-other-oto) order that activates after the trigger market order fills.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+//   - `31` - market validation failed
+//   - `32` - amount validation failed
+//   - `36` - clientOrderId validation failed
+//   - `10` - insufficient balance to place the order
+//   - `111` - resulting position would exceed the market maximum
+//   - `112` - pending orders value would exceed the allowed maximum
+//   - `113` - position side cannot be changed while open positions or orders exist
+//   - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+//   - `115` - order would open a position in the opposite direction (one-way mode)
+//   - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+//
+// </Accordion>
 func (c *Client) CreateCollateralTriggerMarketOrder(
 	ctx context.Context,
 	request *sdk.CreateCollateralTriggerMarketOrderRequest,
@@ -234,7 +313,7 @@ func (c *Client) CreateCollateralTriggerMarketOrder(
 	return response.Body, nil
 }
 
-// The endpoint retrieves collateral account summary.
+// The endpoint returns a collateral account summary including total equity, used margin, free margin, unrealized profit and loss, and the current leverage level. The `marginFraction` field indicates the ratio of used margin to total equity.
 //
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
@@ -255,11 +334,16 @@ func (c *Client) CollateralAccountSummary(
 	return response.Body, nil
 }
 
-// The endpoint retrieves open positions.
+// The endpoint returns all open [collateral](/glossary#balance-collateral) positions for the authenticated account. Each position includes entry price, unrealized PnL, margin allocation, liquidation price, and take-profit/stop-loss configuration. Use the optional `market` parameter to filter results to a single trading pair.
 //
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (returned when the optional `market` filter is malformed)
+//
+// </Accordion>
 func (c *Client) GetOpenPositions(
 	ctx context.Context,
 	request *sdk.GetOpenPositionsRequest,
@@ -276,11 +360,18 @@ func (c *Client) GetOpenPositions(
 	return response.Body, nil
 }
 
-// The endpoint closes a position.
+// The endpoint closes an open [collateral](/glossary#balance-collateral) position at the current market price. The system places a market order in the opposite direction to fully close the specified position. Any attached take-profit or stop-loss orders are cancelled automatically.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (for example, a missing or malformed `positionId` or `market`)
+//   - `104` - position not found. Returned whether the `positionId` does not exist, the position is already closed, or it is not owned by the account — these cases are not distinguished
+//   - `10` - insufficient balance to fund the closing market order
+//
+// </Accordion>
 func (c *Client) ClosePosition(
 	ctx context.Context,
 	request *sdk.ClosePositionRequest,
@@ -297,10 +388,23 @@ func (c *Client) ClosePosition(
 	return nil
 }
 
-// The endpoint retrieves positions history.
+// The endpoint returns the history of [collateral](/glossary#balance-collateral) position state changes for the authenticated account. Each record represents a position event (open, partial close, full close, or liquidation) and includes the order details that triggered the change. Use the optional `market` and `positionId` parameters to filter results.
 //
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
+// </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset` — or a date filter that violates `startDate` ≤ `endDate` ≤ `now + 1s`)
+//
+// </Accordion>
+//
+// <Note>
+// **Date filter window:** `startDate` and `endDate` are optional and have no defaults. The endpoint enforces no maximum window and no lower-bound floor. The only ordering constraint is `startDate` ≤ `endDate` ≤ `now + 1s` — requests that violate the ordering are rejected with a validation error.
+// </Note>
+//
+// <Warning>
+// **Breaking change — April 29, 2026.** The `positionSide` field is no longer returned in the Position History response. Use `side` (same enum: `LONG`, `SHORT`, `BOTH`) plus `isHedge` (boolean) instead. Integrations reading `positionSide` from `/api/v4/collateral-account/positions/history` must migrate before consuming the new response.
 // </Warning>
 func (c *Client) GetPositionsHistory(
 	ctx context.Context,
@@ -318,11 +422,21 @@ func (c *Client) GetPositionsHistory(
 	return response.Body, nil
 }
 
-// The endpoint retrieves funding history.
+// The endpoint returns the funding rate payment history for [collateral](/glossary#balance-collateral) positions. Each record includes the funding rate, settlement price, position amount, and the resulting funding payment. Use the optional `market` parameter to filter results to a single trading pair. The response supports pagination via `limit` and `offset` parameters. Results are ordered by funding time (`fundingTime`), newest first.
 //
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
+//
+// <Note>
+// This endpoint supports pagination. Use `limit` (default: 100) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when `records.length < limit`. An empty `records` array means you have paged past the end; receiving exactly `limit` records does not guarantee that another page exists.
+// </Note>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+//   - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+//
+// </Accordion>
 func (c *Client) GetFundingHistory(
 	ctx context.Context,
 	request *sdk.GetFundingHistoryRequest,
@@ -339,11 +453,28 @@ func (c *Client) GetFundingHistory(
 	return response.Body, nil
 }
 
-// The endpoint changes account leverage.
+// The endpoint changes the leverage level for the [collateral](/glossary#balance-collateral) trading account. Leverage determines the ratio of borrowed funds to collateral and directly affects margin requirements and liquidation thresholds. Accepted values: `1`, `2`, `3`, `5`, `10`, `20`, `50`, `100`.
+//
+// Each leverage level has a corresponding bracket defining the maximum position size for the tier. When a position exceeds the bracket limit, the system applies higher tiers with progressively lower leverage. Query market-specific brackets via `GET /api/v4/public/futures`.
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
+//
+// <Note>
+// A market's `max_leverage` field (from `GET /api/v4/public/futures`) may be lower than `100`. Setting leverage above a market's maximum results in an error.
+// </Note>
+//
+// <Warning>
+// Changing leverage affects **all open positions** across margin and futures trading. Decreasing leverage increases margin requirements — if available funds are insufficient to support the new level, the request returns an error.
+// </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - invalid `leverage` value (out of range, non-integer, or wrong type). Setting leverage above a market's `max_leverage` also surfaces here as an out-of-range value
+//   - `17` - the requested leverage is valid but available balance is insufficient to support it
+//   - `113` - leverage cannot be changed while open positions or orders exist
+//
+// </Accordion>
 func (c *Client) ChangeCollateralAccountLeverage(
 	ctx context.Context,
 	request *sdk.ChangeCollateralAccountLeverageRequest,
@@ -360,7 +491,7 @@ func (c *Client) ChangeCollateralAccountLeverage(
 	return response.Body, nil
 }
 
-// The endpoint retrieves hedge mode status.
+// The endpoint returns the current [hedge mode](/glossary#hedge-mode) status for the collateral trading account. When hedge mode is enabled (`true`), the account supports simultaneous long and short positions on the same market. When disabled (`false`), the account operates in one-way mode.
 //
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
@@ -381,11 +512,21 @@ func (c *Client) GetCollateralHedgeMode(
 	return response.Body, nil
 }
 
-// The endpoint updates hedge mode.
+// The endpoint enables or disables [hedge mode](/glossary#hedge-mode) for the collateral trading account. When hedge mode is enabled (`true`), the account supports simultaneous long and short positions on the same market. When disabled (`false`), the account operates in one-way mode.
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
+//
+// <Warning>
+// Switching between one-way mode and hedge mode requires **no open positions**. Close all futures positions before toggling the mode. If the switch does not take effect immediately after closing positions, wait approximately 15 seconds and retry.
+// </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (for example, a missing or non-boolean `hedgeMode` value)
+//   - `113` - hedge mode cannot be changed while open positions or orders exist
+//
+// </Accordion>
 func (c *Client) UpdateHedgeMode(
 	ctx context.Context,
 	request *sdk.UpdateHedgeModeRequest,
@@ -402,11 +543,42 @@ func (c *Client) UpdateHedgeMode(
 	return nil
 }
 
-// The endpoint retrieves active conditional orders.
+// The endpoint returns the [Auto-Deleveraging (ADL)](/glossary#auto-deleveraging-adl) quantile for each perpetual market in which the authenticated account holds an open position. Each entry exposes the deleveraging-priority value for the long and short sides of the position, where `0` indicates the lowest deleveraging priority and `4` indicates the highest. The endpoint returns an empty array when the account has no perpetual positions.
 //
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
+//
+// <Note>
+// Only perpetual markets (markets with the `_PERP` suffix) are returned. Spot and margin markets are not included.
+// </Note>
+func (c *Client) GetCollateralAccountAdlQuantile(
+	ctx context.Context,
+	request *sdk.GetCollateralAccountAdlQuantileRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.GetCollateralAccountAdlQuantileResponseItem, error) {
+	response, err := c.WithRawResponse.GetCollateralAccountAdlQuantile(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// The endpoint returns active (unexecuted) conditional orders for the authenticated account. Conditional orders include [OCO](/glossary#one-cancels-the-other-oco) and [OTO](/glossary#one-triggers-the-other-oto) types. The response uses polymorphic structure — each record contains a `type` field (`oco` or `oto`) that determines the record shape. Use the optional `market` parameter to filter results.
+//
+// <Warning>
+// Rate limit: 12000 requests/10 sec.
+// </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+//   - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+//
+// </Accordion>
 func (c *Client) GetConditionalOrders(
 	ctx context.Context,
 	request *sdk.GetConditionalOrdersRequest,
@@ -423,11 +595,21 @@ func (c *Client) GetConditionalOrders(
 	return response.Body, nil
 }
 
-// The endpoint retrieves active OCO orders.
+// The endpoint returns active (unexecuted) [OCO](/glossary#one-cancels-the-other-oco) orders for the authenticated account. Each OCO order contains a `stop_loss` and `take_profit` leg. When one leg executes, the system cancels the other automatically. Use the optional `market` parameter to filter results.
 //
 // <Warning>
 // Rate limit: 12000 requests/10 sec.
 // </Warning>
+//
+// <Note>
+// This endpoint supports pagination. Use `limit` (default: 50) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` OCO orders are returned. An empty array means you have paged past the end; receiving exactly `limit` orders does not guarantee that another page exists.
+// </Note>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+//   - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+//
+// </Accordion>
 func (c *Client) GetOcoOrders(
 	ctx context.Context,
 	request *sdk.GetOcoOrdersRequest,
@@ -444,11 +626,27 @@ func (c *Client) GetOcoOrders(
 	return response.Body, nil
 }
 
-// The endpoint creates a collateral OCO order.
+// The endpoint creates a collateral [OCO](/glossary#one-cancels-the-other-oco) (one-cancels-the-other) order using [collateral balance](/glossary#balance-collateral). An OCO order combines a limit order (take-profit leg) and a stop-limit order (stop-loss leg) into a single conditional group. When one leg executes, the system cancels the other automatically.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+//   - `31` - market validation failed
+//   - `32` - amount validation failed
+//   - `33` - price validation failed
+//   - `36` - clientOrderId validation failed
+//   - `10` - insufficient balance to place the order
+//   - `111` - resulting position would exceed the market maximum
+//   - `112` - pending orders value would exceed the allowed maximum
+//   - `113` - position side cannot be changed while open positions or orders exist
+//   - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+//   - `115` - order would open a position in the opposite direction (one-way mode)
+//   - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+//
+// </Accordion>
 func (c *Client) CreateCollateralOcoOrder(
 	ctx context.Context,
 	request *sdk.CreateCollateralOcoOrderRequest,
@@ -465,11 +663,32 @@ func (c *Client) CreateCollateralOcoOrder(
 	return response.Body, nil
 }
 
-// The endpoint cancels a conditional order.
+// The endpoint cancels an active conditional order ([OCO](/glossary#one-cancels-the-other-oco) or [OTO](/glossary#one-triggers-the-other-oto)) on the specified market. Both legs of the conditional order are cancelled. Use the [query unexecuted conditional orders](/api-reference/collateral-trading/query-unexecuted-conditional-orders) endpoint to obtain the conditional order `id` before cancellation.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code
+//   - `31` - market validation failed
+//   - `2` - conditional order not found. Returned whether the `id` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+//
+// </Accordion>
+//
+// <Accordion title="Errors">
+// ```json
+//
+//	{
+//	  "code": 2,
+//	  "message": "Inner validation failed",
+//	  "errors": {
+//	    "id": ["Unexecuted order was not found."]
+//	  }
+//	}
+//
+// ```
+// </Accordion>
 func (c *Client) CancelConditionalOrder(
 	ctx context.Context,
 	request *sdk.CancelConditionalOrderRequest,
@@ -491,6 +710,27 @@ func (c *Client) CancelConditionalOrder(
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code
+//   - `31` - market validation failed
+//   - `2` - OCO order not found. Returned whether the `orderId` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+//
+// </Accordion>
+//
+// <Accordion title="Errors">
+// ```json
+//
+//	{
+//	  "code": 2,
+//	  "message": "Inner validation failed",
+//	  "errors": {
+//	    "orderId": ["Unexecuted order was not found."]
+//	  }
+//	}
+//
+// ```
+// </Accordion>
 func (c *Client) CancelOcoOrder(
 	ctx context.Context,
 	request *sdk.CancelOcoOrderRequest,
@@ -512,6 +752,27 @@ func (c *Client) CancelOcoOrder(
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code
+//   - `31` - market validation failed
+//   - `2` - OTO order not found. Returned whether the `otoId` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+//
+// </Accordion>
+//
+// <Accordion title="Errors">
+// ```json
+//
+//	{
+//	  "code": 2,
+//	  "message": "Inner validation failed",
+//	  "errors": {
+//	    "otoId": ["Unexecuted order was not found."]
+//	  }
+//	}
+//
+// ```
+// </Accordion>
 func (c *Client) CancelOtoOrder(
 	ctx context.Context,
 	request *sdk.CancelOtoOrderRequest,

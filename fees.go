@@ -18,7 +18,7 @@ type GetFeesRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -40,7 +40,7 @@ func (g *GetFeesRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetFeesRequest) SetNonce(nonce string) {
+func (g *GetFeesRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getFeesRequestFieldNonce)
 }
@@ -67,15 +67,15 @@ func (g *GetFeesRequest) MarshalJSON() ([]byte, error) {
 }
 
 var (
-	feeInfoFieldTicker      = big.NewInt(1 << 0)
-	feeInfoFieldName        = big.NewInt(1 << 1)
-	feeInfoFieldCanDeposit  = big.NewInt(1 << 2)
-	feeInfoFieldCanWithdraw = big.NewInt(1 << 3)
-	feeInfoFieldDeposit     = big.NewInt(1 << 4)
-	feeInfoFieldWithdraw    = big.NewInt(1 << 5)
+	mainAccountFeeInfoFieldTicker      = big.NewInt(1 << 0)
+	mainAccountFeeInfoFieldName        = big.NewInt(1 << 1)
+	mainAccountFeeInfoFieldCanDeposit  = big.NewInt(1 << 2)
+	mainAccountFeeInfoFieldCanWithdraw = big.NewInt(1 << 3)
+	mainAccountFeeInfoFieldDeposit     = big.NewInt(1 << 4)
+	mainAccountFeeInfoFieldWithdraw    = big.NewInt(1 << 5)
 )
 
-type FeeInfo struct {
+type MainAccountFeeInfo struct {
 	// Currency [ticker](/glossary#ticker)
 	Ticker *string `json:"ticker,omitempty" url:"ticker,omitempty"`
 	// Currency name
@@ -85,9 +85,9 @@ type FeeInfo struct {
 	// Withdrawal status (currency availability)
 	CanWithdraw *bool `json:"can_withdraw,omitempty" url:"can_withdraw,omitempty"`
 	// Deposit fees and limits
-	Deposit *FeeInfoDeposit `json:"deposit,omitempty" url:"deposit,omitempty"`
+	Deposit *MainAccountFeeInfoDeposit `json:"deposit,omitempty" url:"deposit,omitempty"`
 	// Withdrawal fees and limits
-	Withdraw *FeeInfoWithdraw `json:"withdraw,omitempty" url:"withdraw,omitempty"`
+	Withdraw *MainAccountFeeInfoWithdraw `json:"withdraw,omitempty" url:"withdraw,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -96,151 +96,151 @@ type FeeInfo struct {
 	rawJSON         json.RawMessage
 }
 
-func (f *FeeInfo) GetTicker() *string {
-	if f == nil {
+func (m *MainAccountFeeInfo) GetTicker() *string {
+	if m == nil {
 		return nil
 	}
-	return f.Ticker
+	return m.Ticker
 }
 
-func (f *FeeInfo) GetName() *string {
-	if f == nil {
+func (m *MainAccountFeeInfo) GetName() *string {
+	if m == nil {
 		return nil
 	}
-	return f.Name
+	return m.Name
 }
 
-func (f *FeeInfo) GetCanDeposit() *bool {
-	if f == nil {
+func (m *MainAccountFeeInfo) GetCanDeposit() *bool {
+	if m == nil {
 		return nil
 	}
-	return f.CanDeposit
+	return m.CanDeposit
 }
 
-func (f *FeeInfo) GetCanWithdraw() *bool {
-	if f == nil {
+func (m *MainAccountFeeInfo) GetCanWithdraw() *bool {
+	if m == nil {
 		return nil
 	}
-	return f.CanWithdraw
+	return m.CanWithdraw
 }
 
-func (f *FeeInfo) GetDeposit() *FeeInfoDeposit {
-	if f == nil {
+func (m *MainAccountFeeInfo) GetDeposit() *MainAccountFeeInfoDeposit {
+	if m == nil {
 		return nil
 	}
-	return f.Deposit
+	return m.Deposit
 }
 
-func (f *FeeInfo) GetWithdraw() *FeeInfoWithdraw {
-	if f == nil {
+func (m *MainAccountFeeInfo) GetWithdraw() *MainAccountFeeInfoWithdraw {
+	if m == nil {
 		return nil
 	}
-	return f.Withdraw
+	return m.Withdraw
 }
 
-func (f *FeeInfo) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
+func (m *MainAccountFeeInfo) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
 }
 
-func (f *FeeInfo) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
+func (m *MainAccountFeeInfo) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
 	}
-	f.explicitFields.Or(f.explicitFields, field)
+	m.explicitFields.Or(m.explicitFields, field)
 }
 
 // SetTicker sets the Ticker field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfo) SetTicker(ticker *string) {
-	f.Ticker = ticker
-	f.require(feeInfoFieldTicker)
+func (m *MainAccountFeeInfo) SetTicker(ticker *string) {
+	m.Ticker = ticker
+	m.require(mainAccountFeeInfoFieldTicker)
 }
 
 // SetName sets the Name field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfo) SetName(name *string) {
-	f.Name = name
-	f.require(feeInfoFieldName)
+func (m *MainAccountFeeInfo) SetName(name *string) {
+	m.Name = name
+	m.require(mainAccountFeeInfoFieldName)
 }
 
 // SetCanDeposit sets the CanDeposit field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfo) SetCanDeposit(canDeposit *bool) {
-	f.CanDeposit = canDeposit
-	f.require(feeInfoFieldCanDeposit)
+func (m *MainAccountFeeInfo) SetCanDeposit(canDeposit *bool) {
+	m.CanDeposit = canDeposit
+	m.require(mainAccountFeeInfoFieldCanDeposit)
 }
 
 // SetCanWithdraw sets the CanWithdraw field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfo) SetCanWithdraw(canWithdraw *bool) {
-	f.CanWithdraw = canWithdraw
-	f.require(feeInfoFieldCanWithdraw)
+func (m *MainAccountFeeInfo) SetCanWithdraw(canWithdraw *bool) {
+	m.CanWithdraw = canWithdraw
+	m.require(mainAccountFeeInfoFieldCanWithdraw)
 }
 
 // SetDeposit sets the Deposit field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfo) SetDeposit(deposit *FeeInfoDeposit) {
-	f.Deposit = deposit
-	f.require(feeInfoFieldDeposit)
+func (m *MainAccountFeeInfo) SetDeposit(deposit *MainAccountFeeInfoDeposit) {
+	m.Deposit = deposit
+	m.require(mainAccountFeeInfoFieldDeposit)
 }
 
 // SetWithdraw sets the Withdraw field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfo) SetWithdraw(withdraw *FeeInfoWithdraw) {
-	f.Withdraw = withdraw
-	f.require(feeInfoFieldWithdraw)
+func (m *MainAccountFeeInfo) SetWithdraw(withdraw *MainAccountFeeInfoWithdraw) {
+	m.Withdraw = withdraw
+	m.require(mainAccountFeeInfoFieldWithdraw)
 }
 
-func (f *FeeInfo) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeeInfo
+func (m *MainAccountFeeInfo) UnmarshalJSON(data []byte) error {
+	type unmarshaler MainAccountFeeInfo
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*f = FeeInfo(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	*m = MainAccountFeeInfo(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (f *FeeInfo) MarshalJSON() ([]byte, error) {
-	type embed FeeInfo
+func (m *MainAccountFeeInfo) MarshalJSON() ([]byte, error) {
+	type embed MainAccountFeeInfo
 	var marshaler = struct {
 		embed
 	}{
-		embed: embed(*f),
+		embed: embed(*m),
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (f *FeeInfo) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+func (m *MainAccountFeeInfo) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(f); err == nil {
+	if value, err := internal.StringifyJSON(m); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", f)
+	return fmt.Sprintf("%#v", m)
 }
 
 // Deposit fees and limits
 var (
-	feeInfoDepositFieldMinFlex     = big.NewInt(1 << 0)
-	feeInfoDepositFieldMaxFlex     = big.NewInt(1 << 1)
-	feeInfoDepositFieldPercentFlex = big.NewInt(1 << 2)
-	feeInfoDepositFieldFixed       = big.NewInt(1 << 3)
-	feeInfoDepositFieldMinAmount   = big.NewInt(1 << 4)
-	feeInfoDepositFieldMaxAmount   = big.NewInt(1 << 5)
+	mainAccountFeeInfoDepositFieldMinFlex     = big.NewInt(1 << 0)
+	mainAccountFeeInfoDepositFieldMaxFlex     = big.NewInt(1 << 1)
+	mainAccountFeeInfoDepositFieldPercentFlex = big.NewInt(1 << 2)
+	mainAccountFeeInfoDepositFieldFixed       = big.NewInt(1 << 3)
+	mainAccountFeeInfoDepositFieldMinAmount   = big.NewInt(1 << 4)
+	mainAccountFeeInfoDepositFieldMaxAmount   = big.NewInt(1 << 5)
 )
 
-type FeeInfoDeposit struct {
+type MainAccountFeeInfoDeposit struct {
 	// Minimum fee amount when flex fee is enabled
 	MinFlex *string `json:"minFlex,omitempty" url:"minFlex,omitempty"`
 	// Maximum fee amount when flex fee is enabled
@@ -261,151 +261,151 @@ type FeeInfoDeposit struct {
 	rawJSON         json.RawMessage
 }
 
-func (f *FeeInfoDeposit) GetMinFlex() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoDeposit) GetMinFlex() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MinFlex
+	return m.MinFlex
 }
 
-func (f *FeeInfoDeposit) GetMaxFlex() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoDeposit) GetMaxFlex() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MaxFlex
+	return m.MaxFlex
 }
 
-func (f *FeeInfoDeposit) GetPercentFlex() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoDeposit) GetPercentFlex() *string {
+	if m == nil {
 		return nil
 	}
-	return f.PercentFlex
+	return m.PercentFlex
 }
 
-func (f *FeeInfoDeposit) GetFixed() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoDeposit) GetFixed() *string {
+	if m == nil {
 		return nil
 	}
-	return f.Fixed
+	return m.Fixed
 }
 
-func (f *FeeInfoDeposit) GetMinAmount() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoDeposit) GetMinAmount() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MinAmount
+	return m.MinAmount
 }
 
-func (f *FeeInfoDeposit) GetMaxAmount() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoDeposit) GetMaxAmount() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MaxAmount
+	return m.MaxAmount
 }
 
-func (f *FeeInfoDeposit) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
+func (m *MainAccountFeeInfoDeposit) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
 }
 
-func (f *FeeInfoDeposit) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
+func (m *MainAccountFeeInfoDeposit) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
 	}
-	f.explicitFields.Or(f.explicitFields, field)
+	m.explicitFields.Or(m.explicitFields, field)
 }
 
 // SetMinFlex sets the MinFlex field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoDeposit) SetMinFlex(minFlex *string) {
-	f.MinFlex = minFlex
-	f.require(feeInfoDepositFieldMinFlex)
+func (m *MainAccountFeeInfoDeposit) SetMinFlex(minFlex *string) {
+	m.MinFlex = minFlex
+	m.require(mainAccountFeeInfoDepositFieldMinFlex)
 }
 
 // SetMaxFlex sets the MaxFlex field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoDeposit) SetMaxFlex(maxFlex *string) {
-	f.MaxFlex = maxFlex
-	f.require(feeInfoDepositFieldMaxFlex)
+func (m *MainAccountFeeInfoDeposit) SetMaxFlex(maxFlex *string) {
+	m.MaxFlex = maxFlex
+	m.require(mainAccountFeeInfoDepositFieldMaxFlex)
 }
 
 // SetPercentFlex sets the PercentFlex field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoDeposit) SetPercentFlex(percentFlex *string) {
-	f.PercentFlex = percentFlex
-	f.require(feeInfoDepositFieldPercentFlex)
+func (m *MainAccountFeeInfoDeposit) SetPercentFlex(percentFlex *string) {
+	m.PercentFlex = percentFlex
+	m.require(mainAccountFeeInfoDepositFieldPercentFlex)
 }
 
 // SetFixed sets the Fixed field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoDeposit) SetFixed(fixed *string) {
-	f.Fixed = fixed
-	f.require(feeInfoDepositFieldFixed)
+func (m *MainAccountFeeInfoDeposit) SetFixed(fixed *string) {
+	m.Fixed = fixed
+	m.require(mainAccountFeeInfoDepositFieldFixed)
 }
 
 // SetMinAmount sets the MinAmount field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoDeposit) SetMinAmount(minAmount *string) {
-	f.MinAmount = minAmount
-	f.require(feeInfoDepositFieldMinAmount)
+func (m *MainAccountFeeInfoDeposit) SetMinAmount(minAmount *string) {
+	m.MinAmount = minAmount
+	m.require(mainAccountFeeInfoDepositFieldMinAmount)
 }
 
 // SetMaxAmount sets the MaxAmount field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoDeposit) SetMaxAmount(maxAmount *string) {
-	f.MaxAmount = maxAmount
-	f.require(feeInfoDepositFieldMaxAmount)
+func (m *MainAccountFeeInfoDeposit) SetMaxAmount(maxAmount *string) {
+	m.MaxAmount = maxAmount
+	m.require(mainAccountFeeInfoDepositFieldMaxAmount)
 }
 
-func (f *FeeInfoDeposit) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeeInfoDeposit
+func (m *MainAccountFeeInfoDeposit) UnmarshalJSON(data []byte) error {
+	type unmarshaler MainAccountFeeInfoDeposit
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*f = FeeInfoDeposit(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	*m = MainAccountFeeInfoDeposit(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (f *FeeInfoDeposit) MarshalJSON() ([]byte, error) {
-	type embed FeeInfoDeposit
+func (m *MainAccountFeeInfoDeposit) MarshalJSON() ([]byte, error) {
+	type embed MainAccountFeeInfoDeposit
 	var marshaler = struct {
 		embed
 	}{
-		embed: embed(*f),
+		embed: embed(*m),
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (f *FeeInfoDeposit) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+func (m *MainAccountFeeInfoDeposit) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(f); err == nil {
+	if value, err := internal.StringifyJSON(m); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", f)
+	return fmt.Sprintf("%#v", m)
 }
 
 // Withdrawal fees and limits
 var (
-	feeInfoWithdrawFieldMinFlex     = big.NewInt(1 << 0)
-	feeInfoWithdrawFieldMaxFlex     = big.NewInt(1 << 1)
-	feeInfoWithdrawFieldPercentFlex = big.NewInt(1 << 2)
-	feeInfoWithdrawFieldFixed       = big.NewInt(1 << 3)
-	feeInfoWithdrawFieldMinAmount   = big.NewInt(1 << 4)
-	feeInfoWithdrawFieldMaxAmount   = big.NewInt(1 << 5)
+	mainAccountFeeInfoWithdrawFieldMinFlex     = big.NewInt(1 << 0)
+	mainAccountFeeInfoWithdrawFieldMaxFlex     = big.NewInt(1 << 1)
+	mainAccountFeeInfoWithdrawFieldPercentFlex = big.NewInt(1 << 2)
+	mainAccountFeeInfoWithdrawFieldFixed       = big.NewInt(1 << 3)
+	mainAccountFeeInfoWithdrawFieldMinAmount   = big.NewInt(1 << 4)
+	mainAccountFeeInfoWithdrawFieldMaxAmount   = big.NewInt(1 << 5)
 )
 
-type FeeInfoWithdraw struct {
+type MainAccountFeeInfoWithdraw struct {
 	// Minimum fee amount when flex fee is enabled
 	MinFlex *string `json:"minFlex,omitempty" url:"minFlex,omitempty"`
 	// Maximum fee amount when flex fee is enabled
@@ -426,136 +426,136 @@ type FeeInfoWithdraw struct {
 	rawJSON         json.RawMessage
 }
 
-func (f *FeeInfoWithdraw) GetMinFlex() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoWithdraw) GetMinFlex() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MinFlex
+	return m.MinFlex
 }
 
-func (f *FeeInfoWithdraw) GetMaxFlex() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoWithdraw) GetMaxFlex() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MaxFlex
+	return m.MaxFlex
 }
 
-func (f *FeeInfoWithdraw) GetPercentFlex() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoWithdraw) GetPercentFlex() *string {
+	if m == nil {
 		return nil
 	}
-	return f.PercentFlex
+	return m.PercentFlex
 }
 
-func (f *FeeInfoWithdraw) GetFixed() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoWithdraw) GetFixed() *string {
+	if m == nil {
 		return nil
 	}
-	return f.Fixed
+	return m.Fixed
 }
 
-func (f *FeeInfoWithdraw) GetMinAmount() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoWithdraw) GetMinAmount() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MinAmount
+	return m.MinAmount
 }
 
-func (f *FeeInfoWithdraw) GetMaxAmount() *string {
-	if f == nil {
+func (m *MainAccountFeeInfoWithdraw) GetMaxAmount() *string {
+	if m == nil {
 		return nil
 	}
-	return f.MaxAmount
+	return m.MaxAmount
 }
 
-func (f *FeeInfoWithdraw) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
+func (m *MainAccountFeeInfoWithdraw) GetExtraProperties() map[string]interface{} {
+	return m.extraProperties
 }
 
-func (f *FeeInfoWithdraw) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
+func (m *MainAccountFeeInfoWithdraw) require(field *big.Int) {
+	if m.explicitFields == nil {
+		m.explicitFields = big.NewInt(0)
 	}
-	f.explicitFields.Or(f.explicitFields, field)
+	m.explicitFields.Or(m.explicitFields, field)
 }
 
 // SetMinFlex sets the MinFlex field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoWithdraw) SetMinFlex(minFlex *string) {
-	f.MinFlex = minFlex
-	f.require(feeInfoWithdrawFieldMinFlex)
+func (m *MainAccountFeeInfoWithdraw) SetMinFlex(minFlex *string) {
+	m.MinFlex = minFlex
+	m.require(mainAccountFeeInfoWithdrawFieldMinFlex)
 }
 
 // SetMaxFlex sets the MaxFlex field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoWithdraw) SetMaxFlex(maxFlex *string) {
-	f.MaxFlex = maxFlex
-	f.require(feeInfoWithdrawFieldMaxFlex)
+func (m *MainAccountFeeInfoWithdraw) SetMaxFlex(maxFlex *string) {
+	m.MaxFlex = maxFlex
+	m.require(mainAccountFeeInfoWithdrawFieldMaxFlex)
 }
 
 // SetPercentFlex sets the PercentFlex field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoWithdraw) SetPercentFlex(percentFlex *string) {
-	f.PercentFlex = percentFlex
-	f.require(feeInfoWithdrawFieldPercentFlex)
+func (m *MainAccountFeeInfoWithdraw) SetPercentFlex(percentFlex *string) {
+	m.PercentFlex = percentFlex
+	m.require(mainAccountFeeInfoWithdrawFieldPercentFlex)
 }
 
 // SetFixed sets the Fixed field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoWithdraw) SetFixed(fixed *string) {
-	f.Fixed = fixed
-	f.require(feeInfoWithdrawFieldFixed)
+func (m *MainAccountFeeInfoWithdraw) SetFixed(fixed *string) {
+	m.Fixed = fixed
+	m.require(mainAccountFeeInfoWithdrawFieldFixed)
 }
 
 // SetMinAmount sets the MinAmount field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoWithdraw) SetMinAmount(minAmount *string) {
-	f.MinAmount = minAmount
-	f.require(feeInfoWithdrawFieldMinAmount)
+func (m *MainAccountFeeInfoWithdraw) SetMinAmount(minAmount *string) {
+	m.MinAmount = minAmount
+	m.require(mainAccountFeeInfoWithdrawFieldMinAmount)
 }
 
 // SetMaxAmount sets the MaxAmount field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeInfoWithdraw) SetMaxAmount(maxAmount *string) {
-	f.MaxAmount = maxAmount
-	f.require(feeInfoWithdrawFieldMaxAmount)
+func (m *MainAccountFeeInfoWithdraw) SetMaxAmount(maxAmount *string) {
+	m.MaxAmount = maxAmount
+	m.require(mainAccountFeeInfoWithdrawFieldMaxAmount)
 }
 
-func (f *FeeInfoWithdraw) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeeInfoWithdraw
+func (m *MainAccountFeeInfoWithdraw) UnmarshalJSON(data []byte) error {
+	type unmarshaler MainAccountFeeInfoWithdraw
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*f = FeeInfoWithdraw(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	*m = MainAccountFeeInfoWithdraw(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
+	m.extraProperties = extraProperties
+	m.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (f *FeeInfoWithdraw) MarshalJSON() ([]byte, error) {
-	type embed FeeInfoWithdraw
+func (m *MainAccountFeeInfoWithdraw) MarshalJSON() ([]byte, error) {
+	type embed MainAccountFeeInfoWithdraw
 	var marshaler = struct {
 		embed
 	}{
-		embed: embed(*f),
+		embed: embed(*m),
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (f *FeeInfoWithdraw) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+func (m *MainAccountFeeInfoWithdraw) String() string {
+	if len(m.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(m.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(f); err == nil {
+	if value, err := internal.StringifyJSON(m); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", f)
+	return fmt.Sprintf("%#v", m)
 }

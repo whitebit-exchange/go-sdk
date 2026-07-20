@@ -72,16 +72,23 @@ func WithEnvironment(environment sdk.Environment) *core.EnvironmentOption {
 	}
 }
 
-// WithToken sets the 'Authorization: Bearer <token>' request header.
-func WithToken(token string) *core.TokenOption {
-	return &core.TokenOption{
-		Token: token,
+// WithAPIKey sets the apiKey auth request header.
+func WithAPIKey(apiKey string) *core.APIKeyOption {
+	return &core.APIKeyOption{
+		APIKey: apiKey,
 	}
 }
 
-// WithTxcApikey sets the txcApikey request header.
-func WithTxcApikey(txcApikey string) *core.TxcApikeyOption {
-	return &core.TxcApikeyOption{
-		TxcApikey: txcApikey,
+// WithTxcPayload sets the txcPayload request header.
+func WithTxcPayload(txcPayload string) *core.TxcPayloadOption {
+	return &core.TxcPayloadOption{
+		TxcPayload: txcPayload,
+	}
+}
+
+// WithTxcSignature sets the txcSignature request header.
+func WithTxcSignature(txcSignature string) *core.TxcSignatureOption {
+	return &core.TxcSignatureOption{
+		TxcSignature: txcSignature,
 	}
 }

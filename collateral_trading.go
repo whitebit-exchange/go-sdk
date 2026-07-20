@@ -17,10 +17,12 @@ var (
 )
 
 type CancelConditionalOrderRequest struct {
-	Market  string `json:"market" url:"-"`
+	// Market of the conditional order to cancel. Example: BTC_USDT
+	Market string `json:"market" url:"-"`
+	// Conditional order identifier. Obtain from the [query unexecuted conditional orders](/api-reference/collateral-trading/query-unexecuted-conditional-orders) endpoint.
 	ID      int    `json:"id" url:"-"`
 	Request string `json:"request" url:"-"`
-	Nonce   string `json:"nonce" url:"-"`
+	Nonce   int    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -56,7 +58,7 @@ func (c *CancelConditionalOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelConditionalOrderRequest) SetNonce(nonce string) {
+func (c *CancelConditionalOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(cancelConditionalOrderRequestFieldNonce)
 }
@@ -91,9 +93,9 @@ var (
 
 type CancelOcoOrderRequest struct {
 	Market  string `json:"market" url:"-"`
-	OrderID int    `json:"order_id" url:"-"`
+	OrderID int    `json:"orderId" url:"-"`
 	Request string `json:"request" url:"-"`
-	Nonce   string `json:"nonce" url:"-"`
+	Nonce   int    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -129,7 +131,7 @@ func (c *CancelOcoOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderRequest) SetNonce(nonce string) {
+func (c *CancelOcoOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(cancelOcoOrderRequestFieldNonce)
 }
@@ -166,7 +168,7 @@ type CancelOtoOrderRequest struct {
 	Market  string `json:"market" url:"-"`
 	OtoID   int    `json:"otoId" url:"-"`
 	Request string `json:"request" url:"-"`
-	Nonce   string `json:"nonce" url:"-"`
+	Nonce   int    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -202,7 +204,7 @@ func (c *CancelOtoOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOtoOrderRequest) SetNonce(nonce string) {
+func (c *CancelOtoOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(cancelOtoOrderRequestFieldNonce)
 }
@@ -235,9 +237,10 @@ var (
 )
 
 type ChangeCollateralAccountLeverageRequest struct {
+	// Target leverage level. Accepted values: `1`, `2`, `3`, `5`, `10`, `20`, `50`, `100`. The effective maximum depends on the market's `max_leverage`.
 	Leverage int    `json:"leverage" url:"-"`
 	Request  string `json:"request" url:"-"`
-	Nonce    string `json:"nonce" url:"-"`
+	Nonce    int    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -266,7 +269,7 @@ func (c *ChangeCollateralAccountLeverageRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ChangeCollateralAccountLeverageRequest) SetNonce(nonce string) {
+func (c *ChangeCollateralAccountLeverageRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(changeCollateralAccountLeverageRequestFieldNonce)
 }
@@ -301,11 +304,14 @@ var (
 )
 
 type ClosePositionRequest struct {
-	PositionID   int                               `json:"positionId" url:"-"`
+	// Unique identifier of the position to close. Obtain from the [open positions](/api-reference/collateral-trading/open-positions) endpoint.
+	PositionID int `json:"positionId" url:"-"`
+	// Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
 	PositionSide *ClosePositionRequestPositionSide `json:"positionSide,omitempty" url:"-"`
-	Market       string                            `json:"market" url:"-"`
-	Request      string                            `json:"request" url:"-"`
-	Nonce        string                            `json:"nonce" url:"-"`
+	// Market of the position to close. Example: BTC_USDT
+	Market  string `json:"market" url:"-"`
+	Request string `json:"request" url:"-"`
+	Nonce   int    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -348,7 +354,7 @@ func (c *ClosePositionRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ClosePositionRequest) SetNonce(nonce string) {
+func (c *ClosePositionRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(closePositionRequestFieldNonce)
 }
@@ -388,7 +394,7 @@ type CollateralAccountBalanceRequest struct {
 	// Request signature
 	Request *string `json:"request,omitempty" url:"-"`
 	// Unique request identifier
-	Nonce *string `json:"nonce,omitempty" url:"-"`
+	Nonce *int `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -417,7 +423,7 @@ func (c *CollateralAccountBalanceRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CollateralAccountBalanceRequest) SetNonce(nonce *string) {
+func (c *CollateralAccountBalanceRequest) SetNonce(nonce *int) {
 	c.Nonce = nonce
 	c.require(collateralAccountBalanceRequestFieldNonce)
 }
@@ -457,7 +463,7 @@ type CollateralAccountBalanceSummaryRequest struct {
 	// Request signature
 	Request *string `json:"request,omitempty" url:"-"`
 	// Unique request identifier
-	Nonce *string `json:"nonce,omitempty" url:"-"`
+	Nonce *int `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -486,7 +492,7 @@ func (c *CollateralAccountBalanceSummaryRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CollateralAccountBalanceSummaryRequest) SetNonce(nonce *string) {
+func (c *CollateralAccountBalanceSummaryRequest) SetNonce(nonce *int) {
 	c.Nonce = nonce
 	c.require(collateralAccountBalanceSummaryRequestFieldNonce)
 }
@@ -519,7 +525,7 @@ var (
 
 type CollateralAccountSummaryRequest struct {
 	Request *string `json:"request,omitempty" url:"-"`
-	Nonce   *string `json:"nonce,omitempty" url:"-"`
+	Nonce   *int    `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -541,7 +547,7 @@ func (c *CollateralAccountSummaryRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CollateralAccountSummaryRequest) SetNonce(nonce *string) {
+func (c *CollateralAccountSummaryRequest) SetNonce(nonce *int) {
 	c.Nonce = nonce
 	c.require(collateralAccountSummaryRequestFieldNonce)
 }
@@ -583,7 +589,7 @@ type CreateCollateralBulkOrderRequest struct {
 	// When false (default): All orders in the bulk request are processed regardless of individual failures. Each order result is returned in the response array.
 	StopOnFail *bool   `json:"stopOnFail,omitempty" url:"-"`
 	Request    *string `json:"request,omitempty" url:"-"`
-	Nonce      *string `json:"nonce,omitempty" url:"-"`
+	Nonce      *int    `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -619,7 +625,7 @@ func (c *CreateCollateralBulkOrderRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralBulkOrderRequest) SetNonce(nonce *string) {
+func (c *CreateCollateralBulkOrderRequest) SetNonce(nonce *int) {
 	c.Nonce = nonce
 	c.require(createCollateralBulkOrderRequestFieldNonce)
 }
@@ -657,8 +663,10 @@ var (
 	createCollateralLimitOrderRequestFieldIoc           = big.NewInt(1 << 8)
 	createCollateralLimitOrderRequestFieldRpi           = big.NewInt(1 << 9)
 	createCollateralLimitOrderRequestFieldPositionSide  = big.NewInt(1 << 10)
-	createCollateralLimitOrderRequestFieldRequest       = big.NewInt(1 << 11)
-	createCollateralLimitOrderRequestFieldNonce         = big.NewInt(1 << 12)
+	createCollateralLimitOrderRequestFieldReduceOnly    = big.NewInt(1 << 11)
+	createCollateralLimitOrderRequestFieldStp           = big.NewInt(1 << 12)
+	createCollateralLimitOrderRequestFieldRequest       = big.NewInt(1 << 13)
+	createCollateralLimitOrderRequestFieldNonce         = big.NewInt(1 << 14)
 )
 
 type CreateCollateralLimitOrderRequest struct {
@@ -666,12 +674,12 @@ type CreateCollateralLimitOrderRequest struct {
 	Market string `json:"market" url:"-"`
 	// Order type. Variables: 'buy' / 'sell'. For open long position use **buy**, for short **sell**.
 	Side CreateCollateralLimitOrderRequestSide `json:"side" url:"-"`
-	// Amount of [stock](/glossary#stock) currency to buy or sell.
+	// Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
 	Amount string `json:"amount" url:"-"`
-	// Price in [money](/glossary#money) currency. Example: '9800'
+	// Limit order price in [money](/glossary#money) currency. Minimum price step is market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
 	Price string `json:"price" url:"-"`
-	// Identifier should be unique and contain letters, dashes, numbers, dots or underscores.
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"-"`
+	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
 	// Stop loss price.
 	//
 	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
@@ -680,18 +688,29 @@ type CreateCollateralLimitOrderRequest struct {
 	//
 	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
 	TakeProfit *string `json:"takeProfit,omitempty" url:"-"`
-	// Orders are guaranteed to be the [maker](/glossary#maker) order when [executed](/glossary#finished-orders).
+	// When `true`, guarantees the order executes as a [maker](/glossary#maker) order. The system rejects the order if it would immediately match as taker. Default: `false`.
 	PostOnly *bool `json:"postOnly,omitempty" url:"-"`
-	// An immediate or cancel order (IOC) is an order that attempts to execute all or part immediately and then cancels any unfilled portion.
+	// When `true`, the order executes all or part immediately and cancels any unfilled portion. Cannot be combined with `postOnly=true` or `rpi=true`.
 	Ioc *bool `json:"ioc,omitempty" url:"-"`
 	// Enables Retail Price Improvement (RPI) mode.
 	//
-	// RPI orders are post-only by design and cannot be used with `ioc=true`. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+	// RPI orders are post-only by design and cannot be used with `ioc=true`. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
 	Rpi *bool `json:"rpi,omitempty" url:"-"`
-	// Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
+	// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+	//
+	// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+	// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
 	PositionSide *CreateCollateralLimitOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
-	Request      string                                         `json:"request" url:"-"`
-	Nonce        string                                         `json:"nonce" url:"-"`
+	// When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"-"`
+	// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+	//
+	// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+	//
+	// See [Self-Trade Prevention](/platform/self-trade-prevention).
+	Stp     *CreateCollateralLimitOrderRequestStp `json:"stp,omitempty" url:"-"`
+	Request string                                `json:"request" url:"-"`
+	Nonce   int                                   `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -781,6 +800,20 @@ func (c *CreateCollateralLimitOrderRequest) SetPositionSide(positionSide *Create
 	c.require(createCollateralLimitOrderRequestFieldPositionSide)
 }
 
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralLimitOrderRequest) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralLimitOrderRequestFieldReduceOnly)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralLimitOrderRequest) SetStp(stp *CreateCollateralLimitOrderRequestStp) {
+	c.Stp = stp
+	c.require(createCollateralLimitOrderRequestFieldStp)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CreateCollateralLimitOrderRequest) SetRequest(request string) {
@@ -790,7 +823,7 @@ func (c *CreateCollateralLimitOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralLimitOrderRequest) SetNonce(nonce string) {
+func (c *CreateCollateralLimitOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createCollateralLimitOrderRequestFieldNonce)
 }
@@ -824,20 +857,44 @@ var (
 	createCollateralMarketOrderRequestFieldStopLoss      = big.NewInt(1 << 4)
 	createCollateralMarketOrderRequestFieldTakeProfit    = big.NewInt(1 << 5)
 	createCollateralMarketOrderRequestFieldPositionSide  = big.NewInt(1 << 6)
-	createCollateralMarketOrderRequestFieldRequest       = big.NewInt(1 << 7)
-	createCollateralMarketOrderRequestFieldNonce         = big.NewInt(1 << 8)
+	createCollateralMarketOrderRequestFieldReduceOnly    = big.NewInt(1 << 7)
+	createCollateralMarketOrderRequestFieldStp           = big.NewInt(1 << 8)
+	createCollateralMarketOrderRequestFieldRequest       = big.NewInt(1 << 9)
+	createCollateralMarketOrderRequestFieldNonce         = big.NewInt(1 << 10)
 )
 
 type CreateCollateralMarketOrderRequest struct {
-	Market        string                                          `json:"market" url:"-"`
-	Side          CreateCollateralMarketOrderRequestSide          `json:"side" url:"-"`
-	Amount        string                                          `json:"amount" url:"-"`
-	ClientOrderID *string                                         `json:"client_order_id,omitempty" url:"-"`
-	StopLoss      *string                                         `json:"stopLoss,omitempty" url:"-"`
-	TakeProfit    *string                                         `json:"takeProfit,omitempty" url:"-"`
-	PositionSide  *CreateCollateralMarketOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
-	Request       string                                          `json:"request" url:"-"`
-	Nonce         string                                          `json:"nonce" url:"-"`
+	// Available margin [market](/glossary#market). Example: BTC_USDT
+	Market string `json:"market" url:"-"`
+	// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+	Side CreateCollateralMarketOrderRequestSide `json:"side" url:"-"`
+	// Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+	Amount string `json:"amount" url:"-"`
+	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
+	// Stop loss price.
+	//
+	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+	StopLoss *string `json:"stopLoss,omitempty" url:"-"`
+	// Take profit price.
+	//
+	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+	TakeProfit *string `json:"takeProfit,omitempty" url:"-"`
+	// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+	//
+	// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+	// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+	PositionSide *CreateCollateralMarketOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
+	// When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"-"`
+	// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+	//
+	// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+	//
+	// See [Self-Trade Prevention](/platform/self-trade-prevention).
+	Stp     *CreateCollateralMarketOrderRequestStp `json:"stp,omitempty" url:"-"`
+	Request string                                 `json:"request" url:"-"`
+	Nonce   int                                    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -899,6 +956,20 @@ func (c *CreateCollateralMarketOrderRequest) SetPositionSide(positionSide *Creat
 	c.require(createCollateralMarketOrderRequestFieldPositionSide)
 }
 
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralMarketOrderRequest) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralMarketOrderRequestFieldReduceOnly)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralMarketOrderRequest) SetStp(stp *CreateCollateralMarketOrderRequestStp) {
+	c.Stp = stp
+	c.require(createCollateralMarketOrderRequestFieldStp)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CreateCollateralMarketOrderRequest) SetRequest(request string) {
@@ -908,7 +979,7 @@ func (c *CreateCollateralMarketOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralMarketOrderRequest) SetNonce(nonce string) {
+func (c *CreateCollateralMarketOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createCollateralMarketOrderRequestFieldNonce)
 }
@@ -942,20 +1013,43 @@ var (
 	createCollateralOcoOrderRequestFieldActivationPrice = big.NewInt(1 << 4)
 	createCollateralOcoOrderRequestFieldStopLimitPrice  = big.NewInt(1 << 5)
 	createCollateralOcoOrderRequestFieldClientOrderID   = big.NewInt(1 << 6)
-	createCollateralOcoOrderRequestFieldRequest         = big.NewInt(1 << 7)
-	createCollateralOcoOrderRequestFieldNonce           = big.NewInt(1 << 8)
+	createCollateralOcoOrderRequestFieldReduceOnly      = big.NewInt(1 << 7)
+	createCollateralOcoOrderRequestFieldPositionSide    = big.NewInt(1 << 8)
+	createCollateralOcoOrderRequestFieldStp             = big.NewInt(1 << 9)
+	createCollateralOcoOrderRequestFieldRequest         = big.NewInt(1 << 10)
+	createCollateralOcoOrderRequestFieldNonce           = big.NewInt(1 << 11)
 )
 
 type CreateCollateralOcoOrderRequest struct {
-	Market          string                              `json:"market" url:"-"`
-	Side            CreateCollateralOcoOrderRequestSide `json:"side" url:"-"`
-	Amount          string                              `json:"amount" url:"-"`
-	Price           string                              `json:"price" url:"-"`
-	ActivationPrice string                              `json:"activation_price" url:"-"`
-	StopLimitPrice  string                              `json:"stop_limit_price" url:"-"`
-	ClientOrderID   *string                             `json:"client_order_id,omitempty" url:"-"`
-	Request         string                              `json:"request" url:"-"`
-	Nonce           string                              `json:"nonce" url:"-"`
+	// Available margin [market](/glossary#market). Example: BTC_USDT
+	Market string `json:"market" url:"-"`
+	// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+	Side CreateCollateralOcoOrderRequestSide `json:"side" url:"-"`
+	// Amount of [stock](/glossary#stock) currency for both legs of the OCO order. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+	Amount string `json:"amount" url:"-"`
+	// Limit order price in [money](/glossary#money) currency for the take-profit leg.
+	Price string `json:"price" url:"-"`
+	// Trigger price in [money](/glossary#money) currency for the stop-loss leg. The stop-limit order activates when the market price reaches the specified value.
+	ActivationPrice string `json:"activation_price" url:"-"`
+	// Execution price in [money](/glossary#money) currency for the stop-loss leg. After activation, the stop-loss leg places a limit order at the specified price.
+	StopLimitPrice string `json:"stop_limit_price" url:"-"`
+	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
+	// When `true`, both legs of the OCO order can only reduce or close an existing position — neither leg can increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"-"`
+	// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side). Both legs of the OCO inherit the value.
+	//
+	// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` on each leg whether the field is sent or omitted.
+	// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+	PositionSide *CreateCollateralOcoOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
+	// Self-trade prevention mode. The value applies to both legs of the OCO order. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+	//
+	// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+	//
+	// See [Self-Trade Prevention](/platform/self-trade-prevention).
+	Stp     *CreateCollateralOcoOrderRequestStp `json:"stp,omitempty" url:"-"`
+	Request string                              `json:"request" url:"-"`
+	Nonce   int                                 `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1017,6 +1111,27 @@ func (c *CreateCollateralOcoOrderRequest) SetClientOrderID(clientOrderID *string
 	c.require(createCollateralOcoOrderRequestFieldClientOrderID)
 }
 
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralOcoOrderRequest) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralOcoOrderRequestFieldReduceOnly)
+}
+
+// SetPositionSide sets the PositionSide field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralOcoOrderRequest) SetPositionSide(positionSide *CreateCollateralOcoOrderRequestPositionSide) {
+	c.PositionSide = positionSide
+	c.require(createCollateralOcoOrderRequestFieldPositionSide)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralOcoOrderRequest) SetStp(stp *CreateCollateralOcoOrderRequestStp) {
+	c.Stp = stp
+	c.require(createCollateralOcoOrderRequestFieldStp)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CreateCollateralOcoOrderRequest) SetRequest(request string) {
@@ -1026,7 +1141,7 @@ func (c *CreateCollateralOcoOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralOcoOrderRequest) SetNonce(nonce string) {
+func (c *CreateCollateralOcoOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createCollateralOcoOrderRequestFieldNonce)
 }
@@ -1062,22 +1177,48 @@ var (
 	createCollateralStopLimitOrderRequestFieldTakeProfit      = big.NewInt(1 << 6)
 	createCollateralStopLimitOrderRequestFieldClientOrderID   = big.NewInt(1 << 7)
 	createCollateralStopLimitOrderRequestFieldPositionSide    = big.NewInt(1 << 8)
-	createCollateralStopLimitOrderRequestFieldRequest         = big.NewInt(1 << 9)
-	createCollateralStopLimitOrderRequestFieldNonce           = big.NewInt(1 << 10)
+	createCollateralStopLimitOrderRequestFieldReduceOnly      = big.NewInt(1 << 9)
+	createCollateralStopLimitOrderRequestFieldStp             = big.NewInt(1 << 10)
+	createCollateralStopLimitOrderRequestFieldRequest         = big.NewInt(1 << 11)
+	createCollateralStopLimitOrderRequestFieldNonce           = big.NewInt(1 << 12)
 )
 
 type CreateCollateralStopLimitOrderRequest struct {
-	Market          string                                             `json:"market" url:"-"`
-	Side            CreateCollateralStopLimitOrderRequestSide          `json:"side" url:"-"`
-	Amount          string                                             `json:"amount" url:"-"`
-	Price           string                                             `json:"price" url:"-"`
-	ActivationPrice string                                             `json:"activation_price" url:"-"`
-	StopLoss        *string                                            `json:"stopLoss,omitempty" url:"-"`
-	TakeProfit      *string                                            `json:"takeProfit,omitempty" url:"-"`
-	ClientOrderID   *string                                            `json:"client_order_id,omitempty" url:"-"`
-	PositionSide    *CreateCollateralStopLimitOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
-	Request         string                                             `json:"request" url:"-"`
-	Nonce           string                                             `json:"nonce" url:"-"`
+	// Available margin [market](/glossary#market). Example: BTC_USDT
+	Market string `json:"market" url:"-"`
+	// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+	Side CreateCollateralStopLimitOrderRequestSide `json:"side" url:"-"`
+	// Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+	Amount string `json:"amount" url:"-"`
+	// Limit order price in [money](/glossary#money) currency. The order executes at the specified price or better after activation.
+	Price string `json:"price" url:"-"`
+	// Trigger price in [money](/glossary#money) currency. The stop-limit order activates when the market price reaches the specified value.
+	ActivationPrice string `json:"activation_price" url:"-"`
+	// Stop loss price.
+	//
+	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+	StopLoss *string `json:"stopLoss,omitempty" url:"-"`
+	// Take profit price.
+	//
+	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+	TakeProfit *string `json:"takeProfit,omitempty" url:"-"`
+	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
+	// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+	//
+	// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+	// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+	PositionSide *CreateCollateralStopLimitOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
+	// When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"-"`
+	// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+	//
+	// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+	//
+	// See [Self-Trade Prevention](/platform/self-trade-prevention).
+	Stp     *CreateCollateralStopLimitOrderRequestStp `json:"stp,omitempty" url:"-"`
+	Request string                                    `json:"request" url:"-"`
+	Nonce   int                                       `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1153,6 +1294,20 @@ func (c *CreateCollateralStopLimitOrderRequest) SetPositionSide(positionSide *Cr
 	c.require(createCollateralStopLimitOrderRequestFieldPositionSide)
 }
 
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralStopLimitOrderRequest) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralStopLimitOrderRequestFieldReduceOnly)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralStopLimitOrderRequest) SetStp(stp *CreateCollateralStopLimitOrderRequestStp) {
+	c.Stp = stp
+	c.require(createCollateralStopLimitOrderRequestFieldStp)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CreateCollateralStopLimitOrderRequest) SetRequest(request string) {
@@ -1162,7 +1317,7 @@ func (c *CreateCollateralStopLimitOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralStopLimitOrderRequest) SetNonce(nonce string) {
+func (c *CreateCollateralStopLimitOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createCollateralStopLimitOrderRequestFieldNonce)
 }
@@ -1197,21 +1352,46 @@ var (
 	createCollateralTriggerMarketOrderRequestFieldStopLoss        = big.NewInt(1 << 5)
 	createCollateralTriggerMarketOrderRequestFieldTakeProfit      = big.NewInt(1 << 6)
 	createCollateralTriggerMarketOrderRequestFieldPositionSide    = big.NewInt(1 << 7)
-	createCollateralTriggerMarketOrderRequestFieldRequest         = big.NewInt(1 << 8)
-	createCollateralTriggerMarketOrderRequestFieldNonce           = big.NewInt(1 << 9)
+	createCollateralTriggerMarketOrderRequestFieldReduceOnly      = big.NewInt(1 << 8)
+	createCollateralTriggerMarketOrderRequestFieldStp             = big.NewInt(1 << 9)
+	createCollateralTriggerMarketOrderRequestFieldRequest         = big.NewInt(1 << 10)
+	createCollateralTriggerMarketOrderRequestFieldNonce           = big.NewInt(1 << 11)
 )
 
 type CreateCollateralTriggerMarketOrderRequest struct {
-	Market          string                                                 `json:"market" url:"-"`
-	Side            CreateCollateralTriggerMarketOrderRequestSide          `json:"side" url:"-"`
-	Amount          string                                                 `json:"amount" url:"-"`
-	ActivationPrice string                                                 `json:"activation_price" url:"-"`
-	ClientOrderID   *string                                                `json:"client_order_id,omitempty" url:"-"`
-	StopLoss        *string                                                `json:"stopLoss,omitempty" url:"-"`
-	TakeProfit      *string                                                `json:"takeProfit,omitempty" url:"-"`
-	PositionSide    *CreateCollateralTriggerMarketOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
-	Request         string                                                 `json:"request" url:"-"`
-	Nonce           string                                                 `json:"nonce" url:"-"`
+	// Available margin [market](/glossary#market). Example: BTC_USDT
+	Market string `json:"market" url:"-"`
+	// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
+	Side CreateCollateralTriggerMarketOrderRequestSide `json:"side" url:"-"`
+	// Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
+	Amount string `json:"amount" url:"-"`
+	// Trigger price in [money](/glossary#money) currency. The trigger market order activates when the market price reaches the specified value.
+	ActivationPrice string `json:"activation_price" url:"-"`
+	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
+	// Stop loss price.
+	//
+	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
+	StopLoss *string `json:"stopLoss,omitempty" url:"-"`
+	// Take profit price.
+	//
+	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
+	TakeProfit *string `json:"takeProfit,omitempty" url:"-"`
+	// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+	//
+	// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+	// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+	PositionSide *CreateCollateralTriggerMarketOrderRequestPositionSide `json:"positionSide,omitempty" url:"-"`
+	// When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"-"`
+	// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+	//
+	// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+	//
+	// See [Self-Trade Prevention](/platform/self-trade-prevention).
+	Stp     *CreateCollateralTriggerMarketOrderRequestStp `json:"stp,omitempty" url:"-"`
+	Request string                                        `json:"request" url:"-"`
+	Nonce   int                                           `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1280,6 +1460,20 @@ func (c *CreateCollateralTriggerMarketOrderRequest) SetPositionSide(positionSide
 	c.require(createCollateralTriggerMarketOrderRequestFieldPositionSide)
 }
 
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralTriggerMarketOrderRequest) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralTriggerMarketOrderRequestFieldReduceOnly)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralTriggerMarketOrderRequest) SetStp(stp *CreateCollateralTriggerMarketOrderRequestStp) {
+	c.Stp = stp
+	c.require(createCollateralTriggerMarketOrderRequestFieldStp)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CreateCollateralTriggerMarketOrderRequest) SetRequest(request string) {
@@ -1289,7 +1483,7 @@ func (c *CreateCollateralTriggerMarketOrderRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralTriggerMarketOrderRequest) SetNonce(nonce string) {
+func (c *CreateCollateralTriggerMarketOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createCollateralTriggerMarketOrderRequestFieldNonce)
 }
@@ -1316,13 +1510,68 @@ func (c *CreateCollateralTriggerMarketOrderRequest) MarshalJSON() ([]byte, error
 }
 
 var (
+	getCollateralAccountAdlQuantileRequestFieldRequest = big.NewInt(1 << 0)
+	getCollateralAccountAdlQuantileRequestFieldNonce   = big.NewInt(1 << 1)
+)
+
+type GetCollateralAccountAdlQuantileRequest struct {
+	Request string `json:"request" url:"-"`
+	Nonce   int    `json:"nonce" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (g *GetCollateralAccountAdlQuantileRequest) require(field *big.Int) {
+	if g.explicitFields == nil {
+		g.explicitFields = big.NewInt(0)
+	}
+	g.explicitFields.Or(g.explicitFields, field)
+}
+
+// SetRequest sets the Request field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetCollateralAccountAdlQuantileRequest) SetRequest(request string) {
+	g.Request = request
+	g.require(getCollateralAccountAdlQuantileRequestFieldRequest)
+}
+
+// SetNonce sets the Nonce field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetCollateralAccountAdlQuantileRequest) SetNonce(nonce int) {
+	g.Nonce = nonce
+	g.require(getCollateralAccountAdlQuantileRequestFieldNonce)
+}
+
+func (g *GetCollateralAccountAdlQuantileRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler GetCollateralAccountAdlQuantileRequest
+	var body unmarshaler
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	*g = GetCollateralAccountAdlQuantileRequest(body)
+	return nil
+}
+
+func (g *GetCollateralAccountAdlQuantileRequest) MarshalJSON() ([]byte, error) {
+	type embed GetCollateralAccountAdlQuantileRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+var (
 	getCollateralHedgeModeRequestFieldRequest = big.NewInt(1 << 0)
 	getCollateralHedgeModeRequestFieldNonce   = big.NewInt(1 << 1)
 )
 
 type GetCollateralHedgeModeRequest struct {
 	Request *string `json:"request,omitempty" url:"-"`
-	Nonce   *string `json:"nonce,omitempty" url:"-"`
+	Nonce   *int    `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1344,7 +1593,7 @@ func (g *GetCollateralHedgeModeRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetCollateralHedgeModeRequest) SetNonce(nonce *string) {
+func (g *GetCollateralHedgeModeRequest) SetNonce(nonce *int) {
 	g.Nonce = nonce
 	g.require(getCollateralHedgeModeRequestFieldNonce)
 }
@@ -1379,11 +1628,16 @@ var (
 )
 
 type GetConditionalOrdersRequest struct {
-	Market  *string `json:"market,omitempty" url:"-"`
-	Offset  *int    `json:"offset,omitempty" url:"-"`
+	// Filter by specific market. Example: BTC_USDT
+	//
+	// If not specified, returns conditional orders for all markets.
+	Market *string `json:"market,omitempty" url:"-"`
+	// Number of records to skip for pagination.
+	Offset *int `json:"offset,omitempty" url:"-"`
+	// Maximum number of records to return per page.
 	Limit   *int    `json:"limit,omitempty" url:"-"`
 	Request *string `json:"request,omitempty" url:"-"`
-	Nonce   *string `json:"nonce,omitempty" url:"-"`
+	Nonce   *int    `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1426,7 +1680,7 @@ func (g *GetConditionalOrdersRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersRequest) SetNonce(nonce *string) {
+func (g *GetConditionalOrdersRequest) SetNonce(nonce *int) {
 	g.Nonce = nonce
 	g.require(getConditionalOrdersRequestFieldNonce)
 }
@@ -1472,7 +1726,7 @@ type GetFundingHistoryRequest struct {
 	// Request signature
 	Request *string `json:"request,omitempty" url:"-"`
 	// Unique request identifier
-	Nonce *string `json:"nonce,omitempty" url:"-"`
+	Nonce *int `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1515,7 +1769,7 @@ func (g *GetFundingHistoryRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetFundingHistoryRequest) SetNonce(nonce *string) {
+func (g *GetFundingHistoryRequest) SetNonce(nonce *int) {
 	g.Nonce = nonce
 	g.require(getFundingHistoryRequestFieldNonce)
 }
@@ -1550,11 +1804,16 @@ var (
 )
 
 type GetOcoOrdersRequest struct {
-	Market  *string `json:"market,omitempty" url:"-"`
-	Offset  *int    `json:"offset,omitempty" url:"-"`
+	// Filter by specific market. Example: BTC_USDT
+	//
+	// If not specified, returns OCO orders for all markets.
+	Market *string `json:"market,omitempty" url:"-"`
+	// Number of records to skip for pagination.
+	Offset *int `json:"offset,omitempty" url:"-"`
+	// Maximum number of records to return per page.
 	Limit   *int    `json:"limit,omitempty" url:"-"`
 	Request *string `json:"request,omitempty" url:"-"`
-	Nonce   *string `json:"nonce,omitempty" url:"-"`
+	Nonce   *int    `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1597,7 +1856,7 @@ func (g *GetOcoOrdersRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersRequest) SetNonce(nonce *string) {
+func (g *GetOcoOrdersRequest) SetNonce(nonce *int) {
 	g.Nonce = nonce
 	g.require(getOcoOrdersRequestFieldNonce)
 }
@@ -1637,7 +1896,7 @@ type GetOpenPositionsRequest struct {
 	// Request signature
 	Request *string `json:"request,omitempty" url:"-"`
 	// Unique request identifier
-	Nonce *string `json:"nonce,omitempty" url:"-"`
+	Nonce *int `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1666,7 +1925,7 @@ func (g *GetOpenPositionsRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOpenPositionsRequest) SetNonce(nonce *string) {
+func (g *GetOpenPositionsRequest) SetNonce(nonce *int) {
 	g.Nonce = nonce
 	g.require(getOpenPositionsRequestFieldNonce)
 }
@@ -1695,15 +1954,25 @@ func (g *GetOpenPositionsRequest) MarshalJSON() ([]byte, error) {
 var (
 	getPositionsHistoryRequestFieldMarket     = big.NewInt(1 << 0)
 	getPositionsHistoryRequestFieldPositionID = big.NewInt(1 << 1)
-	getPositionsHistoryRequestFieldRequest    = big.NewInt(1 << 2)
-	getPositionsHistoryRequestFieldNonce      = big.NewInt(1 << 3)
+	getPositionsHistoryRequestFieldStartDate  = big.NewInt(1 << 2)
+	getPositionsHistoryRequestFieldEndDate    = big.NewInt(1 << 3)
+	getPositionsHistoryRequestFieldRequest    = big.NewInt(1 << 4)
+	getPositionsHistoryRequestFieldNonce      = big.NewInt(1 << 5)
 )
 
 type GetPositionsHistoryRequest struct {
-	Market     *string `json:"market,omitempty" url:"-"`
-	PositionID *int    `json:"positionId,omitempty" url:"-"`
-	Request    *string `json:"request,omitempty" url:"-"`
-	Nonce      *string `json:"nonce,omitempty" url:"-"`
+	// Filter by specific market. Example: BTC_USDT
+	//
+	// If not specified, returns position history for all markets.
+	Market *string `json:"market,omitempty" url:"-"`
+	// Filter by specific position identifier. If not specified, returns history for all positions.
+	PositionID *int `json:"positionId,omitempty" url:"-"`
+	// Start of the query window as a Unix timestamp in seconds. Optional, no default. Must be ≤ `endDate`.
+	StartDate *int `json:"startDate,omitempty" url:"-"`
+	// End of the query window as a Unix timestamp in seconds. Optional, no default. Must be ≥ `startDate` and ≤ `now + 1s`; violating values are rejected with a validation error.
+	EndDate *int    `json:"endDate,omitempty" url:"-"`
+	Request *string `json:"request,omitempty" url:"-"`
+	Nonce   *int    `json:"nonce,omitempty" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1730,6 +1999,20 @@ func (g *GetPositionsHistoryRequest) SetPositionID(positionID *int) {
 	g.require(getPositionsHistoryRequestFieldPositionID)
 }
 
+// SetStartDate sets the StartDate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetPositionsHistoryRequest) SetStartDate(startDate *int) {
+	g.StartDate = startDate
+	g.require(getPositionsHistoryRequestFieldStartDate)
+}
+
+// SetEndDate sets the EndDate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetPositionsHistoryRequest) SetEndDate(endDate *int) {
+	g.EndDate = endDate
+	g.require(getPositionsHistoryRequestFieldEndDate)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (g *GetPositionsHistoryRequest) SetRequest(request *string) {
@@ -1739,7 +2022,7 @@ func (g *GetPositionsHistoryRequest) SetRequest(request *string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetPositionsHistoryRequest) SetNonce(nonce *string) {
+func (g *GetPositionsHistoryRequest) SetNonce(nonce *int) {
 	g.Nonce = nonce
 	g.require(getPositionsHistoryRequestFieldNonce)
 }
@@ -1763,6 +2046,35 @@ func (g *GetPositionsHistoryRequest) MarshalJSON() ([]byte, error) {
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
 	return json.Marshal(explicitMarshaler)
+}
+
+// Order status. `NEW` — accepted, not yet matched. `FILLED` — fully executed. `PARTIALLY_FILLED` — partially executed, remainder still active. `CANCELLED` — canceled before full execution.
+type ActiveOrderStatus string
+
+const (
+	ActiveOrderStatusNew             ActiveOrderStatus = "NEW"
+	ActiveOrderStatusFilled          ActiveOrderStatus = "FILLED"
+	ActiveOrderStatusPartiallyFilled ActiveOrderStatus = "PARTIALLY_FILLED"
+	ActiveOrderStatusCancelled       ActiveOrderStatus = "CANCELLED"
+)
+
+func NewActiveOrderStatusFromString(s string) (ActiveOrderStatus, error) {
+	switch s {
+	case "NEW":
+		return ActiveOrderStatusNew, nil
+	case "FILLED":
+		return ActiveOrderStatusFilled, nil
+	case "PARTIALLY_FILLED":
+		return ActiveOrderStatusPartiallyFilled, nil
+	case "CANCELLED":
+		return ActiveOrderStatusCancelled, nil
+	}
+	var t ActiveOrderStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (a ActiveOrderStatus) Ptr() *ActiveOrderStatus {
+	return &a
 }
 
 var (
@@ -1905,21 +2217,21 @@ var (
 
 type CancelOcoOrderResponseStopLoss struct {
 	// Order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CancelOcoOrderResponseStopLossSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Executed amount in money
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Executed amount in stock
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Taker fee ratio
@@ -1929,7 +2241,7 @@ type CancelOcoOrderResponseStopLoss struct {
 	// Unexecuted amount in stock
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Executed fee by deal
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Post-only flag
 	PostOnly *bool `json:"post_only,omitempty" url:"post_only,omitempty"`
 	// Timestamp of order modification
@@ -1938,13 +2250,12 @@ type CancelOcoOrderResponseStopLoss struct {
 	Price *string `json:"price,omitempty" url:"price,omitempty"`
 	// Activation price
 	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
-	// Activation condition
+	// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
 	ActivationCondition *CancelOcoOrderResponseStopLossActivationCondition `json:"activation_condition,omitempty" url:"activation_condition,omitempty"`
 	// Activation status (0 - not activated, 1 - activated)
-	Activated *int `json:"activated,omitempty" url:"activated,omitempty"`
-	// Order status
-	Status *string `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	Activated *int         `json:"activated,omitempty" url:"activated,omitempty"`
+	Status    *OrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2087,7 +2398,7 @@ func (c *CancelOcoOrderResponseStopLoss) GetActivated() *int {
 	return c.Activated
 }
 
-func (c *CancelOcoOrderResponseStopLoss) GetStatus() *string {
+func (c *CancelOcoOrderResponseStopLoss) GetStatus() *OrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -2247,7 +2558,7 @@ func (c *CancelOcoOrderResponseStopLoss) SetActivated(activated *int) {
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetStatus(status *string) {
+func (c *CancelOcoOrderResponseStopLoss) SetStatus(status *OrderStatus) {
 	c.Status = status
 	c.require(cancelOcoOrderResponseStopLossFieldStatus)
 }
@@ -2298,7 +2609,7 @@ func (c *CancelOcoOrderResponseStopLoss) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// Activation condition
+// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
 type CancelOcoOrderResponseStopLossActivationCondition string
 
 const (
@@ -2366,36 +2677,35 @@ var (
 
 type CancelOcoOrderResponseTakeProfit struct {
 	// Order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CancelOcoOrderResponseTakeProfitSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Executed amount in money
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Executed amount in stock
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Unexecuted amount in stock
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Executed fee by deal
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Post-only flag
 	PostOnly *bool `json:"post_only,omitempty" url:"post_only,omitempty"`
 	// Timestamp of order modification
 	Mtime *float64 `json:"mtime,omitempty" url:"mtime,omitempty"`
 	// Order price
-	Price *string `json:"price,omitempty" url:"price,omitempty"`
-	// Order status
-	Status *string `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	Price  *string      `json:"price,omitempty" url:"price,omitempty"`
+	Status *OrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2503,7 +2813,7 @@ func (c *CancelOcoOrderResponseTakeProfit) GetPrice() *string {
 	return c.Price
 }
 
-func (c *CancelOcoOrderResponseTakeProfit) GetStatus() *string {
+func (c *CancelOcoOrderResponseTakeProfit) GetStatus() *OrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -2628,7 +2938,7 @@ func (c *CancelOcoOrderResponseTakeProfit) SetPrice(price *string) {
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetStatus(status *string) {
+func (c *CancelOcoOrderResponseTakeProfit) SetStatus(status *OrderStatus) {
 	c.Status = status
 	c.require(cancelOcoOrderResponseTakeProfitFieldStatus)
 }
@@ -2707,7 +3017,7 @@ var (
 )
 
 type ChangeCollateralAccountLeverageResponse struct {
-	// Current collateral balance leverage
+	// Active leverage level for the collateral account after the update, from `1` (no leverage) to `100`
 	Leverage *int `json:"leverage,omitempty" url:"leverage,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2781,6 +3091,7 @@ func (c *ChangeCollateralAccountLeverageResponse) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
+// Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
 type ClosePositionRequestPositionSide string
 
 const (
@@ -2817,13 +3128,13 @@ var (
 type CollateralAccountBalanceSummaryResponseItem struct {
 	// Asset ticker symbol
 	Asset *string `json:"asset,omitempty" url:"asset,omitempty"`
-	// Current balance amount
+	// Total collateral balance for the asset, in the asset's native units
 	Balance *string `json:"balance,omitempty" url:"balance,omitempty"`
-	// Amount currently borrowed
+	// Amount currently borrowed against the asset, in the asset's native units
 	Borrow *string `json:"borrow,omitempty" url:"borrow,omitempty"`
-	// Available balance without using borrow
+	// Balance available for use without additional borrowing, in the asset's native units
 	AvailableWithoutBorrow *string `json:"availableWithoutBorrow,omitempty" url:"availableWithoutBorrow,omitempty"`
-	// Available balance including borrowing capacity
+	// Maximum balance available when borrowing capacity is included, in the asset's native units
 	AvailableWithBorrow *string `json:"availableWithBorrow,omitempty" url:"availableWithBorrow,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -3146,6 +3457,7 @@ var (
 	createCollateralBulkOrderRequestOrdersItemFieldIoc           = big.NewInt(1 << 8)
 	createCollateralBulkOrderRequestOrdersItemFieldRpi           = big.NewInt(1 << 9)
 	createCollateralBulkOrderRequestOrdersItemFieldPositionSide  = big.NewInt(1 << 10)
+	createCollateralBulkOrderRequestOrdersItemFieldReduceOnly    = big.NewInt(1 << 11)
 )
 
 type CreateCollateralBulkOrderRequestOrdersItem struct {
@@ -3153,12 +3465,12 @@ type CreateCollateralBulkOrderRequestOrdersItem struct {
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order type. Variables: 'buy' / 'sell'.
 	Side *CreateCollateralBulkOrderRequestOrdersItemSide `json:"side,omitempty" url:"side,omitempty"`
-	// Amount of [stock](/glossary#stock) currency to buy or sell.
+	// Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
-	// Price in [money](/glossary#money) currency.
+	// Limit order price in [money](/glossary#money) currency. Minimum price step is market-dependent.
 	Price *string `json:"price,omitempty" url:"price,omitempty"`
-	// Identifier must be unique and contain letters, numbers, dashes, dots, or underscores.
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Stop loss price.
 	//
 	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
@@ -3167,20 +3479,25 @@ type CreateCollateralBulkOrderRequestOrdersItem struct {
 	//
 	// When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
 	TakeProfit *string `json:"takeProfit,omitempty" url:"takeProfit,omitempty"`
-	// Ensures the order adds liquidity and executes as maker.
+	// Ensures the order adds liquidity and executes as maker. Default: `false`.
 	PostOnly *bool `json:"postOnly,omitempty" url:"postOnly,omitempty"`
-	// Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion.
+	// Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion. Default: `false`.
 	//
 	// IOC does not support `rpi=true` because RPI uses post-only behavior by design.
-	// The API returns error code `37` when an order item sets both `ioc=true` and `rpi=true`.
+	// The API returns error code `40` when an order item sets both `ioc=true` and `rpi=true`.
 	Ioc *bool `json:"ioc,omitempty" url:"ioc,omitempty"`
-	// Enables Retail Price Improvement (RPI) mode.
+	// Enables Retail Price Improvement (RPI) mode. Default: `false`.
 	//
 	// RPI orders use post-only behavior by design. An RPI order does not support `ioc=true`.
-	// The API returns error code `37` when an order item sets both `rpi=true` and `ioc=true`.
+	// The API returns error code `40` when an order item sets both `rpi=true` and `ioc=true`.
 	Rpi *bool `json:"rpi,omitempty" url:"rpi,omitempty"`
-	// Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
+	// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+	//
+	// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+	// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the per-order item with error code `114` (`Hedge mode position side does not match`).
 	PositionSide *CreateCollateralBulkOrderRequestOrdersItemPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3264,6 +3581,13 @@ func (c *CreateCollateralBulkOrderRequestOrdersItem) GetPositionSide() *CreateCo
 		return nil
 	}
 	return c.PositionSide
+}
+
+func (c *CreateCollateralBulkOrderRequestOrdersItem) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
 }
 
 func (c *CreateCollateralBulkOrderRequestOrdersItem) GetExtraProperties() map[string]interface{} {
@@ -3354,6 +3678,13 @@ func (c *CreateCollateralBulkOrderRequestOrdersItem) SetPositionSide(positionSid
 	c.require(createCollateralBulkOrderRequestOrdersItemFieldPositionSide)
 }
 
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralBulkOrderRequestOrdersItem) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralBulkOrderRequestOrdersItemFieldReduceOnly)
+}
+
 func (c *CreateCollateralBulkOrderRequestOrdersItem) UnmarshalJSON(data []byte) error {
 	type unmarshaler CreateCollateralBulkOrderRequestOrdersItem
 	var value unmarshaler
@@ -3393,7 +3724,10 @@ func (c *CreateCollateralBulkOrderRequestOrdersItem) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
+// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+//
+// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the per-order item with error code `114` (`Hedge mode position side does not match`).
 type CreateCollateralBulkOrderRequestOrdersItemPositionSide string
 
 const (
@@ -3672,45 +4006,47 @@ var (
 	createCollateralBulkOrderResponseItemResultFieldStp           = big.NewInt(1 << 15)
 	createCollateralBulkOrderResponseItemResultFieldPositionSide  = big.NewInt(1 << 16)
 	createCollateralBulkOrderResponseItemResultFieldRpi           = big.NewInt(1 << 17)
+	createCollateralBulkOrderResponseItemResultFieldReduceOnly    = big.NewInt(1 << 18)
 )
 
 type CreateCollateralBulkOrderResponseItemResult struct {
 	// Unique order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom client order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CreateCollateralBulkOrderResponseItemResultSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation in Unix format
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Amount in money currency that is finished
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Amount in stock currency that is finished
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Remaining amount that must be finished
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Fee in money that is paid when order is finished
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Order price
 	Price *string `json:"price,omitempty" url:"price,omitempty"`
 	// Post-only flag
 	PostOnly *bool `json:"postOnly,omitempty" url:"postOnly,omitempty"`
 	// Immediate or cancel flag
-	Ioc *bool `json:"ioc,omitempty" url:"ioc,omitempty"`
-	// Order status
-	Status *CreateCollateralBulkOrderResponseItemResultStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	Ioc    *bool              `json:"ioc,omitempty" url:"ioc,omitempty"`
+	Status *ActiveOrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 	// Position side
 	PositionSide *CreateCollateralBulkOrderResponseItemResultPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
 	// Retail Price Improvement flag
 	Rpi *bool `json:"rpi,omitempty" url:"rpi,omitempty"`
+	// Reduce-only flag
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -3817,7 +4153,7 @@ func (c *CreateCollateralBulkOrderResponseItemResult) GetIoc() *bool {
 	return c.Ioc
 }
 
-func (c *CreateCollateralBulkOrderResponseItemResult) GetStatus() *CreateCollateralBulkOrderResponseItemResultStatus {
+func (c *CreateCollateralBulkOrderResponseItemResult) GetStatus() *ActiveOrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -3843,6 +4179,13 @@ func (c *CreateCollateralBulkOrderResponseItemResult) GetRpi() *bool {
 		return nil
 	}
 	return c.Rpi
+}
+
+func (c *CreateCollateralBulkOrderResponseItemResult) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
 }
 
 func (c *CreateCollateralBulkOrderResponseItemResult) GetExtraProperties() map[string]interface{} {
@@ -3956,7 +4299,7 @@ func (c *CreateCollateralBulkOrderResponseItemResult) SetIoc(ioc *bool) {
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralBulkOrderResponseItemResult) SetStatus(status *CreateCollateralBulkOrderResponseItemResultStatus) {
+func (c *CreateCollateralBulkOrderResponseItemResult) SetStatus(status *ActiveOrderStatus) {
 	c.Status = status
 	c.require(createCollateralBulkOrderResponseItemResultFieldStatus)
 }
@@ -3980,6 +4323,13 @@ func (c *CreateCollateralBulkOrderResponseItemResult) SetPositionSide(positionSi
 func (c *CreateCollateralBulkOrderResponseItemResult) SetRpi(rpi *bool) {
 	c.Rpi = rpi
 	c.require(createCollateralBulkOrderResponseItemResultFieldRpi)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralBulkOrderResponseItemResult) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralBulkOrderResponseItemResultFieldReduceOnly)
 }
 
 func (c *CreateCollateralBulkOrderResponseItemResult) UnmarshalJSON(data []byte) error {
@@ -4070,36 +4420,10 @@ func (c CreateCollateralBulkOrderResponseItemResultSide) Ptr() *CreateCollateral
 	return &c
 }
 
-// Order status
-type CreateCollateralBulkOrderResponseItemResultStatus string
-
-const (
-	CreateCollateralBulkOrderResponseItemResultStatusNew             CreateCollateralBulkOrderResponseItemResultStatus = "NEW"
-	CreateCollateralBulkOrderResponseItemResultStatusFilled          CreateCollateralBulkOrderResponseItemResultStatus = "FILLED"
-	CreateCollateralBulkOrderResponseItemResultStatusPartiallyFilled CreateCollateralBulkOrderResponseItemResultStatus = "PARTIALLY_FILLED"
-	CreateCollateralBulkOrderResponseItemResultStatusCancelled       CreateCollateralBulkOrderResponseItemResultStatus = "CANCELLED"
-)
-
-func NewCreateCollateralBulkOrderResponseItemResultStatusFromString(s string) (CreateCollateralBulkOrderResponseItemResultStatus, error) {
-	switch s {
-	case "NEW":
-		return CreateCollateralBulkOrderResponseItemResultStatusNew, nil
-	case "FILLED":
-		return CreateCollateralBulkOrderResponseItemResultStatusFilled, nil
-	case "PARTIALLY_FILLED":
-		return CreateCollateralBulkOrderResponseItemResultStatusPartiallyFilled, nil
-	case "CANCELLED":
-		return CreateCollateralBulkOrderResponseItemResultStatusCancelled, nil
-	}
-	var t CreateCollateralBulkOrderResponseItemResultStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CreateCollateralBulkOrderResponseItemResultStatus) Ptr() *CreateCollateralBulkOrderResponseItemResultStatus {
-	return &c
-}
-
-// Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
+// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+//
+// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
 type CreateCollateralLimitOrderRequestPositionSide string
 
 const (
@@ -4148,6 +4472,39 @@ func (c CreateCollateralLimitOrderRequestSide) Ptr() *CreateCollateralLimitOrder
 	return &c
 }
 
+// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+//
+// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+//
+// See [Self-Trade Prevention](/platform/self-trade-prevention).
+type CreateCollateralLimitOrderRequestStp string
+
+const (
+	CreateCollateralLimitOrderRequestStpNo CreateCollateralLimitOrderRequestStp = "no"
+	CreateCollateralLimitOrderRequestStpCb CreateCollateralLimitOrderRequestStp = "cb"
+	CreateCollateralLimitOrderRequestStpCn CreateCollateralLimitOrderRequestStp = "cn"
+	CreateCollateralLimitOrderRequestStpCo CreateCollateralLimitOrderRequestStp = "co"
+)
+
+func NewCreateCollateralLimitOrderRequestStpFromString(s string) (CreateCollateralLimitOrderRequestStp, error) {
+	switch s {
+	case "no":
+		return CreateCollateralLimitOrderRequestStpNo, nil
+	case "cb":
+		return CreateCollateralLimitOrderRequestStpCb, nil
+	case "cn":
+		return CreateCollateralLimitOrderRequestStpCn, nil
+	case "co":
+		return CreateCollateralLimitOrderRequestStpCo, nil
+	}
+	var t CreateCollateralLimitOrderRequestStp
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CreateCollateralLimitOrderRequestStp) Ptr() *CreateCollateralLimitOrderRequestStp {
+	return &c
+}
+
 var (
 	createCollateralLimitOrderResponseFieldOrderID       = big.NewInt(1 << 0)
 	createCollateralLimitOrderResponseFieldClientOrderID = big.NewInt(1 << 1)
@@ -4168,40 +4525,40 @@ var (
 	createCollateralLimitOrderResponseFieldOto           = big.NewInt(1 << 16)
 	createCollateralLimitOrderResponseFieldPositionSide  = big.NewInt(1 << 17)
 	createCollateralLimitOrderResponseFieldRpi           = big.NewInt(1 << 18)
+	createCollateralLimitOrderResponseFieldReduceOnly    = big.NewInt(1 << 19)
 )
 
 type CreateCollateralLimitOrderResponse struct {
 	// Unique order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom client order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CreateCollateralLimitOrderResponseSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation in Unix format
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Amount in money currency that is finished
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Amount in stock currency that is finished
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Remaining amount that must be finished
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Fee in money that is paid when order is finished
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Order price
 	Price *string `json:"price,omitempty" url:"price,omitempty"`
 	// Post-only flag
 	PostOnly *bool `json:"postOnly,omitempty" url:"postOnly,omitempty"`
 	// Immediate or cancel flag
-	Ioc *bool `json:"ioc,omitempty" url:"ioc,omitempty"`
-	// Order status
-	Status *CreateCollateralLimitOrderResponseStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	Ioc    *bool              `json:"ioc,omitempty" url:"ioc,omitempty"`
+	Status *ActiveOrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 	// OTO order data when stopLoss or takeProfit is specified
 	Oto *CreateCollateralLimitOrderResponseOto `json:"oto,omitempty" url:"oto,omitempty"`
@@ -4209,6 +4566,8 @@ type CreateCollateralLimitOrderResponse struct {
 	PositionSide *CreateCollateralLimitOrderResponsePositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
 	// Retail Price Improvement flag
 	Rpi *bool `json:"rpi,omitempty" url:"rpi,omitempty"`
+	// Reduce-only flag
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4315,7 +4674,7 @@ func (c *CreateCollateralLimitOrderResponse) GetIoc() *bool {
 	return c.Ioc
 }
 
-func (c *CreateCollateralLimitOrderResponse) GetStatus() *CreateCollateralLimitOrderResponseStatus {
+func (c *CreateCollateralLimitOrderResponse) GetStatus() *ActiveOrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -4348,6 +4707,13 @@ func (c *CreateCollateralLimitOrderResponse) GetRpi() *bool {
 		return nil
 	}
 	return c.Rpi
+}
+
+func (c *CreateCollateralLimitOrderResponse) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
 }
 
 func (c *CreateCollateralLimitOrderResponse) GetExtraProperties() map[string]interface{} {
@@ -4461,7 +4827,7 @@ func (c *CreateCollateralLimitOrderResponse) SetIoc(ioc *bool) {
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralLimitOrderResponse) SetStatus(status *CreateCollateralLimitOrderResponseStatus) {
+func (c *CreateCollateralLimitOrderResponse) SetStatus(status *ActiveOrderStatus) {
 	c.Status = status
 	c.require(createCollateralLimitOrderResponseFieldStatus)
 }
@@ -4492,6 +4858,13 @@ func (c *CreateCollateralLimitOrderResponse) SetPositionSide(positionSide *Creat
 func (c *CreateCollateralLimitOrderResponse) SetRpi(rpi *bool) {
 	c.Rpi = rpi
 	c.require(createCollateralLimitOrderResponseFieldRpi)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralLimitOrderResponse) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralLimitOrderResponseFieldReduceOnly)
 }
 
 func (c *CreateCollateralLimitOrderResponse) UnmarshalJSON(data []byte) error {
@@ -4696,35 +5069,10 @@ func (c CreateCollateralLimitOrderResponseSide) Ptr() *CreateCollateralLimitOrde
 	return &c
 }
 
-// Order status
-type CreateCollateralLimitOrderResponseStatus string
-
-const (
-	CreateCollateralLimitOrderResponseStatusNew             CreateCollateralLimitOrderResponseStatus = "NEW"
-	CreateCollateralLimitOrderResponseStatusFilled          CreateCollateralLimitOrderResponseStatus = "FILLED"
-	CreateCollateralLimitOrderResponseStatusPartiallyFilled CreateCollateralLimitOrderResponseStatus = "PARTIALLY_FILLED"
-	CreateCollateralLimitOrderResponseStatusCancelled       CreateCollateralLimitOrderResponseStatus = "CANCELLED"
-)
-
-func NewCreateCollateralLimitOrderResponseStatusFromString(s string) (CreateCollateralLimitOrderResponseStatus, error) {
-	switch s {
-	case "NEW":
-		return CreateCollateralLimitOrderResponseStatusNew, nil
-	case "FILLED":
-		return CreateCollateralLimitOrderResponseStatusFilled, nil
-	case "PARTIALLY_FILLED":
-		return CreateCollateralLimitOrderResponseStatusPartiallyFilled, nil
-	case "CANCELLED":
-		return CreateCollateralLimitOrderResponseStatusCancelled, nil
-	}
-	var t CreateCollateralLimitOrderResponseStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CreateCollateralLimitOrderResponseStatus) Ptr() *CreateCollateralLimitOrderResponseStatus {
-	return &c
-}
-
+// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+//
+// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
 type CreateCollateralMarketOrderRequestPositionSide string
 
 const (
@@ -4750,6 +5098,7 @@ func (c CreateCollateralMarketOrderRequestPositionSide) Ptr() *CreateCollateralM
 	return &c
 }
 
+// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
 type CreateCollateralMarketOrderRequestSide string
 
 const (
@@ -4772,6 +5121,39 @@ func (c CreateCollateralMarketOrderRequestSide) Ptr() *CreateCollateralMarketOrd
 	return &c
 }
 
+// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+//
+// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+//
+// See [Self-Trade Prevention](/platform/self-trade-prevention).
+type CreateCollateralMarketOrderRequestStp string
+
+const (
+	CreateCollateralMarketOrderRequestStpNo CreateCollateralMarketOrderRequestStp = "no"
+	CreateCollateralMarketOrderRequestStpCb CreateCollateralMarketOrderRequestStp = "cb"
+	CreateCollateralMarketOrderRequestStpCn CreateCollateralMarketOrderRequestStp = "cn"
+	CreateCollateralMarketOrderRequestStpCo CreateCollateralMarketOrderRequestStp = "co"
+)
+
+func NewCreateCollateralMarketOrderRequestStpFromString(s string) (CreateCollateralMarketOrderRequestStp, error) {
+	switch s {
+	case "no":
+		return CreateCollateralMarketOrderRequestStpNo, nil
+	case "cb":
+		return CreateCollateralMarketOrderRequestStpCb, nil
+	case "cn":
+		return CreateCollateralMarketOrderRequestStpCn, nil
+	case "co":
+		return CreateCollateralMarketOrderRequestStpCo, nil
+	}
+	var t CreateCollateralMarketOrderRequestStp
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CreateCollateralMarketOrderRequestStp) Ptr() *CreateCollateralMarketOrderRequestStp {
+	return &c
+}
+
 var (
 	createCollateralMarketOrderResponseFieldOrderID       = big.NewInt(1 << 0)
 	createCollateralMarketOrderResponseFieldClientOrderID = big.NewInt(1 << 1)
@@ -4788,39 +5170,41 @@ var (
 	createCollateralMarketOrderResponseFieldStp           = big.NewInt(1 << 12)
 	createCollateralMarketOrderResponseFieldOto           = big.NewInt(1 << 13)
 	createCollateralMarketOrderResponseFieldPositionSide  = big.NewInt(1 << 14)
+	createCollateralMarketOrderResponseFieldReduceOnly    = big.NewInt(1 << 15)
 )
 
 type CreateCollateralMarketOrderResponse struct {
 	// Unique order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom client order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CreateCollateralMarketOrderResponseSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation in Unix format
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Amount in money currency that is finished
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Amount in stock currency that is finished
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Remaining amount that must be finished
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Fee in money that is paid when order is finished
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
-	// Order status
-	Status *CreateCollateralMarketOrderResponseStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	DealFee *string            `json:"dealFee,omitempty" url:"dealFee,omitempty"`
+	Status  *ActiveOrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 	// OTO order data when stopLoss or takeProfit is specified
 	Oto *CreateCollateralMarketOrderResponseOto `json:"oto,omitempty" url:"oto,omitempty"`
 	// Position side
 	PositionSide *CreateCollateralMarketOrderResponsePositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// Reduce-only flag
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -4906,7 +5290,7 @@ func (c *CreateCollateralMarketOrderResponse) GetDealFee() *string {
 	return c.DealFee
 }
 
-func (c *CreateCollateralMarketOrderResponse) GetStatus() *CreateCollateralMarketOrderResponseStatus {
+func (c *CreateCollateralMarketOrderResponse) GetStatus() *ActiveOrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -4932,6 +5316,13 @@ func (c *CreateCollateralMarketOrderResponse) GetPositionSide() *CreateCollatera
 		return nil
 	}
 	return c.PositionSide
+}
+
+func (c *CreateCollateralMarketOrderResponse) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
 }
 
 func (c *CreateCollateralMarketOrderResponse) GetExtraProperties() map[string]interface{} {
@@ -5024,7 +5415,7 @@ func (c *CreateCollateralMarketOrderResponse) SetDealFee(dealFee *string) {
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralMarketOrderResponse) SetStatus(status *CreateCollateralMarketOrderResponseStatus) {
+func (c *CreateCollateralMarketOrderResponse) SetStatus(status *ActiveOrderStatus) {
 	c.Status = status
 	c.require(createCollateralMarketOrderResponseFieldStatus)
 }
@@ -5048,6 +5439,13 @@ func (c *CreateCollateralMarketOrderResponse) SetOto(oto *CreateCollateralMarket
 func (c *CreateCollateralMarketOrderResponse) SetPositionSide(positionSide *CreateCollateralMarketOrderResponsePositionSide) {
 	c.PositionSide = positionSide
 	c.require(createCollateralMarketOrderResponseFieldPositionSide)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralMarketOrderResponse) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralMarketOrderResponseFieldReduceOnly)
 }
 
 func (c *CreateCollateralMarketOrderResponse) UnmarshalJSON(data []byte) error {
@@ -5252,35 +5650,36 @@ func (c CreateCollateralMarketOrderResponseSide) Ptr() *CreateCollateralMarketOr
 	return &c
 }
 
-// Order status
-type CreateCollateralMarketOrderResponseStatus string
+// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side). Both legs of the OCO inherit the value.
+//
+// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` on each leg whether the field is sent or omitted.
+// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+type CreateCollateralOcoOrderRequestPositionSide string
 
 const (
-	CreateCollateralMarketOrderResponseStatusNew             CreateCollateralMarketOrderResponseStatus = "NEW"
-	CreateCollateralMarketOrderResponseStatusFilled          CreateCollateralMarketOrderResponseStatus = "FILLED"
-	CreateCollateralMarketOrderResponseStatusPartiallyFilled CreateCollateralMarketOrderResponseStatus = "PARTIALLY_FILLED"
-	CreateCollateralMarketOrderResponseStatusCancelled       CreateCollateralMarketOrderResponseStatus = "CANCELLED"
+	CreateCollateralOcoOrderRequestPositionSideLong  CreateCollateralOcoOrderRequestPositionSide = "LONG"
+	CreateCollateralOcoOrderRequestPositionSideShort CreateCollateralOcoOrderRequestPositionSide = "SHORT"
+	CreateCollateralOcoOrderRequestPositionSideBoth  CreateCollateralOcoOrderRequestPositionSide = "BOTH"
 )
 
-func NewCreateCollateralMarketOrderResponseStatusFromString(s string) (CreateCollateralMarketOrderResponseStatus, error) {
+func NewCreateCollateralOcoOrderRequestPositionSideFromString(s string) (CreateCollateralOcoOrderRequestPositionSide, error) {
 	switch s {
-	case "NEW":
-		return CreateCollateralMarketOrderResponseStatusNew, nil
-	case "FILLED":
-		return CreateCollateralMarketOrderResponseStatusFilled, nil
-	case "PARTIALLY_FILLED":
-		return CreateCollateralMarketOrderResponseStatusPartiallyFilled, nil
-	case "CANCELLED":
-		return CreateCollateralMarketOrderResponseStatusCancelled, nil
+	case "LONG":
+		return CreateCollateralOcoOrderRequestPositionSideLong, nil
+	case "SHORT":
+		return CreateCollateralOcoOrderRequestPositionSideShort, nil
+	case "BOTH":
+		return CreateCollateralOcoOrderRequestPositionSideBoth, nil
 	}
-	var t CreateCollateralMarketOrderResponseStatus
+	var t CreateCollateralOcoOrderRequestPositionSide
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
 }
 
-func (c CreateCollateralMarketOrderResponseStatus) Ptr() *CreateCollateralMarketOrderResponseStatus {
+func (c CreateCollateralOcoOrderRequestPositionSide) Ptr() *CreateCollateralOcoOrderRequestPositionSide {
 	return &c
 }
 
+// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
 type CreateCollateralOcoOrderRequestSide string
 
 const (
@@ -5303,15 +5702,51 @@ func (c CreateCollateralOcoOrderRequestSide) Ptr() *CreateCollateralOcoOrderRequ
 	return &c
 }
 
+// Self-trade prevention mode. The value applies to both legs of the OCO order. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+//
+// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+//
+// See [Self-Trade Prevention](/platform/self-trade-prevention).
+type CreateCollateralOcoOrderRequestStp string
+
+const (
+	CreateCollateralOcoOrderRequestStpNo CreateCollateralOcoOrderRequestStp = "no"
+	CreateCollateralOcoOrderRequestStpCb CreateCollateralOcoOrderRequestStp = "cb"
+	CreateCollateralOcoOrderRequestStpCn CreateCollateralOcoOrderRequestStp = "cn"
+	CreateCollateralOcoOrderRequestStpCo CreateCollateralOcoOrderRequestStp = "co"
+)
+
+func NewCreateCollateralOcoOrderRequestStpFromString(s string) (CreateCollateralOcoOrderRequestStp, error) {
+	switch s {
+	case "no":
+		return CreateCollateralOcoOrderRequestStpNo, nil
+	case "cb":
+		return CreateCollateralOcoOrderRequestStpCb, nil
+	case "cn":
+		return CreateCollateralOcoOrderRequestStpCn, nil
+	case "co":
+		return CreateCollateralOcoOrderRequestStpCo, nil
+	}
+	var t CreateCollateralOcoOrderRequestStp
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CreateCollateralOcoOrderRequestStp) Ptr() *CreateCollateralOcoOrderRequestStp {
+	return &c
+}
+
 var (
 	createCollateralOcoOrderResponseFieldID         = big.NewInt(1 << 0)
-	createCollateralOcoOrderResponseFieldStopLoss   = big.NewInt(1 << 1)
-	createCollateralOcoOrderResponseFieldTakeProfit = big.NewInt(1 << 2)
+	createCollateralOcoOrderResponseFieldReduceOnly = big.NewInt(1 << 1)
+	createCollateralOcoOrderResponseFieldStopLoss   = big.NewInt(1 << 2)
+	createCollateralOcoOrderResponseFieldTakeProfit = big.NewInt(1 << 3)
 )
 
 type CreateCollateralOcoOrderResponse struct {
 	// OCO order identifier
 	ID *int `json:"id,omitempty" url:"id,omitempty"`
+	// Reduce-only flag
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 	// Stop loss order details
 	StopLoss *CreateCollateralOcoOrderResponseStopLoss `json:"stop_loss,omitempty" url:"stop_loss,omitempty"`
 	// Take profit order details
@@ -5329,6 +5764,13 @@ func (c *CreateCollateralOcoOrderResponse) GetID() *int {
 		return nil
 	}
 	return c.ID
+}
+
+func (c *CreateCollateralOcoOrderResponse) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
 }
 
 func (c *CreateCollateralOcoOrderResponse) GetStopLoss() *CreateCollateralOcoOrderResponseStopLoss {
@@ -5361,6 +5803,13 @@ func (c *CreateCollateralOcoOrderResponse) require(field *big.Int) {
 func (c *CreateCollateralOcoOrderResponse) SetID(id *int) {
 	c.ID = id
 	c.require(createCollateralOcoOrderResponseFieldID)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralOcoOrderResponse) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralOcoOrderResponseFieldReduceOnly)
 }
 
 // SetStopLoss sets the StopLoss field and marks it as non-optional;
@@ -5444,21 +5893,21 @@ var (
 
 type CreateCollateralOcoOrderResponseStopLoss struct {
 	// Order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CreateCollateralOcoOrderResponseStopLossSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Executed amount in money
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Executed amount in stock
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Taker fee ratio
@@ -5468,7 +5917,7 @@ type CreateCollateralOcoOrderResponseStopLoss struct {
 	// Unexecuted amount in stock
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Executed fee by deal
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Post-only flag
 	PostOnly *bool `json:"post_only,omitempty" url:"post_only,omitempty"`
 	// Timestamp of order modification
@@ -5477,13 +5926,12 @@ type CreateCollateralOcoOrderResponseStopLoss struct {
 	Price *string `json:"price,omitempty" url:"price,omitempty"`
 	// Activation price
 	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
-	// Activation condition
+	// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
 	ActivationCondition *CreateCollateralOcoOrderResponseStopLossActivationCondition `json:"activation_condition,omitempty" url:"activation_condition,omitempty"`
 	// Activation status (0 - not activated, 1 - activated)
-	Activated *int `json:"activated,omitempty" url:"activated,omitempty"`
-	// Order status
-	Status *CreateCollateralOcoOrderResponseStopLossStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	Activated *int               `json:"activated,omitempty" url:"activated,omitempty"`
+	Status    *ActiveOrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 	// Position side
 	PositionSide *CreateCollateralOcoOrderResponseStopLossPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
@@ -5628,7 +6076,7 @@ func (c *CreateCollateralOcoOrderResponseStopLoss) GetActivated() *int {
 	return c.Activated
 }
 
-func (c *CreateCollateralOcoOrderResponseStopLoss) GetStatus() *CreateCollateralOcoOrderResponseStopLossStatus {
+func (c *CreateCollateralOcoOrderResponseStopLoss) GetStatus() *ActiveOrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -5795,7 +6243,7 @@ func (c *CreateCollateralOcoOrderResponseStopLoss) SetActivated(activated *int) 
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralOcoOrderResponseStopLoss) SetStatus(status *CreateCollateralOcoOrderResponseStopLossStatus) {
+func (c *CreateCollateralOcoOrderResponseStopLoss) SetStatus(status *ActiveOrderStatus) {
 	c.Status = status
 	c.require(createCollateralOcoOrderResponseStopLossFieldStatus)
 }
@@ -5853,7 +6301,7 @@ func (c *CreateCollateralOcoOrderResponseStopLoss) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
-// Activation condition
+// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
 type CreateCollateralOcoOrderResponseStopLossActivationCondition string
 
 const (
@@ -5925,35 +6373,6 @@ func (c CreateCollateralOcoOrderResponseStopLossSide) Ptr() *CreateCollateralOco
 	return &c
 }
 
-// Order status
-type CreateCollateralOcoOrderResponseStopLossStatus string
-
-const (
-	CreateCollateralOcoOrderResponseStopLossStatusNew             CreateCollateralOcoOrderResponseStopLossStatus = "NEW"
-	CreateCollateralOcoOrderResponseStopLossStatusFilled          CreateCollateralOcoOrderResponseStopLossStatus = "FILLED"
-	CreateCollateralOcoOrderResponseStopLossStatusPartiallyFilled CreateCollateralOcoOrderResponseStopLossStatus = "PARTIALLY_FILLED"
-	CreateCollateralOcoOrderResponseStopLossStatusCancelled       CreateCollateralOcoOrderResponseStopLossStatus = "CANCELLED"
-)
-
-func NewCreateCollateralOcoOrderResponseStopLossStatusFromString(s string) (CreateCollateralOcoOrderResponseStopLossStatus, error) {
-	switch s {
-	case "NEW":
-		return CreateCollateralOcoOrderResponseStopLossStatusNew, nil
-	case "FILLED":
-		return CreateCollateralOcoOrderResponseStopLossStatusFilled, nil
-	case "PARTIALLY_FILLED":
-		return CreateCollateralOcoOrderResponseStopLossStatusPartiallyFilled, nil
-	case "CANCELLED":
-		return CreateCollateralOcoOrderResponseStopLossStatusCancelled, nil
-	}
-	var t CreateCollateralOcoOrderResponseStopLossStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CreateCollateralOcoOrderResponseStopLossStatus) Ptr() *CreateCollateralOcoOrderResponseStopLossStatus {
-	return &c
-}
-
 // Take profit order details
 var (
 	createCollateralOcoOrderResponseTakeProfitFieldOrderID       = big.NewInt(1 << 0)
@@ -5979,21 +6398,21 @@ var (
 
 type CreateCollateralOcoOrderResponseTakeProfit struct {
 	// Order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CreateCollateralOcoOrderResponseTakeProfitSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Executed amount in money
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Executed amount in stock
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Taker fee ratio
@@ -6003,16 +6422,15 @@ type CreateCollateralOcoOrderResponseTakeProfit struct {
 	// Unexecuted amount in stock
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Executed fee by deal
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Post-only flag
 	PostOnly *bool `json:"post_only,omitempty" url:"post_only,omitempty"`
 	// Timestamp of order modification
 	Mtime *float64 `json:"mtime,omitempty" url:"mtime,omitempty"`
 	// Order price
-	Price *string `json:"price,omitempty" url:"price,omitempty"`
-	// Order status
-	Status *CreateCollateralOcoOrderResponseTakeProfitStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	Price  *string            `json:"price,omitempty" url:"price,omitempty"`
+	Status *ActiveOrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 	// Position side
 	PositionSide *CreateCollateralOcoOrderResponseTakeProfitPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
@@ -6136,7 +6554,7 @@ func (c *CreateCollateralOcoOrderResponseTakeProfit) GetPrice() *string {
 	return c.Price
 }
 
-func (c *CreateCollateralOcoOrderResponseTakeProfit) GetStatus() *CreateCollateralOcoOrderResponseTakeProfitStatus {
+func (c *CreateCollateralOcoOrderResponseTakeProfit) GetStatus() *ActiveOrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -6282,7 +6700,7 @@ func (c *CreateCollateralOcoOrderResponseTakeProfit) SetPrice(price *string) {
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralOcoOrderResponseTakeProfit) SetStatus(status *CreateCollateralOcoOrderResponseTakeProfitStatus) {
+func (c *CreateCollateralOcoOrderResponseTakeProfit) SetStatus(status *ActiveOrderStatus) {
 	c.Status = status
 	c.require(createCollateralOcoOrderResponseTakeProfitFieldStatus)
 }
@@ -6389,35 +6807,10 @@ func (c CreateCollateralOcoOrderResponseTakeProfitSide) Ptr() *CreateCollateralO
 	return &c
 }
 
-// Order status
-type CreateCollateralOcoOrderResponseTakeProfitStatus string
-
-const (
-	CreateCollateralOcoOrderResponseTakeProfitStatusNew             CreateCollateralOcoOrderResponseTakeProfitStatus = "NEW"
-	CreateCollateralOcoOrderResponseTakeProfitStatusFilled          CreateCollateralOcoOrderResponseTakeProfitStatus = "FILLED"
-	CreateCollateralOcoOrderResponseTakeProfitStatusPartiallyFilled CreateCollateralOcoOrderResponseTakeProfitStatus = "PARTIALLY_FILLED"
-	CreateCollateralOcoOrderResponseTakeProfitStatusCancelled       CreateCollateralOcoOrderResponseTakeProfitStatus = "CANCELLED"
-)
-
-func NewCreateCollateralOcoOrderResponseTakeProfitStatusFromString(s string) (CreateCollateralOcoOrderResponseTakeProfitStatus, error) {
-	switch s {
-	case "NEW":
-		return CreateCollateralOcoOrderResponseTakeProfitStatusNew, nil
-	case "FILLED":
-		return CreateCollateralOcoOrderResponseTakeProfitStatusFilled, nil
-	case "PARTIALLY_FILLED":
-		return CreateCollateralOcoOrderResponseTakeProfitStatusPartiallyFilled, nil
-	case "CANCELLED":
-		return CreateCollateralOcoOrderResponseTakeProfitStatusCancelled, nil
-	}
-	var t CreateCollateralOcoOrderResponseTakeProfitStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CreateCollateralOcoOrderResponseTakeProfitStatus) Ptr() *CreateCollateralOcoOrderResponseTakeProfitStatus {
-	return &c
-}
-
+// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+//
+// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
 type CreateCollateralStopLimitOrderRequestPositionSide string
 
 const (
@@ -6443,6 +6836,7 @@ func (c CreateCollateralStopLimitOrderRequestPositionSide) Ptr() *CreateCollater
 	return &c
 }
 
+// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
 type CreateCollateralStopLimitOrderRequestSide string
 
 const (
@@ -6465,6 +6859,39 @@ func (c CreateCollateralStopLimitOrderRequestSide) Ptr() *CreateCollateralStopLi
 	return &c
 }
 
+// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+//
+// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+//
+// See [Self-Trade Prevention](/platform/self-trade-prevention).
+type CreateCollateralStopLimitOrderRequestStp string
+
+const (
+	CreateCollateralStopLimitOrderRequestStpNo CreateCollateralStopLimitOrderRequestStp = "no"
+	CreateCollateralStopLimitOrderRequestStpCb CreateCollateralStopLimitOrderRequestStp = "cb"
+	CreateCollateralStopLimitOrderRequestStpCn CreateCollateralStopLimitOrderRequestStp = "cn"
+	CreateCollateralStopLimitOrderRequestStpCo CreateCollateralStopLimitOrderRequestStp = "co"
+)
+
+func NewCreateCollateralStopLimitOrderRequestStpFromString(s string) (CreateCollateralStopLimitOrderRequestStp, error) {
+	switch s {
+	case "no":
+		return CreateCollateralStopLimitOrderRequestStpNo, nil
+	case "cb":
+		return CreateCollateralStopLimitOrderRequestStpCb, nil
+	case "cn":
+		return CreateCollateralStopLimitOrderRequestStpCn, nil
+	case "co":
+		return CreateCollateralStopLimitOrderRequestStpCo, nil
+	}
+	var t CreateCollateralStopLimitOrderRequestStp
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CreateCollateralStopLimitOrderRequestStp) Ptr() *CreateCollateralStopLimitOrderRequestStp {
+	return &c
+}
+
 var (
 	createCollateralStopLimitOrderResponseFieldOrderID         = big.NewInt(1 << 0)
 	createCollateralStopLimitOrderResponseFieldClientOrderID   = big.NewInt(1 << 1)
@@ -6483,43 +6910,45 @@ var (
 	createCollateralStopLimitOrderResponseFieldStp             = big.NewInt(1 << 14)
 	createCollateralStopLimitOrderResponseFieldOto             = big.NewInt(1 << 15)
 	createCollateralStopLimitOrderResponseFieldPositionSide    = big.NewInt(1 << 16)
+	createCollateralStopLimitOrderResponseFieldReduceOnly      = big.NewInt(1 << 17)
 )
 
 type CreateCollateralStopLimitOrderResponse struct {
 	// Unique order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom client order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CreateCollateralStopLimitOrderResponseSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation in Unix format
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Amount in money currency that is finished
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Amount in stock currency that is finished
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Remaining amount that must be finished
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Fee in money that is paid when order is finished
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Order price
 	Price *string `json:"price,omitempty" url:"price,omitempty"`
 	// Price at which the stop-limit order activates
-	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
-	// Order status
-	Status *CreateCollateralStopLimitOrderResponseStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	ActivationPrice *string            `json:"activation_price,omitempty" url:"activation_price,omitempty"`
+	Status          *ActiveOrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 	// OTO order data when stopLoss or takeProfit is specified
 	Oto *CreateCollateralStopLimitOrderResponseOto `json:"oto,omitempty" url:"oto,omitempty"`
 	// Position side
 	PositionSide *CreateCollateralStopLimitOrderResponsePositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// Reduce-only flag
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -6619,7 +7048,7 @@ func (c *CreateCollateralStopLimitOrderResponse) GetActivationPrice() *string {
 	return c.ActivationPrice
 }
 
-func (c *CreateCollateralStopLimitOrderResponse) GetStatus() *CreateCollateralStopLimitOrderResponseStatus {
+func (c *CreateCollateralStopLimitOrderResponse) GetStatus() *ActiveOrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -6645,6 +7074,13 @@ func (c *CreateCollateralStopLimitOrderResponse) GetPositionSide() *CreateCollat
 		return nil
 	}
 	return c.PositionSide
+}
+
+func (c *CreateCollateralStopLimitOrderResponse) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
 }
 
 func (c *CreateCollateralStopLimitOrderResponse) GetExtraProperties() map[string]interface{} {
@@ -6751,7 +7187,7 @@ func (c *CreateCollateralStopLimitOrderResponse) SetActivationPrice(activationPr
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralStopLimitOrderResponse) SetStatus(status *CreateCollateralStopLimitOrderResponseStatus) {
+func (c *CreateCollateralStopLimitOrderResponse) SetStatus(status *ActiveOrderStatus) {
 	c.Status = status
 	c.require(createCollateralStopLimitOrderResponseFieldStatus)
 }
@@ -6775,6 +7211,13 @@ func (c *CreateCollateralStopLimitOrderResponse) SetOto(oto *CreateCollateralSto
 func (c *CreateCollateralStopLimitOrderResponse) SetPositionSide(positionSide *CreateCollateralStopLimitOrderResponsePositionSide) {
 	c.PositionSide = positionSide
 	c.require(createCollateralStopLimitOrderResponseFieldPositionSide)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralStopLimitOrderResponse) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralStopLimitOrderResponseFieldReduceOnly)
 }
 
 func (c *CreateCollateralStopLimitOrderResponse) UnmarshalJSON(data []byte) error {
@@ -6979,35 +7422,10 @@ func (c CreateCollateralStopLimitOrderResponseSide) Ptr() *CreateCollateralStopL
 	return &c
 }
 
-// Order status
-type CreateCollateralStopLimitOrderResponseStatus string
-
-const (
-	CreateCollateralStopLimitOrderResponseStatusNew             CreateCollateralStopLimitOrderResponseStatus = "NEW"
-	CreateCollateralStopLimitOrderResponseStatusFilled          CreateCollateralStopLimitOrderResponseStatus = "FILLED"
-	CreateCollateralStopLimitOrderResponseStatusPartiallyFilled CreateCollateralStopLimitOrderResponseStatus = "PARTIALLY_FILLED"
-	CreateCollateralStopLimitOrderResponseStatusCancelled       CreateCollateralStopLimitOrderResponseStatus = "CANCELLED"
-)
-
-func NewCreateCollateralStopLimitOrderResponseStatusFromString(s string) (CreateCollateralStopLimitOrderResponseStatus, error) {
-	switch s {
-	case "NEW":
-		return CreateCollateralStopLimitOrderResponseStatusNew, nil
-	case "FILLED":
-		return CreateCollateralStopLimitOrderResponseStatusFilled, nil
-	case "PARTIALLY_FILLED":
-		return CreateCollateralStopLimitOrderResponseStatusPartiallyFilled, nil
-	case "CANCELLED":
-		return CreateCollateralStopLimitOrderResponseStatusCancelled, nil
-	}
-	var t CreateCollateralStopLimitOrderResponseStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CreateCollateralStopLimitOrderResponseStatus) Ptr() *CreateCollateralStopLimitOrderResponseStatus {
-	return &c
-}
-
+// Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+//
+// - **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+// - **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
 type CreateCollateralTriggerMarketOrderRequestPositionSide string
 
 const (
@@ -7033,6 +7451,7 @@ func (c CreateCollateralTriggerMarketOrderRequestPositionSide) Ptr() *CreateColl
 	return &c
 }
 
+// Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
 type CreateCollateralTriggerMarketOrderRequestSide string
 
 const (
@@ -7055,6 +7474,39 @@ func (c CreateCollateralTriggerMarketOrderRequestSide) Ptr() *CreateCollateralTr
 	return &c
 }
 
+// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+//
+// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+//
+// See [Self-Trade Prevention](/platform/self-trade-prevention).
+type CreateCollateralTriggerMarketOrderRequestStp string
+
+const (
+	CreateCollateralTriggerMarketOrderRequestStpNo CreateCollateralTriggerMarketOrderRequestStp = "no"
+	CreateCollateralTriggerMarketOrderRequestStpCb CreateCollateralTriggerMarketOrderRequestStp = "cb"
+	CreateCollateralTriggerMarketOrderRequestStpCn CreateCollateralTriggerMarketOrderRequestStp = "cn"
+	CreateCollateralTriggerMarketOrderRequestStpCo CreateCollateralTriggerMarketOrderRequestStp = "co"
+)
+
+func NewCreateCollateralTriggerMarketOrderRequestStpFromString(s string) (CreateCollateralTriggerMarketOrderRequestStp, error) {
+	switch s {
+	case "no":
+		return CreateCollateralTriggerMarketOrderRequestStpNo, nil
+	case "cb":
+		return CreateCollateralTriggerMarketOrderRequestStpCb, nil
+	case "cn":
+		return CreateCollateralTriggerMarketOrderRequestStpCn, nil
+	case "co":
+		return CreateCollateralTriggerMarketOrderRequestStpCo, nil
+	}
+	var t CreateCollateralTriggerMarketOrderRequestStp
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CreateCollateralTriggerMarketOrderRequestStp) Ptr() *CreateCollateralTriggerMarketOrderRequestStp {
+	return &c
+}
+
 var (
 	createCollateralTriggerMarketOrderResponseFieldOrderID         = big.NewInt(1 << 0)
 	createCollateralTriggerMarketOrderResponseFieldClientOrderID   = big.NewInt(1 << 1)
@@ -7072,41 +7524,43 @@ var (
 	createCollateralTriggerMarketOrderResponseFieldStp             = big.NewInt(1 << 13)
 	createCollateralTriggerMarketOrderResponseFieldOto             = big.NewInt(1 << 14)
 	createCollateralTriggerMarketOrderResponseFieldPositionSide    = big.NewInt(1 << 15)
+	createCollateralTriggerMarketOrderResponseFieldReduceOnly      = big.NewInt(1 << 16)
 )
 
 type CreateCollateralTriggerMarketOrderResponse struct {
 	// Unique order identifier
-	OrderID *int `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
 	// Custom client order identifier. Empty string if not specified
-	ClientOrderID *string `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	// Market name
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Order side
 	Side *CreateCollateralTriggerMarketOrderResponseSide `json:"side,omitempty" url:"side,omitempty"`
 	// Order type
 	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Timestamp of order creation in Unix format
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
 	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
 	// Amount in money currency that is finished
-	DealMoney *string `json:"deal_money,omitempty" url:"deal_money,omitempty"`
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
 	// Amount in stock currency that is finished
-	DealStock *string `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	// Order amount
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Remaining amount that must be finished
 	Left *string `json:"left,omitempty" url:"left,omitempty"`
 	// Fee in money that is paid when order is finished
-	DealFee *string `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	// Price at which the stop market order activates
-	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
-	// Order status
-	Status *CreateCollateralTriggerMarketOrderResponseStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self trade prevention mode
+	ActivationPrice *string            `json:"activation_price,omitempty" url:"activation_price,omitempty"`
+	Status          *ActiveOrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
 	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
 	// OTO order data when stopLoss or takeProfit is specified
 	Oto *CreateCollateralTriggerMarketOrderResponseOto `json:"oto,omitempty" url:"oto,omitempty"`
 	// Position side
 	PositionSide *CreateCollateralTriggerMarketOrderResponsePositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// Reduce-only flag
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7199,7 +7653,7 @@ func (c *CreateCollateralTriggerMarketOrderResponse) GetActivationPrice() *strin
 	return c.ActivationPrice
 }
 
-func (c *CreateCollateralTriggerMarketOrderResponse) GetStatus() *CreateCollateralTriggerMarketOrderResponseStatus {
+func (c *CreateCollateralTriggerMarketOrderResponse) GetStatus() *ActiveOrderStatus {
 	if c == nil {
 		return nil
 	}
@@ -7225,6 +7679,13 @@ func (c *CreateCollateralTriggerMarketOrderResponse) GetPositionSide() *CreateCo
 		return nil
 	}
 	return c.PositionSide
+}
+
+func (c *CreateCollateralTriggerMarketOrderResponse) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
 }
 
 func (c *CreateCollateralTriggerMarketOrderResponse) GetExtraProperties() map[string]interface{} {
@@ -7324,7 +7785,7 @@ func (c *CreateCollateralTriggerMarketOrderResponse) SetActivationPrice(activati
 
 // SetStatus sets the Status field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCollateralTriggerMarketOrderResponse) SetStatus(status *CreateCollateralTriggerMarketOrderResponseStatus) {
+func (c *CreateCollateralTriggerMarketOrderResponse) SetStatus(status *ActiveOrderStatus) {
 	c.Status = status
 	c.require(createCollateralTriggerMarketOrderResponseFieldStatus)
 }
@@ -7348,6 +7809,13 @@ func (c *CreateCollateralTriggerMarketOrderResponse) SetOto(oto *CreateCollatera
 func (c *CreateCollateralTriggerMarketOrderResponse) SetPositionSide(positionSide *CreateCollateralTriggerMarketOrderResponsePositionSide) {
 	c.PositionSide = positionSide
 	c.require(createCollateralTriggerMarketOrderResponseFieldPositionSide)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CreateCollateralTriggerMarketOrderResponse) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(createCollateralTriggerMarketOrderResponseFieldReduceOnly)
 }
 
 func (c *CreateCollateralTriggerMarketOrderResponse) UnmarshalJSON(data []byte) error {
@@ -7552,33 +8020,117 @@ func (c CreateCollateralTriggerMarketOrderResponseSide) Ptr() *CreateCollateralT
 	return &c
 }
 
-// Order status
-type CreateCollateralTriggerMarketOrderResponseStatus string
-
-const (
-	CreateCollateralTriggerMarketOrderResponseStatusNew             CreateCollateralTriggerMarketOrderResponseStatus = "NEW"
-	CreateCollateralTriggerMarketOrderResponseStatusFilled          CreateCollateralTriggerMarketOrderResponseStatus = "FILLED"
-	CreateCollateralTriggerMarketOrderResponseStatusPartiallyFilled CreateCollateralTriggerMarketOrderResponseStatus = "PARTIALLY_FILLED"
-	CreateCollateralTriggerMarketOrderResponseStatusCancelled       CreateCollateralTriggerMarketOrderResponseStatus = "CANCELLED"
+var (
+	getCollateralAccountAdlQuantileResponseItemFieldMarket = big.NewInt(1 << 0)
+	getCollateralAccountAdlQuantileResponseItemFieldLong   = big.NewInt(1 << 1)
+	getCollateralAccountAdlQuantileResponseItemFieldShort  = big.NewInt(1 << 2)
 )
 
-func NewCreateCollateralTriggerMarketOrderResponseStatusFromString(s string) (CreateCollateralTriggerMarketOrderResponseStatus, error) {
-	switch s {
-	case "NEW":
-		return CreateCollateralTriggerMarketOrderResponseStatusNew, nil
-	case "FILLED":
-		return CreateCollateralTriggerMarketOrderResponseStatusFilled, nil
-	case "PARTIALLY_FILLED":
-		return CreateCollateralTriggerMarketOrderResponseStatusPartiallyFilled, nil
-	case "CANCELLED":
-		return CreateCollateralTriggerMarketOrderResponseStatusCancelled, nil
-	}
-	var t CreateCollateralTriggerMarketOrderResponseStatus
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
+type GetCollateralAccountAdlQuantileResponseItem struct {
+	// Perpetual market name. Format: `BASE_PERP`.
+	Market *string `json:"market,omitempty" url:"market,omitempty"`
+	// ADL quantile for the long side of the position. Values range from `0` to `4`: `0` indicates the lowest deleveraging priority (safest position in the ADL queue); `4` indicates the highest probability of being selected as the ADL counterparty. The value is `null` when the account has no exposure on the long side.
+	Long *int `json:"long,omitempty" url:"long,omitempty"`
+	// ADL quantile for the short side of the position. Values range from `0` to `4`: `0` indicates the lowest deleveraging priority; `4` indicates the highest probability of being selected as the ADL counterparty. The value is `null` when the account has no exposure on the short side.
+	Short *int `json:"short,omitempty" url:"short,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
 }
 
-func (c CreateCollateralTriggerMarketOrderResponseStatus) Ptr() *CreateCollateralTriggerMarketOrderResponseStatus {
-	return &c
+func (g *GetCollateralAccountAdlQuantileResponseItem) GetMarket() *string {
+	if g == nil {
+		return nil
+	}
+	return g.Market
+}
+
+func (g *GetCollateralAccountAdlQuantileResponseItem) GetLong() *int {
+	if g == nil {
+		return nil
+	}
+	return g.Long
+}
+
+func (g *GetCollateralAccountAdlQuantileResponseItem) GetShort() *int {
+	if g == nil {
+		return nil
+	}
+	return g.Short
+}
+
+func (g *GetCollateralAccountAdlQuantileResponseItem) GetExtraProperties() map[string]interface{} {
+	return g.extraProperties
+}
+
+func (g *GetCollateralAccountAdlQuantileResponseItem) require(field *big.Int) {
+	if g.explicitFields == nil {
+		g.explicitFields = big.NewInt(0)
+	}
+	g.explicitFields.Or(g.explicitFields, field)
+}
+
+// SetMarket sets the Market field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetCollateralAccountAdlQuantileResponseItem) SetMarket(market *string) {
+	g.Market = market
+	g.require(getCollateralAccountAdlQuantileResponseItemFieldMarket)
+}
+
+// SetLong sets the Long field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetCollateralAccountAdlQuantileResponseItem) SetLong(long *int) {
+	g.Long = long
+	g.require(getCollateralAccountAdlQuantileResponseItemFieldLong)
+}
+
+// SetShort sets the Short field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetCollateralAccountAdlQuantileResponseItem) SetShort(short *int) {
+	g.Short = short
+	g.require(getCollateralAccountAdlQuantileResponseItemFieldShort)
+}
+
+func (g *GetCollateralAccountAdlQuantileResponseItem) UnmarshalJSON(data []byte) error {
+	type unmarshaler GetCollateralAccountAdlQuantileResponseItem
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*g = GetCollateralAccountAdlQuantileResponseItem(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *g)
+	if err != nil {
+		return err
+	}
+	g.extraProperties = extraProperties
+	g.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (g *GetCollateralAccountAdlQuantileResponseItem) MarshalJSON() ([]byte, error) {
+	type embed GetCollateralAccountAdlQuantileResponseItem
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (g *GetCollateralAccountAdlQuantileResponseItem) String() string {
+	if len(g.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(g); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", g)
 }
 
 var (
@@ -7586,7 +8138,7 @@ var (
 )
 
 type GetCollateralHedgeModeResponse struct {
-	// Current hedge mode status
+	// Indicates whether hedge mode is active. When `true`, the account supports simultaneous long and short positions on the same market.
 	HedgeMode *bool `json:"hedgeMode,omitempty" url:"hedgeMode,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -7912,14 +8464,17 @@ func (g *GetConditionalOrdersResponseRecordsItem) validate() error {
 // OCO type conditional order
 var (
 	getConditionalOrdersResponseRecordsItemOcoFieldID         = big.NewInt(1 << 0)
-	getConditionalOrdersResponseRecordsItemOcoFieldStopLoss   = big.NewInt(1 << 1)
-	getConditionalOrdersResponseRecordsItemOcoFieldTakeProfit = big.NewInt(1 << 2)
+	getConditionalOrdersResponseRecordsItemOcoFieldReduceOnly = big.NewInt(1 << 1)
+	getConditionalOrdersResponseRecordsItemOcoFieldStopLoss   = big.NewInt(1 << 2)
+	getConditionalOrdersResponseRecordsItemOcoFieldTakeProfit = big.NewInt(1 << 3)
 )
 
 type GetConditionalOrdersResponseRecordsItemOco struct {
-	ID         *int                                                  `json:"id,omitempty" url:"id,omitempty"`
-	StopLoss   *GetConditionalOrdersResponseRecordsItemOcoStopLoss   `json:"stop_loss,omitempty" url:"stop_loss,omitempty"`
-	TakeProfit *GetConditionalOrdersResponseRecordsItemOcoTakeProfit `json:"take_profit,omitempty" url:"take_profit,omitempty"`
+	ID *int `json:"id,omitempty" url:"id,omitempty"`
+	// Reduce-only flag
+	ReduceOnly *bool                                                 `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
+	StopLoss   *GetConditionalOrdersResponseRecordsItemOcoStopLoss   `json:"stopLoss,omitempty" url:"stopLoss,omitempty"`
+	TakeProfit *GetConditionalOrdersResponseRecordsItemOcoTakeProfit `json:"takeProfit,omitempty" url:"takeProfit,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -7933,6 +8488,13 @@ func (g *GetConditionalOrdersResponseRecordsItemOco) GetID() *int {
 		return nil
 	}
 	return g.ID
+}
+
+func (g *GetConditionalOrdersResponseRecordsItemOco) GetReduceOnly() *bool {
+	if g == nil {
+		return nil
+	}
+	return g.ReduceOnly
 }
 
 func (g *GetConditionalOrdersResponseRecordsItemOco) GetStopLoss() *GetConditionalOrdersResponseRecordsItemOcoStopLoss {
@@ -7965,6 +8527,13 @@ func (g *GetConditionalOrdersResponseRecordsItemOco) require(field *big.Int) {
 func (g *GetConditionalOrdersResponseRecordsItemOco) SetID(id *int) {
 	g.ID = id
 	g.require(getConditionalOrdersResponseRecordsItemOcoFieldID)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetConditionalOrdersResponseRecordsItemOco) SetReduceOnly(reduceOnly *bool) {
+	g.ReduceOnly = reduceOnly
+	g.require(getConditionalOrdersResponseRecordsItemOcoFieldReduceOnly)
 }
 
 // SetStopLoss sets the StopLoss field and marks it as non-optional;
@@ -8026,7 +8595,7 @@ var (
 )
 
 type GetConditionalOrdersResponseRecordsItemOcoStopLoss struct {
-	OrderID      *int                                                            `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID      *int                                                            `json:"orderId,omitempty" url:"orderId,omitempty"`
 	PositionSide *GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -8145,7 +8714,7 @@ var (
 )
 
 type GetConditionalOrdersResponseRecordsItemOcoTakeProfit struct {
-	OrderID      *int                                                              `json:"order_id,omitempty" url:"order_id,omitempty"`
+	OrderID      *int                                                              `json:"orderId,omitempty" url:"orderId,omitempty"`
 	PositionSide *GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -8261,13 +8830,16 @@ func (g GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide) Ptr() 
 // OTO type conditional order
 var (
 	getConditionalOrdersResponseRecordsItemOtoFieldID               = big.NewInt(1 << 0)
-	getConditionalOrdersResponseRecordsItemOtoFieldStopLossPrice    = big.NewInt(1 << 1)
-	getConditionalOrdersResponseRecordsItemOtoFieldTakeProfitPrice  = big.NewInt(1 << 2)
-	getConditionalOrdersResponseRecordsItemOtoFieldConditionalOrder = big.NewInt(1 << 3)
+	getConditionalOrdersResponseRecordsItemOtoFieldReduceOnly       = big.NewInt(1 << 1)
+	getConditionalOrdersResponseRecordsItemOtoFieldStopLossPrice    = big.NewInt(1 << 2)
+	getConditionalOrdersResponseRecordsItemOtoFieldTakeProfitPrice  = big.NewInt(1 << 3)
+	getConditionalOrdersResponseRecordsItemOtoFieldConditionalOrder = big.NewInt(1 << 4)
 )
 
 type GetConditionalOrdersResponseRecordsItemOto struct {
-	ID               *int                                                        `json:"id,omitempty" url:"id,omitempty"`
+	ID *int `json:"id,omitempty" url:"id,omitempty"`
+	// Reduce-only flag
+	ReduceOnly       *bool                                                       `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
 	StopLossPrice    *string                                                     `json:"stopLossPrice,omitempty" url:"stopLossPrice,omitempty"`
 	TakeProfitPrice  *string                                                     `json:"takeProfitPrice,omitempty" url:"takeProfitPrice,omitempty"`
 	ConditionalOrder *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder `json:"conditionalOrder,omitempty" url:"conditionalOrder,omitempty"`
@@ -8284,6 +8856,13 @@ func (g *GetConditionalOrdersResponseRecordsItemOto) GetID() *int {
 		return nil
 	}
 	return g.ID
+}
+
+func (g *GetConditionalOrdersResponseRecordsItemOto) GetReduceOnly() *bool {
+	if g == nil {
+		return nil
+	}
+	return g.ReduceOnly
 }
 
 func (g *GetConditionalOrdersResponseRecordsItemOto) GetStopLossPrice() *string {
@@ -8323,6 +8902,13 @@ func (g *GetConditionalOrdersResponseRecordsItemOto) require(field *big.Int) {
 func (g *GetConditionalOrdersResponseRecordsItemOto) SetID(id *int) {
 	g.ID = id
 	g.require(getConditionalOrdersResponseRecordsItemOtoFieldID)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetConditionalOrdersResponseRecordsItemOto) SetReduceOnly(reduceOnly *bool) {
+	g.ReduceOnly = reduceOnly
+	g.require(getConditionalOrdersResponseRecordsItemOtoFieldReduceOnly)
 }
 
 // SetStopLossPrice sets the StopLossPrice field and marks it as non-optional;
@@ -8393,8 +8979,8 @@ var (
 )
 
 type GetConditionalOrdersResponseRecordsItemOtoConditionalOrder struct {
-	OrderID       *int                                                                    `json:"order_id,omitempty" url:"order_id,omitempty"`
-	ClientOrderID *string                                                                 `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	OrderID       *int                                                                    `json:"orderId,omitempty" url:"orderId,omitempty"`
+	ClientOrderID *string                                                                 `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	Market        *string                                                                 `json:"market,omitempty" url:"market,omitempty"`
 	PositionSide  *GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
 
@@ -8969,23 +9555,24 @@ var (
 )
 
 type GetOcoOrdersResponseItemStopLoss struct {
-	OrderID             *int                                                 `json:"order_id,omitempty" url:"order_id,omitempty"`
-	ClientOrderID       *string                                              `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
-	Market              *string                                              `json:"market,omitempty" url:"market,omitempty"`
-	Side                *GetOcoOrdersResponseItemStopLossSide                `json:"side,omitempty" url:"side,omitempty"`
-	Type                *string                                              `json:"type,omitempty" url:"type,omitempty"`
-	Timestamp           *float64                                             `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	DealMoney           *string                                              `json:"deal_money,omitempty" url:"deal_money,omitempty"`
-	DealStock           *string                                              `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
-	Amount              *string                                              `json:"amount,omitempty" url:"amount,omitempty"`
-	TakerFee            *string                                              `json:"takerFee,omitempty" url:"takerFee,omitempty"`
-	MakerFee            *string                                              `json:"makerFee,omitempty" url:"makerFee,omitempty"`
-	Left                *string                                              `json:"left,omitempty" url:"left,omitempty"`
-	DealFee             *string                                              `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
-	PostOnly            *bool                                                `json:"post_only,omitempty" url:"post_only,omitempty"`
-	Mtime               *float64                                             `json:"mtime,omitempty" url:"mtime,omitempty"`
-	Price               *string                                              `json:"price,omitempty" url:"price,omitempty"`
-	ActivationPrice     *string                                              `json:"activation_price,omitempty" url:"activation_price,omitempty"`
+	OrderID         *int                                  `json:"orderId,omitempty" url:"orderId,omitempty"`
+	ClientOrderID   *string                               `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
+	Market          *string                               `json:"market,omitempty" url:"market,omitempty"`
+	Side            *GetOcoOrdersResponseItemStopLossSide `json:"side,omitempty" url:"side,omitempty"`
+	Type            *string                               `json:"type,omitempty" url:"type,omitempty"`
+	Timestamp       *float64                              `json:"timestamp,omitempty" url:"timestamp,omitempty"`
+	DealMoney       *string                               `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
+	DealStock       *string                               `json:"dealStock,omitempty" url:"dealStock,omitempty"`
+	Amount          *string                               `json:"amount,omitempty" url:"amount,omitempty"`
+	TakerFee        *string                               `json:"takerFee,omitempty" url:"takerFee,omitempty"`
+	MakerFee        *string                               `json:"makerFee,omitempty" url:"makerFee,omitempty"`
+	Left            *string                               `json:"left,omitempty" url:"left,omitempty"`
+	DealFee         *string                               `json:"dealFee,omitempty" url:"dealFee,omitempty"`
+	PostOnly        *bool                                 `json:"post_only,omitempty" url:"post_only,omitempty"`
+	Mtime           *float64                              `json:"mtime,omitempty" url:"mtime,omitempty"`
+	Price           *string                               `json:"price,omitempty" url:"price,omitempty"`
+	ActivationPrice *string                               `json:"activation_price,omitempty" url:"activation_price,omitempty"`
+	// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
 	ActivationCondition *GetOcoOrdersResponseItemStopLossActivationCondition `json:"activation_condition,omitempty" url:"activation_condition,omitempty"`
 	Activated           *int                                                 `json:"activated,omitempty" url:"activated,omitempty"`
 	Status              *string                                              `json:"status,omitempty" url:"status,omitempty"`
@@ -9342,6 +9929,7 @@ func (g *GetOcoOrdersResponseItemStopLoss) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
+// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
 type GetOcoOrdersResponseItemStopLossActivationCondition string
 
 const (
@@ -9409,19 +9997,19 @@ var (
 )
 
 type GetOcoOrdersResponseItemTakeProfit struct {
-	OrderID       *int                                    `json:"order_id,omitempty" url:"order_id,omitempty"`
-	ClientOrderID *string                                 `json:"client_order_id,omitempty" url:"client_order_id,omitempty"`
+	OrderID       *int                                    `json:"orderId,omitempty" url:"orderId,omitempty"`
+	ClientOrderID *string                                 `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
 	Market        *string                                 `json:"market,omitempty" url:"market,omitempty"`
 	Side          *GetOcoOrdersResponseItemTakeProfitSide `json:"side,omitempty" url:"side,omitempty"`
 	Type          *string                                 `json:"type,omitempty" url:"type,omitempty"`
 	Timestamp     *float64                                `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	DealMoney     *string                                 `json:"deal_money,omitempty" url:"deal_money,omitempty"`
-	DealStock     *string                                 `json:"deal_stock,omitempty" url:"deal_stock,omitempty"`
+	DealMoney     *string                                 `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
+	DealStock     *string                                 `json:"dealStock,omitempty" url:"dealStock,omitempty"`
 	Amount        *string                                 `json:"amount,omitempty" url:"amount,omitempty"`
 	TakerFee      *string                                 `json:"takerFee,omitempty" url:"takerFee,omitempty"`
 	MakerFee      *string                                 `json:"makerFee,omitempty" url:"makerFee,omitempty"`
 	Left          *string                                 `json:"left,omitempty" url:"left,omitempty"`
-	DealFee       *string                                 `json:"deal_fee,omitempty" url:"deal_fee,omitempty"`
+	DealFee       *string                                 `json:"dealFee,omitempty" url:"dealFee,omitempty"`
 	PostOnly      *bool                                   `json:"post_only,omitempty" url:"post_only,omitempty"`
 	Mtime         *float64                                `json:"mtime,omitempty" url:"mtime,omitempty"`
 	Price         *string                                 `json:"price,omitempty" url:"price,omitempty"`
@@ -9764,20 +10352,19 @@ var (
 	getOpenPositionsResponseItemFieldMarket            = big.NewInt(1 << 1)
 	getOpenPositionsResponseItemFieldAmount            = big.NewInt(1 << 2)
 	getOpenPositionsResponseItemFieldBasePrice         = big.NewInt(1 << 3)
-	getOpenPositionsResponseItemFieldLiqPrice          = big.NewInt(1 << 4)
-	getOpenPositionsResponseItemFieldPnl               = big.NewInt(1 << 5)
-	getOpenPositionsResponseItemFieldPnlPercent        = big.NewInt(1 << 6)
-	getOpenPositionsResponseItemFieldMargin            = big.NewInt(1 << 7)
-	getOpenPositionsResponseItemFieldFreeMargin        = big.NewInt(1 << 8)
-	getOpenPositionsResponseItemFieldFunding           = big.NewInt(1 << 9)
-	getOpenPositionsResponseItemFieldUnrealizedPnl     = big.NewInt(1 << 10)
-	getOpenPositionsResponseItemFieldPositionSide      = big.NewInt(1 << 11)
-	getOpenPositionsResponseItemFieldOpenDate          = big.NewInt(1 << 12)
-	getOpenPositionsResponseItemFieldModifyDate        = big.NewInt(1 << 13)
-	getOpenPositionsResponseItemFieldLiquidationPrice  = big.NewInt(1 << 14)
-	getOpenPositionsResponseItemFieldLiquidationState  = big.NewInt(1 << 15)
-	getOpenPositionsResponseItemFieldTpsl              = big.NewInt(1 << 16)
-	getOpenPositionsResponseItemFieldUnrealizedFunding = big.NewInt(1 << 17)
+	getOpenPositionsResponseItemFieldPnl               = big.NewInt(1 << 4)
+	getOpenPositionsResponseItemFieldPnlPercent        = big.NewInt(1 << 5)
+	getOpenPositionsResponseItemFieldMargin            = big.NewInt(1 << 6)
+	getOpenPositionsResponseItemFieldFreeMargin        = big.NewInt(1 << 7)
+	getOpenPositionsResponseItemFieldFunding           = big.NewInt(1 << 8)
+	getOpenPositionsResponseItemFieldUnrealizedPnl     = big.NewInt(1 << 9)
+	getOpenPositionsResponseItemFieldPositionSide      = big.NewInt(1 << 10)
+	getOpenPositionsResponseItemFieldOpenDate          = big.NewInt(1 << 11)
+	getOpenPositionsResponseItemFieldModifyDate        = big.NewInt(1 << 12)
+	getOpenPositionsResponseItemFieldLiquidationPrice  = big.NewInt(1 << 13)
+	getOpenPositionsResponseItemFieldLiquidationState  = big.NewInt(1 << 14)
+	getOpenPositionsResponseItemFieldTpsl              = big.NewInt(1 << 15)
+	getOpenPositionsResponseItemFieldUnrealizedFunding = big.NewInt(1 << 16)
 )
 
 type GetOpenPositionsResponseItem struct {
@@ -9789,9 +10376,7 @@ type GetOpenPositionsResponseItem struct {
 	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
 	// Base price of position
 	BasePrice *string `json:"basePrice,omitempty" url:"basePrice,omitempty"`
-	// Liquidation price according to current state of position
-	LiqPrice *string `json:"liqPrice,omitempty" url:"liqPrice,omitempty"`
-	// Unrealized profit and loss in money
+	// Realized profit and loss accumulated from partial position closes, in money currency. Zero for newly opened positions that have not been partially closed.
 	Pnl *string `json:"pnl,omitempty" url:"pnl,omitempty"`
 	// Unrealized profit and loss in percentage
 	PnlPercent *string `json:"pnlPercent,omitempty" url:"pnlPercent,omitempty"`
@@ -9799,9 +10384,9 @@ type GetOpenPositionsResponseItem struct {
 	Margin *string `json:"margin,omitempty" url:"margin,omitempty"`
 	// Free funds for trading
 	FreeMargin *string `json:"freeMargin,omitempty" url:"freeMargin,omitempty"`
-	// Funding that will be paid on next position stage change
+	// Cumulative funding fees paid over the entire lifetime of the position, in money currency. For futures markets (e.g., BTC_PERP and other _PERP pairs), the value is always "0" — futures funding is applied via periodic balance updates rather than being tracked per position.
 	Funding *string `json:"funding,omitempty" url:"funding,omitempty"`
-	// Unrealized profit and loss
+	// Floating (mark-to-market) unrealized profit and loss in money currency. Updates continuously as the market price changes.
 	UnrealizedPnl *string `json:"unrealizedPnl,omitempty" url:"unrealizedPnl,omitempty"`
 	// Position side
 	PositionSide *GetOpenPositionsResponseItemPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
@@ -9815,7 +10400,7 @@ type GetOpenPositionsResponseItem struct {
 	LiquidationState *GetOpenPositionsResponseItemLiquidationState `json:"liquidationState,omitempty" url:"liquidationState,omitempty"`
 	// Take profit and stop loss configuration
 	Tpsl *GetOpenPositionsResponseItemTpsl `json:"tpsl,omitempty" url:"tpsl,omitempty"`
-	// Funding that will be paid on next position stage change
+	// Funding fees accrued since the last position state change and not yet realized. For margin positions, the value accumulates continuously and is settled into the funding field when the position state changes (e.g., on partial or full close). For futures markets (BTC_PERP and other _PERP pairs), always "0" — futures funding is applied via periodic balance updates, not tracked per position.
 	UnrealizedFunding *string `json:"unrealizedFunding,omitempty" url:"unrealizedFunding,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -9851,13 +10436,6 @@ func (g *GetOpenPositionsResponseItem) GetBasePrice() *string {
 		return nil
 	}
 	return g.BasePrice
-}
-
-func (g *GetOpenPositionsResponseItem) GetLiqPrice() *string {
-	if g == nil {
-		return nil
-	}
-	return g.LiqPrice
 }
 
 func (g *GetOpenPositionsResponseItem) GetPnl() *string {
@@ -9988,13 +10566,6 @@ func (g *GetOpenPositionsResponseItem) SetAmount(amount *string) {
 func (g *GetOpenPositionsResponseItem) SetBasePrice(basePrice *string) {
 	g.BasePrice = basePrice
 	g.require(getOpenPositionsResponseItemFieldBasePrice)
-}
-
-// SetLiqPrice sets the LiqPrice field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOpenPositionsResponseItem) SetLiqPrice(liqPrice *string) {
-	g.LiqPrice = liqPrice
-	g.require(getOpenPositionsResponseItemFieldLiqPrice)
 }
 
 // SetPnl sets the Pnl field and marks it as non-optional;
@@ -10318,7 +10889,8 @@ var (
 	getPositionsHistoryResponseItemFieldLiquidationPrice = big.NewInt(1 << 7)
 	getPositionsHistoryResponseItemFieldLiquidationState = big.NewInt(1 << 8)
 	getPositionsHistoryResponseItemFieldOrderDetail      = big.NewInt(1 << 9)
-	getPositionsHistoryResponseItemFieldPositionSide     = big.NewInt(1 << 10)
+	getPositionsHistoryResponseItemFieldSide             = big.NewInt(1 << 10)
+	getPositionsHistoryResponseItemFieldIsHedge          = big.NewInt(1 << 11)
 )
 
 type GetPositionsHistoryResponseItem struct {
@@ -10342,8 +10914,10 @@ type GetPositionsHistoryResponseItem struct {
 	LiquidationState *GetPositionsHistoryResponseItemLiquidationState `json:"liquidationState,omitempty" url:"liquidationState,omitempty"`
 	// Details of order which changes position
 	OrderDetail *GetPositionsHistoryResponseItemOrderDetail `json:"orderDetail,omitempty" url:"orderDetail,omitempty"`
-	// Position side
-	PositionSide *GetPositionsHistoryResponseItemPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// Position direction. `BOTH` indicates a one-way mode position; `LONG` or `SHORT` indicates a hedge mode position. See [position side](/glossary#position-side).
+	Side *GetPositionsHistoryResponseItemSide `json:"side,omitempty" url:"side,omitempty"`
+	// Indicates whether [hedge mode](/glossary#hedge-mode) was active when the position was opened. Hedge-mode toggling requires zero open positions, so the value also reflects the account mode at every event in the position's lifetime.
+	IsHedge *bool `json:"isHedge,omitempty" url:"isHedge,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -10422,11 +10996,18 @@ func (g *GetPositionsHistoryResponseItem) GetOrderDetail() *GetPositionsHistoryR
 	return g.OrderDetail
 }
 
-func (g *GetPositionsHistoryResponseItem) GetPositionSide() *GetPositionsHistoryResponseItemPositionSide {
+func (g *GetPositionsHistoryResponseItem) GetSide() *GetPositionsHistoryResponseItemSide {
 	if g == nil {
 		return nil
 	}
-	return g.PositionSide
+	return g.Side
+}
+
+func (g *GetPositionsHistoryResponseItem) GetIsHedge() *bool {
+	if g == nil {
+		return nil
+	}
+	return g.IsHedge
 }
 
 func (g *GetPositionsHistoryResponseItem) GetExtraProperties() map[string]interface{} {
@@ -10510,11 +11091,18 @@ func (g *GetPositionsHistoryResponseItem) SetOrderDetail(orderDetail *GetPositio
 	g.require(getPositionsHistoryResponseItemFieldOrderDetail)
 }
 
-// SetPositionSide sets the PositionSide field and marks it as non-optional;
+// SetSide sets the Side field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetPositionsHistoryResponseItem) SetPositionSide(positionSide *GetPositionsHistoryResponseItemPositionSide) {
-	g.PositionSide = positionSide
-	g.require(getPositionsHistoryResponseItemFieldPositionSide)
+func (g *GetPositionsHistoryResponseItem) SetSide(side *GetPositionsHistoryResponseItemSide) {
+	g.Side = side
+	g.require(getPositionsHistoryResponseItemFieldSide)
+}
+
+// SetIsHedge sets the IsHedge field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetPositionsHistoryResponseItem) SetIsHedge(isHedge *bool) {
+	g.IsHedge = isHedge
+	g.require(getPositionsHistoryResponseItemFieldIsHedge)
 }
 
 func (g *GetPositionsHistoryResponseItem) UnmarshalJSON(data []byte) error {
@@ -10744,29 +11332,29 @@ func (g *GetPositionsHistoryResponseItemOrderDetail) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
-// Position side
-type GetPositionsHistoryResponseItemPositionSide string
+// Position direction. `BOTH` indicates a one-way mode position; `LONG` or `SHORT` indicates a hedge mode position. See [position side](/glossary#position-side).
+type GetPositionsHistoryResponseItemSide string
 
 const (
-	GetPositionsHistoryResponseItemPositionSideLong  GetPositionsHistoryResponseItemPositionSide = "LONG"
-	GetPositionsHistoryResponseItemPositionSideShort GetPositionsHistoryResponseItemPositionSide = "SHORT"
-	GetPositionsHistoryResponseItemPositionSideBoth  GetPositionsHistoryResponseItemPositionSide = "BOTH"
+	GetPositionsHistoryResponseItemSideLong  GetPositionsHistoryResponseItemSide = "LONG"
+	GetPositionsHistoryResponseItemSideShort GetPositionsHistoryResponseItemSide = "SHORT"
+	GetPositionsHistoryResponseItemSideBoth  GetPositionsHistoryResponseItemSide = "BOTH"
 )
 
-func NewGetPositionsHistoryResponseItemPositionSideFromString(s string) (GetPositionsHistoryResponseItemPositionSide, error) {
+func NewGetPositionsHistoryResponseItemSideFromString(s string) (GetPositionsHistoryResponseItemSide, error) {
 	switch s {
 	case "LONG":
-		return GetPositionsHistoryResponseItemPositionSideLong, nil
+		return GetPositionsHistoryResponseItemSideLong, nil
 	case "SHORT":
-		return GetPositionsHistoryResponseItemPositionSideShort, nil
+		return GetPositionsHistoryResponseItemSideShort, nil
 	case "BOTH":
-		return GetPositionsHistoryResponseItemPositionSideBoth, nil
+		return GetPositionsHistoryResponseItemSideBoth, nil
 	}
-	var t GetPositionsHistoryResponseItemPositionSide
+	var t GetPositionsHistoryResponseItemSide
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
 }
 
-func (g GetPositionsHistoryResponseItemPositionSide) Ptr() *GetPositionsHistoryResponseItemPositionSide {
+func (g GetPositionsHistoryResponseItemSide) Ptr() *GetPositionsHistoryResponseItemSide {
 	return &g
 }
 
@@ -10777,9 +11365,10 @@ var (
 )
 
 type UpdateHedgeModeRequest struct {
+	// Set to `true` to enable hedge mode (simultaneous long and short positions) or `false` to use one-way mode.
 	HedgeMode bool   `json:"hedgeMode" url:"-"`
 	Request   string `json:"request" url:"-"`
-	Nonce     string `json:"nonce" url:"-"`
+	Nonce     int    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -10808,7 +11397,7 @@ func (u *UpdateHedgeModeRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UpdateHedgeModeRequest) SetNonce(nonce string) {
+func (u *UpdateHedgeModeRequest) SetNonce(nonce int) {
 	u.Nonce = nonce
 	u.require(updateHedgeModeRequestFieldNonce)
 }

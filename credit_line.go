@@ -18,7 +18,7 @@ type GetCreditLineInfoRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -40,7 +40,7 @@ func (g *GetCreditLineInfoRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetCreditLineInfoRequest) SetNonce(nonce string) {
+func (g *GetCreditLineInfoRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getCreditLineInfoRequestFieldNonce)
 }

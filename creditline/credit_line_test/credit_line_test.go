@@ -75,7 +75,7 @@ func TestCreditLineGetCreditLineInfoWithWireMock(
 	)
 	request := &sdk.GetCreditLineInfoRequest{
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CreditLine.GetCreditLineInfo(
 		context.TODO(),

@@ -75,7 +75,7 @@ func TestMainAccountGetMainBalanceWithWireMock(
 	)
 	request := &sdk.GetMainBalanceRequest{
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.MainAccount.GetMainBalance(
 		context.TODO(),
@@ -118,7 +118,7 @@ func TestMainAccountGetDepositWithdrawHistoryWithWireMock(
 			7,
 		},
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.MainAccount.GetDepositWithdrawHistory(
 		context.TODO(),

@@ -66,6 +66,13 @@ func (c *Client) CreateCode(
 // <Note>
 // The API does not cache the response.
 // </Note>
+//
+// <Note>
+// To avoid leaking whether a code exists, most failure modes — invalid format, expired,
+// non-existent, or wrong passphrase — collapse to one generic rejection on field `code`.
+// Only two cases are distinguishable at the API surface: a code that has already been
+// applied, and a code created by the same account.
+// </Note>
 func (c *Client) ApplyCode(
 	ctx context.Context,
 	request *sdk.ApplyCodeRequest,
@@ -91,6 +98,10 @@ func (c *Client) ApplyCode(
 // <Note>
 // The API does not cache the response.
 // </Note>
+//
+// <Note>
+// Results are sorted by creation date, newest first. Pagination is capped at `offset + limit ≤ 10000`; for a complete history export beyond the cap, use the Report on the History page.
+// </Note>
 func (c *Client) GetMyCodes(
 	ctx context.Context,
 	request *sdk.GetMyCodesRequest,
@@ -115,6 +126,14 @@ func (c *Client) GetMyCodes(
 //
 // <Note>
 // The API does not cache the response.
+// </Note>
+//
+// <Note>
+// Results are sorted by date, newest first.
+// </Note>
+//
+// <Note>
+// **No date filtering:** the endpoint does not accept `startDate` / `endDate` parameters, and pagination is capped at `offset + limit ≤ 10000` (`limit` ≤ 100). For a complete history export beyond the cap, use the Report on the History page.
 // </Note>
 func (c *Client) GetCodesHistory(
 	ctx context.Context,

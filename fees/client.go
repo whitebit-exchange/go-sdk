@@ -35,6 +35,8 @@ func NewClient(options *core.RequestOptions) *Client {
 // Returns an array of objects containing deposit/withdrawal [fees](/glossary#fee) for the corresponding currencies.
 // Zero value in amount fields means that the setting is disabled.
 //
+// The endpoint takes no input beyond the signed request envelope and returns the full per-currency fee schedule on success. It can return only the [common authentication errors](/api-reference/authentication).
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
@@ -46,7 +48,7 @@ func (c *Client) GetFees(
 	ctx context.Context,
 	request *sdk.GetFeesRequest,
 	opts ...option.RequestOption,
-) ([]*sdk.FeeInfo, error) {
+) ([]*sdk.MainAccountFeeInfo, error) {
 	response, err := c.WithRawResponse.GetFees(
 		ctx,
 		request,

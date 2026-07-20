@@ -76,7 +76,7 @@ func TestDepositGetDepositAddressWithWireMock(
 	request := &sdk.GetDepositAddressRequest{
 		Ticker:  "BTC",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Deposit.GetDepositAddress(
 		context.TODO(),
@@ -105,11 +105,9 @@ func TestDepositGetFiatDepositURLWithWireMock(
 		Ticker:   "UAH",
 		Provider: "VISAMASTER",
 		Amount:   "100",
-		UniqueID: sdk.String(
-			"{{generateID}}",
-		),
-		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		UniqueID: "{{generateID}}",
+		Request:  "{{request}}",
+		Nonce:    1594297865000,
 	}
 	_, invocationErr := client.Deposit.GetFiatDepositURL(
 		context.TODO(),
@@ -161,12 +159,10 @@ func TestDepositRefundDepositWithWireMock(
 		option.WithBaseURL(WireMockBaseURL),
 	)
 	request := &sdk.RefundDepositRequest{
-		TransactionID: sdk.String(
-			"54bffeb7-7a8f-43f8-bcd8-f14ec10fee85",
-		),
-		Address: "0x1234567890abcdef1234567890abcdef12345678",
-		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		TransactionID: "54bffeb7-7a8f-43f8-bcd8-f14ec10fee85",
+		Address:       "0x1234567890abcdef1234567890abcdef12345678",
+		Request:       "{{request}}",
+		Nonce:         1594297865000,
 	}
 	_, invocationErr := client.Deposit.RefundDeposit(
 		context.TODO(),
@@ -194,7 +190,7 @@ func TestDepositCreateNewAddressWithWireMock(
 	request := &sdk.CreateNewAddressRequest{
 		Ticker:  "XLM",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Deposit.CreateNewAddress(
 		context.TODO(),

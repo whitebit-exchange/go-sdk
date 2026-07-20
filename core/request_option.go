@@ -25,8 +25,9 @@ type RequestOptions struct {
 	BodyProperties  map[string]interface{}
 	QueryParameters url.Values
 	MaxAttempts     uint
-	Token           string
-	TxcApikey       string
+	APIKey          string
+	TxcPayload      string
+	TxcSignature    string
 }
 
 // NewRequestOptions returns a new *RequestOptions value.
@@ -49,10 +50,11 @@ func NewRequestOptions(opts ...RequestOption) *RequestOptions {
 // for the request(s).
 func (r *RequestOptions) ToHeader() http.Header {
 	header := r.cloneHeader()
-	if r.Token != "" {
-		header.Set("Authorization", "Bearer "+r.Token)
+	if r.APIKey != "" {
+		header.Set("X-TXC-APIKEY", fmt.Sprintf("%v", r.APIKey))
 	}
-	header.Set("X-TXC-APIKEY", fmt.Sprintf("%v", r.TxcApikey))
+	header.Set("X-TXC-PAYLOAD", fmt.Sprintf("%v", r.TxcPayload))
+	header.Set("X-TXC-SIGNATURE", fmt.Sprintf("%v", r.TxcSignature))
 	return header
 }
 
@@ -123,20 +125,29 @@ func (e *EnvironmentOption) applyRequestOptions(opts *RequestOptions) {
 	opts.Environment = e.Environment
 }
 
-// TokenOption implements the RequestOption interface.
-type TokenOption struct {
-	Token string
+// APIKeyOption implements the RequestOption interface.
+type APIKeyOption struct {
+	APIKey string
 }
 
-func (t *TokenOption) applyRequestOptions(opts *RequestOptions) {
-	opts.Token = t.Token
+func (a *APIKeyOption) applyRequestOptions(opts *RequestOptions) {
+	opts.APIKey = a.APIKey
 }
 
-// TxcApikeyOption implements the RequestOption interface.
-type TxcApikeyOption struct {
-	TxcApikey string
+// TxcPayloadOption implements the RequestOption interface.
+type TxcPayloadOption struct {
+	TxcPayload string
 }
 
-func (t *TxcApikeyOption) applyRequestOptions(opts *RequestOptions) {
-	opts.TxcApikey = t.TxcApikey
+func (t *TxcPayloadOption) applyRequestOptions(opts *RequestOptions) {
+	opts.TxcPayload = t.TxcPayload
+}
+
+// TxcSignatureOption implements the RequestOption interface.
+type TxcSignatureOption struct {
+	TxcSignature string
+}
+
+func (t *TxcSignatureOption) applyRequestOptions(opts *RequestOptions) {
+	opts.TxcSignature = t.TxcSignature
 }

@@ -80,8 +80,8 @@ func TestCollateralTradingCollateralAccountBalanceWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.CollateralAccountBalance(
@@ -114,8 +114,8 @@ func TestCollateralTradingCollateralAccountBalanceSummaryWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.CollateralAccountBalanceSummary(
@@ -165,8 +165,11 @@ func TestCollateralTradingCreateCollateralLimitOrderWithWireMock(
 			true,
 		),
 		PositionSide: sdk.CreateCollateralLimitOrderRequestPositionSideLong.Ptr(),
-		Request:      "{{request}}",
-		Nonce:        "{{nonce}}",
+		ReduceOnly: sdk.Bool(
+			false,
+		),
+		Request: "{{request}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CollateralTrading.CreateCollateralLimitOrder(
 		context.TODO(),
@@ -217,6 +220,9 @@ func TestCollateralTradingCreateCollateralBulkOrderWithWireMock(
 					true,
 				),
 				PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+				ReduceOnly: sdk.Bool(
+					false,
+				),
 			},
 			&sdk.CreateCollateralBulkOrderRequestOrdersItem{
 				Market: sdk.String(
@@ -242,6 +248,9 @@ func TestCollateralTradingCreateCollateralBulkOrderWithWireMock(
 					true,
 				),
 				PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+				ReduceOnly: sdk.Bool(
+					true,
+				),
 			},
 			&sdk.CreateCollateralBulkOrderRequestOrdersItem{
 				Market: sdk.String(
@@ -267,6 +276,9 @@ func TestCollateralTradingCreateCollateralBulkOrderWithWireMock(
 					true,
 				),
 				PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+				ReduceOnly: sdk.Bool(
+					false,
+				),
 			},
 		},
 		StopOnFail: sdk.Bool(
@@ -275,8 +287,8 @@ func TestCollateralTradingCreateCollateralBulkOrderWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.CreateCollateralBulkOrder(
@@ -309,8 +321,11 @@ func TestCollateralTradingCreateCollateralMarketOrderWithWireMock(
 		ClientOrderID: sdk.String(
 			"order1987111",
 		),
+		ReduceOnly: sdk.Bool(
+			false,
+		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CollateralTrading.CreateCollateralMarketOrder(
 		context.TODO(),
@@ -351,8 +366,11 @@ func TestCollateralTradingCreateCollateralStopLimitOrderWithWireMock(
 			"order1987111",
 		),
 		PositionSide: sdk.CreateCollateralStopLimitOrderRequestPositionSideLong.Ptr(),
-		Request:      "{{request}}",
-		Nonce:        "{{nonce}}",
+		ReduceOnly: sdk.Bool(
+			false,
+		),
+		Request: "{{request}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CollateralTrading.CreateCollateralStopLimitOrder(
 		context.TODO(),
@@ -385,8 +403,11 @@ func TestCollateralTradingCreateCollateralTriggerMarketOrderWithWireMock(
 		ClientOrderID: sdk.String(
 			"order1987111",
 		),
+		ReduceOnly: sdk.Bool(
+			false,
+		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 		context.TODO(),
@@ -415,8 +436,8 @@ func TestCollateralTradingCollateralAccountSummaryWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.CollateralAccountSummary(
@@ -449,8 +470,8 @@ func TestCollateralTradingGetOpenPositionsWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.GetOpenPositions(
@@ -462,7 +483,7 @@ func TestCollateralTradingGetOpenPositionsWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	VerifyRequestCount(t, "TestCollateralTradingGetOpenPositionsWithWireMock", "POST", "/api/v4/collateral-account/positions", nil, 1)
+	VerifyRequestCount(t, "TestCollateralTradingGetOpenPositionsWithWireMock", "POST", "/api/v4/collateral-account/positions/open", nil, 1)
 }
 
 func TestCollateralTradingClosePositionWithWireMock(
@@ -481,7 +502,7 @@ func TestCollateralTradingClosePositionWithWireMock(
 		PositionSide: sdk.ClosePositionRequestPositionSideLong.Ptr(),
 		Market:       "BTC_USDT",
 		Request:      "{{request}}",
-		Nonce:        "{{nonce}}",
+		Nonce:        1594297865000,
 	}
 	invocationErr := client.CollateralTrading.ClosePosition(
 		context.TODO(),
@@ -516,8 +537,8 @@ func TestCollateralTradingGetPositionsHistoryWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.GetPositionsHistory(
@@ -556,8 +577,8 @@ func TestCollateralTradingGetFundingHistoryWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.GetFundingHistory(
@@ -586,7 +607,7 @@ func TestCollateralTradingChangeCollateralAccountLeverageWithWireMock(
 	request := &sdk.ChangeCollateralAccountLeverageRequest{
 		Leverage: 5,
 		Request:  "{{request}}",
-		Nonce:    "{{nonce}}",
+		Nonce:    1594297865000,
 	}
 	_, invocationErr := client.CollateralTrading.ChangeCollateralAccountLeverage(
 		context.TODO(),
@@ -615,8 +636,8 @@ func TestCollateralTradingGetCollateralHedgeModeWithWireMock(
 		Request: sdk.String(
 			"{{request}}",
 		),
-		Nonce: sdk.String(
-			"{{nonce}}",
+		Nonce: sdk.Int(
+			1594297865000,
 		),
 	}
 	_, invocationErr := client.CollateralTrading.GetCollateralHedgeMode(
@@ -645,7 +666,7 @@ func TestCollateralTradingUpdateHedgeModeWithWireMock(
 	request := &sdk.UpdateHedgeModeRequest{
 		HedgeMode: true,
 		Request:   "{{request}}",
-		Nonce:     "{{nonce}}",
+		Nonce:     1594297865000,
 	}
 	invocationErr := client.CollateralTrading.UpdateHedgeMode(
 		context.TODO(),
@@ -657,6 +678,33 @@ func TestCollateralTradingUpdateHedgeModeWithWireMock(
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "TestCollateralTradingUpdateHedgeModeWithWireMock", "POST", "/api/v4/collateral-account/hedge-mode/update", nil, 1)
+}
+
+func TestCollateralTradingGetCollateralAccountAdlQuantileWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetCollateralAccountAdlQuantileRequest{
+		Request: "{{request}}",
+		Nonce:   1594297865000,
+	}
+	_, invocationErr := client.CollateralTrading.GetCollateralAccountAdlQuantile(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetCollateralAccountAdlQuantileWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetCollateralAccountAdlQuantileWithWireMock", "POST", "/api/v4/collateral-account/adl-quantile", nil, 1)
 }
 
 func TestCollateralTradingGetConditionalOrdersWithWireMock(
@@ -690,7 +738,7 @@ func TestCollateralTradingGetConditionalOrdersWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	VerifyRequestCount(t, "TestCollateralTradingGetConditionalOrdersWithWireMock", "POST", "/api/v4/orders/conditional", nil, 1)
+	VerifyRequestCount(t, "TestCollateralTradingGetConditionalOrdersWithWireMock", "POST", "/api/v4/conditional-orders", nil, 1)
 }
 
 func TestCollateralTradingGetOcoOrdersWithWireMock(
@@ -724,7 +772,7 @@ func TestCollateralTradingGetOcoOrdersWithWireMock(
 	)
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
-	VerifyRequestCount(t, "TestCollateralTradingGetOcoOrdersWithWireMock", "POST", "/api/v4/orders/oco", nil, 1)
+	VerifyRequestCount(t, "TestCollateralTradingGetOcoOrdersWithWireMock", "POST", "/api/v4/oco-orders", nil, 1)
 }
 
 func TestCollateralTradingCreateCollateralOcoOrderWithWireMock(
@@ -748,8 +796,12 @@ func TestCollateralTradingCreateCollateralOcoOrderWithWireMock(
 		ClientOrderID: sdk.String(
 			"order1987111",
 		),
-		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		ReduceOnly: sdk.Bool(
+			false,
+		),
+		PositionSide: sdk.CreateCollateralOcoOrderRequestPositionSideLong.Ptr(),
+		Request:      "{{request}}",
+		Nonce:        1594297865000,
 	}
 	_, invocationErr := client.CollateralTrading.CreateCollateralOcoOrder(
 		context.TODO(),
@@ -778,7 +830,7 @@ func TestCollateralTradingCancelConditionalOrderWithWireMock(
 		Market:  "BTC_USDT",
 		ID:      117703764514,
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	invocationErr := client.CollateralTrading.CancelConditionalOrder(
 		context.TODO(),
@@ -807,7 +859,7 @@ func TestCollateralTradingCancelOcoOrderWithWireMock(
 		Market:  "BTC_USDT",
 		OrderID: 117703764514,
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CollateralTrading.CancelOcoOrder(
 		context.TODO(),
@@ -836,7 +888,7 @@ func TestCollateralTradingCancelOtoOrderWithWireMock(
 		Market:  "BTC_USDT",
 		OtoID:   117703764514,
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	invocationErr := client.CollateralTrading.CancelOtoOrder(
 		context.TODO(),

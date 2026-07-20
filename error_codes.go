@@ -8,11 +8,6 @@ import (
 )
 
 var ErrorCodes internal.ErrorCodes = internal.ErrorCodes{
-	401: func(apiError *core.APIError) error {
-		return &UnauthorizedError{
-			APIError: apiError,
-		}
-	},
 	422: func(apiError *core.APIError) error {
 		return &UnprocessableEntityError{
 			APIError: apiError,
@@ -28,8 +23,23 @@ var ErrorCodes internal.ErrorCodes = internal.ErrorCodes{
 			APIError: apiError,
 		}
 	},
+	401: func(apiError *core.APIError) error {
+		return &UnauthorizedError{
+			APIError: apiError,
+		}
+	},
 	500: func(apiError *core.APIError) error {
 		return &InternalServerError{
+			APIError: apiError,
+		}
+	},
+	412: func(apiError *core.APIError) error {
+		return &PreconditionFailedError{
+			APIError: apiError,
+		}
+	},
+	403: func(apiError *core.APIError) error {
+		return &ForbiddenError{
 			APIError: apiError,
 		}
 	},

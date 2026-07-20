@@ -92,7 +92,7 @@ type ConvertEstimateRequest struct {
 	To string `json:"to" url:"-"`
 	// Convert amount direction, defines in which currency corresponding "amount" field is populated. Use "to" in case amount is in "to" currency, use "from" if amount is in "from" currency
 	Direction ConvertEstimateRequestDirection `json:"direction" url:"-"`
-	// Amount to convert or receive.
+	// Amount to convert or receive. The value is silently truncated to 8 decimal places before evaluation; excess decimals do not raise an error.
 	Amount string `json:"amount" url:"-"`
 	// Nonce for request
 	Nonce *int `json:"nonce,omitempty" url:"-"`
@@ -190,16 +190,16 @@ type ConvertHistoryRequest struct {
 	FromTicker *string `json:"fromTicker,omitempty" url:"-"`
 	// To currency. Example: USDT
 	ToTicker *string `json:"toTicker,omitempty" url:"-"`
-	// From time filter. Example: 1699260637. Default: now()
+	// From time filter (Unix seconds). Must be no more than 30 days before `to` and no older than 6 months. Example: 1699260637. Default: now()
 	From *string `json:"from,omitempty" url:"-"`
-	// To time filter. Example: 1699260637. Default: now() +
+	// To time filter (Unix seconds). Must be no more than 30 days after `from`. Example: 1699260637. Default: now()
 	To *string `json:"to,omitempty" url:"-"`
 	// Quote Id. Example: 4050
 	QuoteID *string `json:"quoteId,omitempty" url:"-"`
-	// How many records to receive. Default: 100
-	Limit *string `json:"limit,omitempty" url:"-"`
-	// Amount to convert or receive. Default 0
-	Offset *string `json:"offset,omitempty" url:"-"`
+	// How many records to receive. Allowed range: 1–100. Default: 100
+	Limit *int `json:"limit,omitempty" url:"-"`
+	// Number of records to skip for pagination. Minimum: 0. Default: 0
+	Offset *int `json:"offset,omitempty" url:"-"`
 	// Nonce for request
 	Nonce *int `json:"nonce,omitempty" url:"-"`
 	// Request path
@@ -253,14 +253,14 @@ func (c *ConvertHistoryRequest) SetQuoteID(quoteID *string) {
 
 // SetLimit sets the Limit field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConvertHistoryRequest) SetLimit(limit *string) {
+func (c *ConvertHistoryRequest) SetLimit(limit *int) {
 	c.Limit = limit
 	c.require(convertHistoryRequestFieldLimit)
 }
 
 // SetOffset sets the Offset field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *ConvertHistoryRequest) SetOffset(offset *string) {
+func (c *ConvertHistoryRequest) SetOffset(offset *int) {
 	c.Offset = offset
 	c.require(convertHistoryRequestFieldOffset)
 }
@@ -302,19 +302,20 @@ func (c *ConvertHistoryRequest) MarshalJSON() ([]byte, error) {
 
 var (
 	authorizeRequestFieldID     = big.NewInt(1 << 0)
-	authorizeRequestFieldParams = big.NewInt(1 << 1)
+	authorizeRequestFieldMethod = big.NewInt(1 << 1)
+	authorizeRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type AuthorizeRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `authorize`.
+	Method AuthorizeRequestMethod `json:"method" url:"method"`
 	// Array with WebSocket token and constant "public" string
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -327,15 +328,18 @@ func (a *AuthorizeRequest) GetID() int {
 	return a.ID
 }
 
+func (a *AuthorizeRequest) GetMethod() AuthorizeRequestMethod {
+	if a == nil {
+		return ""
+	}
+	return a.Method
+}
+
 func (a *AuthorizeRequest) GetParams() []interface{} {
 	if a == nil {
 		return nil
 	}
 	return a.Params
-}
-
-func (a *AuthorizeRequest) Method() string {
-	return a.method
 }
 
 func (a *AuthorizeRequest) GetExtraProperties() map[string]interface{} {
@@ -356,6 +360,13 @@ func (a *AuthorizeRequest) SetID(id int) {
 	a.require(authorizeRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AuthorizeRequest) SetMethod(method AuthorizeRequestMethod) {
+	a.Method = method
+	a.require(authorizeRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (a *AuthorizeRequest) SetParams(params []interface{}) {
@@ -364,22 +375,13 @@ func (a *AuthorizeRequest) SetParams(params []interface{}) {
 }
 
 func (a *AuthorizeRequest) UnmarshalJSON(data []byte) error {
-	type embed AuthorizeRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*a),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler AuthorizeRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*a = AuthorizeRequest(unmarshaler.embed)
-	if unmarshaler.Method != "authorize" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", a, "authorize", unmarshaler.Method)
-	}
-	a.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *a, "method")
+	*a = AuthorizeRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
 	if err != nil {
 		return err
 	}
@@ -392,10 +394,8 @@ func (a *AuthorizeRequest) MarshalJSON() ([]byte, error) {
 	type embed AuthorizeRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*a),
-		Method: "authorize",
+		embed: embed(*a),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -411,6 +411,26 @@ func (a *AuthorizeRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", a)
+}
+
+// Method name. Fixed value: `authorize`.
+type AuthorizeRequestMethod string
+
+const (
+	AuthorizeRequestMethodAuthorize AuthorizeRequestMethod = "authorize"
+)
+
+func NewAuthorizeRequestMethodFromString(s string) (AuthorizeRequestMethod, error) {
+	switch s {
+	case "authorize":
+		return AuthorizeRequestMethodAuthorize, nil
+	}
+	var t AuthorizeRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (a AuthorizeRequestMethod) Ptr() *AuthorizeRequestMethod {
+	return &a
 }
 
 var (
@@ -525,19 +545,26 @@ func (a *AuthorizeResponse) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
+var (
+	authorizeResponseResultFieldStatus = big.NewInt(1 << 0)
+)
+
 type AuthorizeResponseResult struct {
 	// Fixed value: `success`.
+	Status AuthorizeResponseResultStatus `json:"status" url:"status"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	status         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
 }
 
-func (a *AuthorizeResponseResult) Status() string {
-	return a.status
+func (a *AuthorizeResponseResult) GetStatus() AuthorizeResponseResultStatus {
+	if a == nil {
+		return ""
+	}
+	return a.Status
 }
 
 func (a *AuthorizeResponseResult) GetExtraProperties() map[string]interface{} {
@@ -551,23 +578,21 @@ func (a *AuthorizeResponseResult) require(field *big.Int) {
 	a.explicitFields.Or(a.explicitFields, field)
 }
 
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (a *AuthorizeResponseResult) SetStatus(status AuthorizeResponseResultStatus) {
+	a.Status = status
+	a.require(authorizeResponseResultFieldStatus)
+}
+
 func (a *AuthorizeResponseResult) UnmarshalJSON(data []byte) error {
-	type embed AuthorizeResponseResult
-	var unmarshaler = struct {
-		embed
-		Status string `json:"status"`
-	}{
-		embed: embed(*a),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler AuthorizeResponseResult
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*a = AuthorizeResponseResult(unmarshaler.embed)
-	if unmarshaler.Status != "success" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", a, "success", unmarshaler.Status)
-	}
-	a.status = unmarshaler.Status
-	extraProperties, err := internal.ExtractExtraProperties(data, *a, "status")
+	*a = AuthorizeResponseResult(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *a)
 	if err != nil {
 		return err
 	}
@@ -580,10 +605,8 @@ func (a *AuthorizeResponseResult) MarshalJSON() ([]byte, error) {
 	type embed AuthorizeResponseResult
 	var marshaler = struct {
 		embed
-		Status string `json:"status"`
 	}{
-		embed:  embed(*a),
-		Status: "success",
+		embed: embed(*a),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, a.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -599,6 +622,26 @@ func (a *AuthorizeResponseResult) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", a)
+}
+
+// Fixed value: `success`.
+type AuthorizeResponseResultStatus string
+
+const (
+	AuthorizeResponseResultStatusSuccess AuthorizeResponseResultStatus = "success"
+)
+
+func NewAuthorizeResponseResultStatusFromString(s string) (AuthorizeResponseResultStatus, error) {
+	switch s {
+	case "success":
+		return AuthorizeResponseResultStatusSuccess, nil
+	}
+	var t AuthorizeResponseResultStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (a AuthorizeResponseResultStatus) Ptr() *AuthorizeResponseResultStatus {
+	return &a
 }
 
 var (
@@ -696,98 +739,21 @@ func (b *BadRequestErrorBody) String() string {
 }
 
 var (
-	badRequestErrorBodyDataFieldToken = big.NewInt(1 << 0)
-)
-
-type BadRequestErrorBodyData struct {
-	Token []string `json:"token,omitempty" url:"token,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (b *BadRequestErrorBodyData) GetToken() []string {
-	if b == nil {
-		return nil
-	}
-	return b.Token
-}
-
-func (b *BadRequestErrorBodyData) GetExtraProperties() map[string]interface{} {
-	return b.extraProperties
-}
-
-func (b *BadRequestErrorBodyData) require(field *big.Int) {
-	if b.explicitFields == nil {
-		b.explicitFields = big.NewInt(0)
-	}
-	b.explicitFields.Or(b.explicitFields, field)
-}
-
-// SetToken sets the Token field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BadRequestErrorBodyData) SetToken(token []string) {
-	b.Token = token
-	b.require(badRequestErrorBodyDataFieldToken)
-}
-
-func (b *BadRequestErrorBodyData) UnmarshalJSON(data []byte) error {
-	type unmarshaler BadRequestErrorBodyData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*b = BadRequestErrorBodyData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *b)
-	if err != nil {
-		return err
-	}
-	b.extraProperties = extraProperties
-	b.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (b *BadRequestErrorBodyData) MarshalJSON() ([]byte, error) {
-	type embed BadRequestErrorBodyData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*b),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (b *BadRequestErrorBodyData) String() string {
-	if len(b.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(b.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(b); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", b)
-}
-
-var (
 	balanceMarginRequestFieldID     = big.NewInt(1 << 0)
-	balanceMarginRequestFieldParams = big.NewInt(1 << 1)
+	balanceMarginRequestFieldMethod = big.NewInt(1 << 1)
+	balanceMarginRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type BalanceMarginRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `balanceMargin_request`.
+	Method BalanceMarginRequestMethod `json:"method" url:"method"`
 	// Array of asset tickers to query
 	Params []string `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -800,15 +766,18 @@ func (b *BalanceMarginRequest) GetID() int {
 	return b.ID
 }
 
+func (b *BalanceMarginRequest) GetMethod() BalanceMarginRequestMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BalanceMarginRequest) GetParams() []string {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BalanceMarginRequest) Method() string {
-	return b.method
 }
 
 func (b *BalanceMarginRequest) GetExtraProperties() map[string]interface{} {
@@ -829,6 +798,13 @@ func (b *BalanceMarginRequest) SetID(id int) {
 	b.require(balanceMarginRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceMarginRequest) SetMethod(method BalanceMarginRequestMethod) {
+	b.Method = method
+	b.require(balanceMarginRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BalanceMarginRequest) SetParams(params []string) {
@@ -837,22 +813,13 @@ func (b *BalanceMarginRequest) SetParams(params []string) {
 }
 
 func (b *BalanceMarginRequest) UnmarshalJSON(data []byte) error {
-	type embed BalanceMarginRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BalanceMarginRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BalanceMarginRequest(unmarshaler.embed)
-	if unmarshaler.Method != "balanceMargin_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "balanceMargin_request", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BalanceMarginRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -865,10 +832,8 @@ func (b *BalanceMarginRequest) MarshalJSON() ([]byte, error) {
 	type embed BalanceMarginRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "balanceMargin_request",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -884,6 +849,26 @@ func (b *BalanceMarginRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", b)
+}
+
+// Method name. Fixed value: `balanceMargin_request`.
+type BalanceMarginRequestMethod string
+
+const (
+	BalanceMarginRequestMethodBalanceMarginRequest BalanceMarginRequestMethod = "balanceMargin_request"
+)
+
+func NewBalanceMarginRequestMethodFromString(s string) (BalanceMarginRequestMethod, error) {
+	switch s {
+	case "balanceMargin_request":
+		return BalanceMarginRequestMethodBalanceMarginRequest, nil
+	}
+	var t BalanceMarginRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceMarginRequestMethod) Ptr() *BalanceMarginRequestMethod {
+	return &b
 }
 
 var (
@@ -1131,19 +1116,20 @@ func (b *BalanceMarginResponseResultValue) String() string {
 
 var (
 	balanceMarginSubscribeFieldID     = big.NewInt(1 << 0)
-	balanceMarginSubscribeFieldParams = big.NewInt(1 << 1)
+	balanceMarginSubscribeFieldMethod = big.NewInt(1 << 1)
+	balanceMarginSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type BalanceMarginSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `balanceMargin_subscribe`.
+	Method BalanceMarginSubscribeMethod `json:"method" url:"method"`
 	// Array of asset tickers to subscribe to
 	Params []string `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -1156,15 +1142,18 @@ func (b *BalanceMarginSubscribe) GetID() int {
 	return b.ID
 }
 
+func (b *BalanceMarginSubscribe) GetMethod() BalanceMarginSubscribeMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BalanceMarginSubscribe) GetParams() []string {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BalanceMarginSubscribe) Method() string {
-	return b.method
 }
 
 func (b *BalanceMarginSubscribe) GetExtraProperties() map[string]interface{} {
@@ -1185,6 +1174,13 @@ func (b *BalanceMarginSubscribe) SetID(id int) {
 	b.require(balanceMarginSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceMarginSubscribe) SetMethod(method BalanceMarginSubscribeMethod) {
+	b.Method = method
+	b.require(balanceMarginSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BalanceMarginSubscribe) SetParams(params []string) {
@@ -1193,22 +1189,13 @@ func (b *BalanceMarginSubscribe) SetParams(params []string) {
 }
 
 func (b *BalanceMarginSubscribe) UnmarshalJSON(data []byte) error {
-	type embed BalanceMarginSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BalanceMarginSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BalanceMarginSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "balanceMargin_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "balanceMargin_subscribe", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BalanceMarginSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -1221,10 +1208,8 @@ func (b *BalanceMarginSubscribe) MarshalJSON() ([]byte, error) {
 	type embed BalanceMarginSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "balanceMargin_subscribe",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -1242,21 +1227,42 @@ func (b *BalanceMarginSubscribe) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Method name. Fixed value: `balanceMargin_subscribe`.
+type BalanceMarginSubscribeMethod string
+
+const (
+	BalanceMarginSubscribeMethodBalanceMarginSubscribe BalanceMarginSubscribeMethod = "balanceMargin_subscribe"
+)
+
+func NewBalanceMarginSubscribeMethodFromString(s string) (BalanceMarginSubscribeMethod, error) {
+	switch s {
+	case "balanceMargin_subscribe":
+		return BalanceMarginSubscribeMethodBalanceMarginSubscribe, nil
+	}
+	var t BalanceMarginSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceMarginSubscribeMethod) Ptr() *BalanceMarginSubscribeMethod {
+	return &b
+}
+
 var (
 	balanceMarginUpdateFieldID     = big.NewInt(1 << 0)
-	balanceMarginUpdateFieldParams = big.NewInt(1 << 1)
+	balanceMarginUpdateFieldMethod = big.NewInt(1 << 1)
+	balanceMarginUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type BalanceMarginUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `balanceMargin_update`.
+	Method BalanceMarginUpdateMethod `json:"method" url:"method"`
 	// Array containing margin balance updates with abbreviated field names
 	Params []*BalanceMarginUpdateParamsItem `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -1269,15 +1275,18 @@ func (b *BalanceMarginUpdate) GetID() interface{} {
 	return b.ID
 }
 
+func (b *BalanceMarginUpdate) GetMethod() BalanceMarginUpdateMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BalanceMarginUpdate) GetParams() []*BalanceMarginUpdateParamsItem {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BalanceMarginUpdate) Method() string {
-	return b.method
 }
 
 func (b *BalanceMarginUpdate) GetExtraProperties() map[string]interface{} {
@@ -1298,6 +1307,13 @@ func (b *BalanceMarginUpdate) SetID(id interface{}) {
 	b.require(balanceMarginUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceMarginUpdate) SetMethod(method BalanceMarginUpdateMethod) {
+	b.Method = method
+	b.require(balanceMarginUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BalanceMarginUpdate) SetParams(params []*BalanceMarginUpdateParamsItem) {
@@ -1306,22 +1322,13 @@ func (b *BalanceMarginUpdate) SetParams(params []*BalanceMarginUpdateParamsItem)
 }
 
 func (b *BalanceMarginUpdate) UnmarshalJSON(data []byte) error {
-	type embed BalanceMarginUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BalanceMarginUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BalanceMarginUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "balanceMargin_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "balanceMargin_update", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BalanceMarginUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -1334,10 +1341,8 @@ func (b *BalanceMarginUpdate) MarshalJSON() ([]byte, error) {
 	type embed BalanceMarginUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "balanceMargin_update",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -1353,6 +1358,26 @@ func (b *BalanceMarginUpdate) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", b)
+}
+
+// Method name. Fixed value: `balanceMargin_update`.
+type BalanceMarginUpdateMethod string
+
+const (
+	BalanceMarginUpdateMethodBalanceMarginUpdate BalanceMarginUpdateMethod = "balanceMargin_update"
+)
+
+func NewBalanceMarginUpdateMethodFromString(s string) (BalanceMarginUpdateMethod, error) {
+	switch s {
+	case "balanceMargin_update":
+		return BalanceMarginUpdateMethodBalanceMarginUpdate, nil
+	}
+	var t BalanceMarginUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceMarginUpdateMethod) Ptr() *BalanceMarginUpdateMethod {
+	return &b
 }
 
 // Margin balance update object (uses abbreviated keys)
@@ -1505,19 +1530,20 @@ func (b *BalanceMarginUpdateParamsItem) String() string {
 
 var (
 	balanceSpotRequestFieldID     = big.NewInt(1 << 0)
-	balanceSpotRequestFieldParams = big.NewInt(1 << 1)
+	balanceSpotRequestFieldMethod = big.NewInt(1 << 1)
+	balanceSpotRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type BalanceSpotRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `balanceSpot_request`.
+	Method BalanceSpotRequestMethod `json:"method" url:"method"`
 	// Array of asset tickers to query. Empty array returns all balances.
 	Params []string `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -1530,15 +1556,18 @@ func (b *BalanceSpotRequest) GetID() int {
 	return b.ID
 }
 
+func (b *BalanceSpotRequest) GetMethod() BalanceSpotRequestMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BalanceSpotRequest) GetParams() []string {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BalanceSpotRequest) Method() string {
-	return b.method
 }
 
 func (b *BalanceSpotRequest) GetExtraProperties() map[string]interface{} {
@@ -1559,6 +1588,13 @@ func (b *BalanceSpotRequest) SetID(id int) {
 	b.require(balanceSpotRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceSpotRequest) SetMethod(method BalanceSpotRequestMethod) {
+	b.Method = method
+	b.require(balanceSpotRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BalanceSpotRequest) SetParams(params []string) {
@@ -1567,22 +1603,13 @@ func (b *BalanceSpotRequest) SetParams(params []string) {
 }
 
 func (b *BalanceSpotRequest) UnmarshalJSON(data []byte) error {
-	type embed BalanceSpotRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BalanceSpotRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BalanceSpotRequest(unmarshaler.embed)
-	if unmarshaler.Method != "balanceSpot_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "balanceSpot_request", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BalanceSpotRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -1595,10 +1622,8 @@ func (b *BalanceSpotRequest) MarshalJSON() ([]byte, error) {
 	type embed BalanceSpotRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "balanceSpot_request",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -1614,6 +1639,26 @@ func (b *BalanceSpotRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", b)
+}
+
+// Method name. Fixed value: `balanceSpot_request`.
+type BalanceSpotRequestMethod string
+
+const (
+	BalanceSpotRequestMethodBalanceSpotRequest BalanceSpotRequestMethod = "balanceSpot_request"
+)
+
+func NewBalanceSpotRequestMethodFromString(s string) (BalanceSpotRequestMethod, error) {
+	switch s {
+	case "balanceSpot_request":
+		return BalanceSpotRequestMethodBalanceSpotRequest, nil
+	}
+	var t BalanceSpotRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceSpotRequestMethod) Ptr() *BalanceSpotRequestMethod {
+	return &b
 }
 
 var (
@@ -1827,19 +1872,20 @@ func (b *BalanceSpotResponseResultValue) String() string {
 
 var (
 	balanceSpotSubscribeFieldID     = big.NewInt(1 << 0)
-	balanceSpotSubscribeFieldParams = big.NewInt(1 << 1)
+	balanceSpotSubscribeFieldMethod = big.NewInt(1 << 1)
+	balanceSpotSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type BalanceSpotSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `balanceSpot_subscribe`.
+	Method BalanceSpotSubscribeMethod `json:"method" url:"method"`
 	// Array of asset tickers to subscribe to
 	Params []string `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -1852,15 +1898,18 @@ func (b *BalanceSpotSubscribe) GetID() int {
 	return b.ID
 }
 
+func (b *BalanceSpotSubscribe) GetMethod() BalanceSpotSubscribeMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BalanceSpotSubscribe) GetParams() []string {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BalanceSpotSubscribe) Method() string {
-	return b.method
 }
 
 func (b *BalanceSpotSubscribe) GetExtraProperties() map[string]interface{} {
@@ -1881,6 +1930,13 @@ func (b *BalanceSpotSubscribe) SetID(id int) {
 	b.require(balanceSpotSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceSpotSubscribe) SetMethod(method BalanceSpotSubscribeMethod) {
+	b.Method = method
+	b.require(balanceSpotSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BalanceSpotSubscribe) SetParams(params []string) {
@@ -1889,22 +1945,13 @@ func (b *BalanceSpotSubscribe) SetParams(params []string) {
 }
 
 func (b *BalanceSpotSubscribe) UnmarshalJSON(data []byte) error {
-	type embed BalanceSpotSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BalanceSpotSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BalanceSpotSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "balanceSpot_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "balanceSpot_subscribe", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BalanceSpotSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -1917,10 +1964,8 @@ func (b *BalanceSpotSubscribe) MarshalJSON() ([]byte, error) {
 	type embed BalanceSpotSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "balanceSpot_subscribe",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -1938,21 +1983,42 @@ func (b *BalanceSpotSubscribe) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Method name. Fixed value: `balanceSpot_subscribe`.
+type BalanceSpotSubscribeMethod string
+
+const (
+	BalanceSpotSubscribeMethodBalanceSpotSubscribe BalanceSpotSubscribeMethod = "balanceSpot_subscribe"
+)
+
+func NewBalanceSpotSubscribeMethodFromString(s string) (BalanceSpotSubscribeMethod, error) {
+	switch s {
+	case "balanceSpot_subscribe":
+		return BalanceSpotSubscribeMethodBalanceSpotSubscribe, nil
+	}
+	var t BalanceSpotSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceSpotSubscribeMethod) Ptr() *BalanceSpotSubscribeMethod {
+	return &b
+}
+
 var (
 	balanceSpotUpdateFieldID     = big.NewInt(1 << 0)
-	balanceSpotUpdateFieldParams = big.NewInt(1 << 1)
+	balanceSpotUpdateFieldMethod = big.NewInt(1 << 1)
+	balanceSpotUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type BalanceSpotUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `balanceSpot_update`.
+	Method BalanceSpotUpdateMethod `json:"method" url:"method"`
 	// Array containing balance updates for subscribed assets
 	Params []map[string]*BalanceSpotUpdateParamsItemValue `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -1965,15 +2031,18 @@ func (b *BalanceSpotUpdate) GetID() interface{} {
 	return b.ID
 }
 
+func (b *BalanceSpotUpdate) GetMethod() BalanceSpotUpdateMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BalanceSpotUpdate) GetParams() []map[string]*BalanceSpotUpdateParamsItemValue {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BalanceSpotUpdate) Method() string {
-	return b.method
 }
 
 func (b *BalanceSpotUpdate) GetExtraProperties() map[string]interface{} {
@@ -1994,6 +2063,13 @@ func (b *BalanceSpotUpdate) SetID(id interface{}) {
 	b.require(balanceSpotUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BalanceSpotUpdate) SetMethod(method BalanceSpotUpdateMethod) {
+	b.Method = method
+	b.require(balanceSpotUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BalanceSpotUpdate) SetParams(params []map[string]*BalanceSpotUpdateParamsItemValue) {
@@ -2002,22 +2078,13 @@ func (b *BalanceSpotUpdate) SetParams(params []map[string]*BalanceSpotUpdatePara
 }
 
 func (b *BalanceSpotUpdate) UnmarshalJSON(data []byte) error {
-	type embed BalanceSpotUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BalanceSpotUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BalanceSpotUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "balanceSpot_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "balanceSpot_update", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BalanceSpotUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -2030,10 +2097,8 @@ func (b *BalanceSpotUpdate) MarshalJSON() ([]byte, error) {
 	type embed BalanceSpotUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "balanceSpot_update",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2049,6 +2114,26 @@ func (b *BalanceSpotUpdate) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", b)
+}
+
+// Method name. Fixed value: `balanceSpot_update`.
+type BalanceSpotUpdateMethod string
+
+const (
+	BalanceSpotUpdateMethodBalanceSpotUpdate BalanceSpotUpdateMethod = "balanceSpot_update"
+)
+
+func NewBalanceSpotUpdateMethodFromString(s string) (BalanceSpotUpdateMethod, error) {
+	switch s {
+	case "balanceSpot_update":
+		return BalanceSpotUpdateMethodBalanceSpotUpdate, nil
+	}
+	var t BalanceSpotUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BalanceSpotUpdateMethod) Ptr() *BalanceSpotUpdateMethod {
+	return &b
 }
 
 var (
@@ -2323,18 +2408,19 @@ func (b *BaseResponse) String() string {
 
 var (
 	bookTickerSubscribeFieldID     = big.NewInt(1 << 0)
-	bookTickerSubscribeFieldParams = big.NewInt(1 << 1)
+	bookTickerSubscribeFieldMethod = big.NewInt(1 << 1)
+	bookTickerSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type BookTickerSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `bookTicker_subscribe`.
-	Params []string `json:"params" url:"params"`
+	Method BookTickerSubscribeMethod `json:"method" url:"method"`
+	Params []string                  `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -2347,15 +2433,18 @@ func (b *BookTickerSubscribe) GetID() int {
 	return b.ID
 }
 
+func (b *BookTickerSubscribe) GetMethod() BookTickerSubscribeMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BookTickerSubscribe) GetParams() []string {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BookTickerSubscribe) Method() string {
-	return b.method
 }
 
 func (b *BookTickerSubscribe) GetExtraProperties() map[string]interface{} {
@@ -2376,6 +2465,13 @@ func (b *BookTickerSubscribe) SetID(id int) {
 	b.require(bookTickerSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BookTickerSubscribe) SetMethod(method BookTickerSubscribeMethod) {
+	b.Method = method
+	b.require(bookTickerSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BookTickerSubscribe) SetParams(params []string) {
@@ -2384,22 +2480,13 @@ func (b *BookTickerSubscribe) SetParams(params []string) {
 }
 
 func (b *BookTickerSubscribe) UnmarshalJSON(data []byte) error {
-	type embed BookTickerSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BookTickerSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BookTickerSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "bookTicker_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "bookTicker_subscribe", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BookTickerSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -2412,10 +2499,8 @@ func (b *BookTickerSubscribe) MarshalJSON() ([]byte, error) {
 	type embed BookTickerSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "bookTicker_subscribe",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2433,19 +2518,40 @@ func (b *BookTickerSubscribe) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Method name. Fixed value: `bookTicker_subscribe`.
+type BookTickerSubscribeMethod string
+
+const (
+	BookTickerSubscribeMethodBookTickerSubscribe BookTickerSubscribeMethod = "bookTicker_subscribe"
+)
+
+func NewBookTickerSubscribeMethodFromString(s string) (BookTickerSubscribeMethod, error) {
+	switch s {
+	case "bookTicker_subscribe":
+		return BookTickerSubscribeMethodBookTickerSubscribe, nil
+	}
+	var t BookTickerSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BookTickerSubscribeMethod) Ptr() *BookTickerSubscribeMethod {
+	return &b
+}
+
 var (
 	bookTickerUpdateFieldID     = big.NewInt(1 << 0)
-	bookTickerUpdateFieldParams = big.NewInt(1 << 1)
+	bookTickerUpdateFieldMethod = big.NewInt(1 << 1)
+	bookTickerUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type BookTickerUpdate struct {
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `bookTicker_update`.
+	Method BookTickerUpdateMethod `json:"method" url:"method"`
 	Params []BookTickerUpdateData `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -2458,15 +2564,18 @@ func (b *BookTickerUpdate) GetID() interface{} {
 	return b.ID
 }
 
+func (b *BookTickerUpdate) GetMethod() BookTickerUpdateMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BookTickerUpdate) GetParams() []BookTickerUpdateData {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BookTickerUpdate) Method() string {
-	return b.method
 }
 
 func (b *BookTickerUpdate) GetExtraProperties() map[string]interface{} {
@@ -2487,6 +2596,13 @@ func (b *BookTickerUpdate) SetID(id interface{}) {
 	b.require(bookTickerUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BookTickerUpdate) SetMethod(method BookTickerUpdateMethod) {
+	b.Method = method
+	b.require(bookTickerUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BookTickerUpdate) SetParams(params []BookTickerUpdateData) {
@@ -2495,22 +2611,13 @@ func (b *BookTickerUpdate) SetParams(params []BookTickerUpdateData) {
 }
 
 func (b *BookTickerUpdate) UnmarshalJSON(data []byte) error {
-	type embed BookTickerUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BookTickerUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BookTickerUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "bookTicker_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "bookTicker_update", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BookTickerUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -2523,10 +2630,8 @@ func (b *BookTickerUpdate) MarshalJSON() ([]byte, error) {
 	type embed BookTickerUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "bookTicker_update",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2555,21 +2660,42 @@ func (b *BookTickerUpdate) String() string {
 // - [7] Best ask amount
 type BookTickerUpdateData = []interface{}
 
+// Method name. Fixed value: `bookTicker_update`.
+type BookTickerUpdateMethod string
+
+const (
+	BookTickerUpdateMethodBookTickerUpdate BookTickerUpdateMethod = "bookTicker_update"
+)
+
+func NewBookTickerUpdateMethodFromString(s string) (BookTickerUpdateMethod, error) {
+	switch s {
+	case "bookTicker_update":
+		return BookTickerUpdateMethodBookTickerUpdate, nil
+	}
+	var t BookTickerUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BookTickerUpdateMethod) Ptr() *BookTickerUpdateMethod {
+	return &b
+}
+
 var (
 	borrowsEventsSubscribeFieldID     = big.NewInt(1 << 0)
-	borrowsEventsSubscribeFieldParams = big.NewInt(1 << 1)
+	borrowsEventsSubscribeFieldMethod = big.NewInt(1 << 1)
+	borrowsEventsSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type BorrowsEventsSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `borrowsAccountMargin_subscribe`.
+	Method BorrowsEventsSubscribeMethod `json:"method" url:"method"`
 	// Empty array
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -2582,15 +2708,18 @@ func (b *BorrowsEventsSubscribe) GetID() int {
 	return b.ID
 }
 
+func (b *BorrowsEventsSubscribe) GetMethod() BorrowsEventsSubscribeMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BorrowsEventsSubscribe) GetParams() []interface{} {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BorrowsEventsSubscribe) Method() string {
-	return b.method
 }
 
 func (b *BorrowsEventsSubscribe) GetExtraProperties() map[string]interface{} {
@@ -2611,6 +2740,13 @@ func (b *BorrowsEventsSubscribe) SetID(id int) {
 	b.require(borrowsEventsSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BorrowsEventsSubscribe) SetMethod(method BorrowsEventsSubscribeMethod) {
+	b.Method = method
+	b.require(borrowsEventsSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BorrowsEventsSubscribe) SetParams(params []interface{}) {
@@ -2619,22 +2755,13 @@ func (b *BorrowsEventsSubscribe) SetParams(params []interface{}) {
 }
 
 func (b *BorrowsEventsSubscribe) UnmarshalJSON(data []byte) error {
-	type embed BorrowsEventsSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BorrowsEventsSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BorrowsEventsSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "borrowsAccountMargin_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "borrowsAccountMargin_subscribe", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BorrowsEventsSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -2647,10 +2774,8 @@ func (b *BorrowsEventsSubscribe) MarshalJSON() ([]byte, error) {
 	type embed BorrowsEventsSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "borrowsAccountMargin_subscribe",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2668,15 +2793,37 @@ func (b *BorrowsEventsSubscribe) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Method name. Fixed value: `borrowsAccountMargin_subscribe`.
+type BorrowsEventsSubscribeMethod string
+
+const (
+	BorrowsEventsSubscribeMethodBorrowsAccountMarginSubscribe BorrowsEventsSubscribeMethod = "borrowsAccountMargin_subscribe"
+)
+
+func NewBorrowsEventsSubscribeMethodFromString(s string) (BorrowsEventsSubscribeMethod, error) {
+	switch s {
+	case "borrowsAccountMargin_subscribe":
+		return BorrowsEventsSubscribeMethodBorrowsAccountMarginSubscribe, nil
+	}
+	var t BorrowsEventsSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BorrowsEventsSubscribeMethod) Ptr() *BorrowsEventsSubscribeMethod {
+	return &b
+}
+
 var (
 	borrowsEventsUpdateFieldID     = big.NewInt(1 << 0)
-	borrowsEventsUpdateFieldParams = big.NewInt(1 << 1)
+	borrowsEventsUpdateFieldMethod = big.NewInt(1 << 1)
+	borrowsEventsUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type BorrowsEventsUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `borrowsAccountMargin_update`.
+	Method BorrowsEventsUpdateMethod `json:"method" url:"method"`
 	// Event tuple:
 	// - [0] Event type (1=Margin call, 2=Liquidation)
 	// - [1] Borrow object with all borrow details
@@ -2684,7 +2831,6 @@ type BorrowsEventsUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -2697,15 +2843,18 @@ func (b *BorrowsEventsUpdate) GetID() interface{} {
 	return b.ID
 }
 
+func (b *BorrowsEventsUpdate) GetMethod() BorrowsEventsUpdateMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BorrowsEventsUpdate) GetParams() []interface{} {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BorrowsEventsUpdate) Method() string {
-	return b.method
 }
 
 func (b *BorrowsEventsUpdate) GetExtraProperties() map[string]interface{} {
@@ -2726,6 +2875,13 @@ func (b *BorrowsEventsUpdate) SetID(id interface{}) {
 	b.require(borrowsEventsUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BorrowsEventsUpdate) SetMethod(method BorrowsEventsUpdateMethod) {
+	b.Method = method
+	b.require(borrowsEventsUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BorrowsEventsUpdate) SetParams(params []interface{}) {
@@ -2734,22 +2890,13 @@ func (b *BorrowsEventsUpdate) SetParams(params []interface{}) {
 }
 
 func (b *BorrowsEventsUpdate) UnmarshalJSON(data []byte) error {
-	type embed BorrowsEventsUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BorrowsEventsUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BorrowsEventsUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "borrowsAccountMargin_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "borrowsAccountMargin_update", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BorrowsEventsUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -2762,10 +2909,8 @@ func (b *BorrowsEventsUpdate) MarshalJSON() ([]byte, error) {
 	type embed BorrowsEventsUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "borrowsAccountMargin_update",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2783,21 +2928,42 @@ func (b *BorrowsEventsUpdate) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Method name. Fixed value: `borrowsAccountMargin_update`.
+type BorrowsEventsUpdateMethod string
+
+const (
+	BorrowsEventsUpdateMethodBorrowsAccountMarginUpdate BorrowsEventsUpdateMethod = "borrowsAccountMargin_update"
+)
+
+func NewBorrowsEventsUpdateMethodFromString(s string) (BorrowsEventsUpdateMethod, error) {
+	switch s {
+	case "borrowsAccountMargin_update":
+		return BorrowsEventsUpdateMethodBorrowsAccountMarginUpdate, nil
+	}
+	var t BorrowsEventsUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BorrowsEventsUpdateMethod) Ptr() *BorrowsEventsUpdateMethod {
+	return &b
+}
+
 var (
 	borrowsSubscribeFieldID     = big.NewInt(1 << 0)
-	borrowsSubscribeFieldParams = big.NewInt(1 << 1)
+	borrowsSubscribeFieldMethod = big.NewInt(1 << 1)
+	borrowsSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type BorrowsSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `borrowsMargin_subscribe`.
+	Method BorrowsSubscribeMethod `json:"method" url:"method"`
 	// Empty array for borrows subscription
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -2810,15 +2976,18 @@ func (b *BorrowsSubscribe) GetID() int {
 	return b.ID
 }
 
+func (b *BorrowsSubscribe) GetMethod() BorrowsSubscribeMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BorrowsSubscribe) GetParams() []interface{} {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BorrowsSubscribe) Method() string {
-	return b.method
 }
 
 func (b *BorrowsSubscribe) GetExtraProperties() map[string]interface{} {
@@ -2839,6 +3008,13 @@ func (b *BorrowsSubscribe) SetID(id int) {
 	b.require(borrowsSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BorrowsSubscribe) SetMethod(method BorrowsSubscribeMethod) {
+	b.Method = method
+	b.require(borrowsSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BorrowsSubscribe) SetParams(params []interface{}) {
@@ -2847,22 +3023,13 @@ func (b *BorrowsSubscribe) SetParams(params []interface{}) {
 }
 
 func (b *BorrowsSubscribe) UnmarshalJSON(data []byte) error {
-	type embed BorrowsSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BorrowsSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BorrowsSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "borrowsMargin_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "borrowsMargin_subscribe", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BorrowsSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -2875,10 +3042,8 @@ func (b *BorrowsSubscribe) MarshalJSON() ([]byte, error) {
 	type embed BorrowsSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "borrowsMargin_subscribe",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -2896,20 +3061,41 @@ func (b *BorrowsSubscribe) String() string {
 	return fmt.Sprintf("%#v", b)
 }
 
+// Method name. Fixed value: `borrowsMargin_subscribe`.
+type BorrowsSubscribeMethod string
+
+const (
+	BorrowsSubscribeMethodBorrowsMarginSubscribe BorrowsSubscribeMethod = "borrowsMargin_subscribe"
+)
+
+func NewBorrowsSubscribeMethodFromString(s string) (BorrowsSubscribeMethod, error) {
+	switch s {
+	case "borrowsMargin_subscribe":
+		return BorrowsSubscribeMethodBorrowsMarginSubscribe, nil
+	}
+	var t BorrowsSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BorrowsSubscribeMethod) Ptr() *BorrowsSubscribeMethod {
+	return &b
+}
+
 var (
 	borrowsUpdateFieldID     = big.NewInt(1 << 0)
-	borrowsUpdateFieldParams = big.NewInt(1 << 1)
+	borrowsUpdateFieldMethod = big.NewInt(1 << 1)
+	borrowsUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type BorrowsUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `borrowsMargin_update`.
+	Method BorrowsUpdateMethod  `json:"method" url:"method"`
 	Params *BorrowsUpdateParams `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -2922,15 +3108,18 @@ func (b *BorrowsUpdate) GetID() interface{} {
 	return b.ID
 }
 
+func (b *BorrowsUpdate) GetMethod() BorrowsUpdateMethod {
+	if b == nil {
+		return ""
+	}
+	return b.Method
+}
+
 func (b *BorrowsUpdate) GetParams() *BorrowsUpdateParams {
 	if b == nil {
 		return nil
 	}
 	return b.Params
-}
-
-func (b *BorrowsUpdate) Method() string {
-	return b.method
 }
 
 func (b *BorrowsUpdate) GetExtraProperties() map[string]interface{} {
@@ -2951,6 +3140,13 @@ func (b *BorrowsUpdate) SetID(id interface{}) {
 	b.require(borrowsUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BorrowsUpdate) SetMethod(method BorrowsUpdateMethod) {
+	b.Method = method
+	b.require(borrowsUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (b *BorrowsUpdate) SetParams(params *BorrowsUpdateParams) {
@@ -2959,22 +3155,13 @@ func (b *BorrowsUpdate) SetParams(params *BorrowsUpdateParams) {
 }
 
 func (b *BorrowsUpdate) UnmarshalJSON(data []byte) error {
-	type embed BorrowsUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*b),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler BorrowsUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*b = BorrowsUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "borrowsMargin_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", b, "borrowsMargin_update", unmarshaler.Method)
-	}
-	b.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *b, "method")
+	*b = BorrowsUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *b)
 	if err != nil {
 		return err
 	}
@@ -2987,10 +3174,8 @@ func (b *BorrowsUpdate) MarshalJSON() ([]byte, error) {
 	type embed BorrowsUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*b),
-		Method: "borrowsMargin_update",
+		embed: embed(*b),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, b.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -3006,6 +3191,26 @@ func (b *BorrowsUpdate) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", b)
+}
+
+// Method name. Fixed value: `borrowsMargin_update`.
+type BorrowsUpdateMethod string
+
+const (
+	BorrowsUpdateMethodBorrowsMarginUpdate BorrowsUpdateMethod = "borrowsMargin_update"
+)
+
+func NewBorrowsUpdateMethodFromString(s string) (BorrowsUpdateMethod, error) {
+	switch s {
+	case "borrowsMargin_update":
+		return BorrowsUpdateMethodBorrowsMarginUpdate, nil
+	}
+	var t BorrowsUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BorrowsUpdateMethod) Ptr() *BorrowsUpdateMethod {
+	return &b
 }
 
 var (
@@ -3280,13 +3485,15 @@ type Candle = []interface{}
 
 var (
 	candlesRequestFieldID     = big.NewInt(1 << 0)
-	candlesRequestFieldParams = big.NewInt(1 << 1)
+	candlesRequestFieldMethod = big.NewInt(1 << 1)
+	candlesRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type CandlesRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `candles_request`.
+	Method CandlesRequestMethod `json:"method" url:"method"`
 	// Query parameters:
 	// - [0] Market name (e.g., ETH_BTC)
 	// - [1] Start time (Unix timestamp)
@@ -3296,7 +3503,6 @@ type CandlesRequest struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -3309,15 +3515,18 @@ func (c *CandlesRequest) GetID() int {
 	return c.ID
 }
 
+func (c *CandlesRequest) GetMethod() CandlesRequestMethod {
+	if c == nil {
+		return ""
+	}
+	return c.Method
+}
+
 func (c *CandlesRequest) GetParams() []interface{} {
 	if c == nil {
 		return nil
 	}
 	return c.Params
-}
-
-func (c *CandlesRequest) Method() string {
-	return c.method
 }
 
 func (c *CandlesRequest) GetExtraProperties() map[string]interface{} {
@@ -3338,6 +3547,13 @@ func (c *CandlesRequest) SetID(id int) {
 	c.require(candlesRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CandlesRequest) SetMethod(method CandlesRequestMethod) {
+	c.Method = method
+	c.require(candlesRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CandlesRequest) SetParams(params []interface{}) {
@@ -3346,22 +3562,13 @@ func (c *CandlesRequest) SetParams(params []interface{}) {
 }
 
 func (c *CandlesRequest) UnmarshalJSON(data []byte) error {
-	type embed CandlesRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*c),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler CandlesRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*c = CandlesRequest(unmarshaler.embed)
-	if unmarshaler.Method != "candles_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", c, "candles_request", unmarshaler.Method)
-	}
-	c.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *c, "method")
+	*c = CandlesRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
 	if err != nil {
 		return err
 	}
@@ -3374,10 +3581,8 @@ func (c *CandlesRequest) MarshalJSON() ([]byte, error) {
 	type embed CandlesRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*c),
-		Method: "candles_request",
+		embed: embed(*c),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -3393,6 +3598,26 @@ func (c *CandlesRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", c)
+}
+
+// Method name. Fixed value: `candles_request`.
+type CandlesRequestMethod string
+
+const (
+	CandlesRequestMethodCandlesRequest CandlesRequestMethod = "candles_request"
+)
+
+func NewCandlesRequestMethodFromString(s string) (CandlesRequestMethod, error) {
+	switch s {
+	case "candles_request":
+		return CandlesRequestMethodCandlesRequest, nil
+	}
+	var t CandlesRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CandlesRequestMethod) Ptr() *CandlesRequestMethod {
+	return &c
 }
 
 var (
@@ -3508,13 +3733,15 @@ func (c *CandlesResponse) String() string {
 
 var (
 	candlesSubscribeFieldID     = big.NewInt(1 << 0)
-	candlesSubscribeFieldParams = big.NewInt(1 << 1)
+	candlesSubscribeFieldMethod = big.NewInt(1 << 1)
+	candlesSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type CandlesSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `candles_subscribe`.
+	Method CandlesSubscribeMethod `json:"method" url:"method"`
 	// Subscription parameters:
 	// - [0] Market name (e.g., BTC_USD)
 	// - [1] Interval in seconds
@@ -3522,7 +3749,6 @@ type CandlesSubscribe struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -3535,15 +3761,18 @@ func (c *CandlesSubscribe) GetID() int {
 	return c.ID
 }
 
+func (c *CandlesSubscribe) GetMethod() CandlesSubscribeMethod {
+	if c == nil {
+		return ""
+	}
+	return c.Method
+}
+
 func (c *CandlesSubscribe) GetParams() []interface{} {
 	if c == nil {
 		return nil
 	}
 	return c.Params
-}
-
-func (c *CandlesSubscribe) Method() string {
-	return c.method
 }
 
 func (c *CandlesSubscribe) GetExtraProperties() map[string]interface{} {
@@ -3564,6 +3793,13 @@ func (c *CandlesSubscribe) SetID(id int) {
 	c.require(candlesSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CandlesSubscribe) SetMethod(method CandlesSubscribeMethod) {
+	c.Method = method
+	c.require(candlesSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CandlesSubscribe) SetParams(params []interface{}) {
@@ -3572,22 +3808,13 @@ func (c *CandlesSubscribe) SetParams(params []interface{}) {
 }
 
 func (c *CandlesSubscribe) UnmarshalJSON(data []byte) error {
-	type embed CandlesSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*c),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler CandlesSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*c = CandlesSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "candles_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", c, "candles_subscribe", unmarshaler.Method)
-	}
-	c.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *c, "method")
+	*c = CandlesSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
 	if err != nil {
 		return err
 	}
@@ -3600,10 +3827,8 @@ func (c *CandlesSubscribe) MarshalJSON() ([]byte, error) {
 	type embed CandlesSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*c),
-		Method: "candles_subscribe",
+		embed: embed(*c),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -3621,19 +3846,40 @@ func (c *CandlesSubscribe) String() string {
 	return fmt.Sprintf("%#v", c)
 }
 
+// Method name. Fixed value: `candles_subscribe`.
+type CandlesSubscribeMethod string
+
+const (
+	CandlesSubscribeMethodCandlesSubscribe CandlesSubscribeMethod = "candles_subscribe"
+)
+
+func NewCandlesSubscribeMethodFromString(s string) (CandlesSubscribeMethod, error) {
+	switch s {
+	case "candles_subscribe":
+		return CandlesSubscribeMethodCandlesSubscribe, nil
+	}
+	var t CandlesSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CandlesSubscribeMethod) Ptr() *CandlesSubscribeMethod {
+	return &c
+}
+
 var (
 	candlesUpdateFieldID     = big.NewInt(1 << 0)
-	candlesUpdateFieldParams = big.NewInt(1 << 1)
+	candlesUpdateFieldMethod = big.NewInt(1 << 1)
+	candlesUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type CandlesUpdate struct {
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `candles_update`.
-	Params []Candle `json:"params" url:"params"`
+	Method CandlesUpdateMethod `json:"method" url:"method"`
+	Params []Candle            `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -3646,15 +3892,18 @@ func (c *CandlesUpdate) GetID() interface{} {
 	return c.ID
 }
 
+func (c *CandlesUpdate) GetMethod() CandlesUpdateMethod {
+	if c == nil {
+		return ""
+	}
+	return c.Method
+}
+
 func (c *CandlesUpdate) GetParams() []Candle {
 	if c == nil {
 		return nil
 	}
 	return c.Params
-}
-
-func (c *CandlesUpdate) Method() string {
-	return c.method
 }
 
 func (c *CandlesUpdate) GetExtraProperties() map[string]interface{} {
@@ -3675,6 +3924,13 @@ func (c *CandlesUpdate) SetID(id interface{}) {
 	c.require(candlesUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CandlesUpdate) SetMethod(method CandlesUpdateMethod) {
+	c.Method = method
+	c.require(candlesUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (c *CandlesUpdate) SetParams(params []Candle) {
@@ -3683,22 +3939,13 @@ func (c *CandlesUpdate) SetParams(params []Candle) {
 }
 
 func (c *CandlesUpdate) UnmarshalJSON(data []byte) error {
-	type embed CandlesUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*c),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler CandlesUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*c = CandlesUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "candles_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", c, "candles_update", unmarshaler.Method)
-	}
-	c.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *c, "method")
+	*c = CandlesUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
 	if err != nil {
 		return err
 	}
@@ -3711,10 +3958,8 @@ func (c *CandlesUpdate) MarshalJSON() ([]byte, error) {
 	type embed CandlesUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*c),
-		Method: "candles_update",
+		embed: embed(*c),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -3730,6 +3975,26 @@ func (c *CandlesUpdate) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", c)
+}
+
+// Method name. Fixed value: `candles_update`.
+type CandlesUpdateMethod string
+
+const (
+	CandlesUpdateMethodCandlesUpdate CandlesUpdateMethod = "candles_update"
+)
+
+func NewCandlesUpdateMethodFromString(s string) (CandlesUpdateMethod, error) {
+	switch s {
+	case "candles_update":
+		return CandlesUpdateMethodCandlesUpdate, nil
+	}
+	var t CandlesUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c CandlesUpdateMethod) Ptr() *CandlesUpdateMethod {
+	return &c
 }
 
 var (
@@ -3872,7 +4137,7 @@ type ConvertEstimateResponse struct {
 	Give *string `json:"give,omitempty" url:"give,omitempty"`
 	// Amount to receive
 	Receive *string `json:"receive,omitempty" url:"receive,omitempty"`
-	// Conversion rate
+	// Conversion rate expressed in the from→to direction: units of the 'to' currency received per one unit of the 'from' currency. Example: if from=BTC and to=USDT, a rate of "34299.76" means 1 BTC is worth approximately 34 299.76 USDT at the time of the quote.
 	Rate *string `json:"rate,omitempty" url:"rate,omitempty"`
 	// Quote expiration timestamp
 	ExpireAt *int `json:"expireAt,omitempty" url:"expireAt,omitempty"`
@@ -4436,13 +4701,15 @@ func (c *ConvertHistoryResponseRecordsItemPathItem) String() string {
 
 var (
 	dealsRequestFieldID     = big.NewInt(1 << 0)
-	dealsRequestFieldParams = big.NewInt(1 << 1)
+	dealsRequestFieldMethod = big.NewInt(1 << 1)
+	dealsRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type DealsRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `deals_request`.
+	Method DealsRequestMethod `json:"method" url:"method"`
 	// Query parameters tuple:
 	// - [0] Market name
 	// - [1] Offset
@@ -4451,7 +4718,6 @@ type DealsRequest struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -4464,15 +4730,18 @@ func (d *DealsRequest) GetID() int {
 	return d.ID
 }
 
+func (d *DealsRequest) GetMethod() DealsRequestMethod {
+	if d == nil {
+		return ""
+	}
+	return d.Method
+}
+
 func (d *DealsRequest) GetParams() []interface{} {
 	if d == nil {
 		return nil
 	}
 	return d.Params
-}
-
-func (d *DealsRequest) Method() string {
-	return d.method
 }
 
 func (d *DealsRequest) GetExtraProperties() map[string]interface{} {
@@ -4493,6 +4762,13 @@ func (d *DealsRequest) SetID(id int) {
 	d.require(dealsRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DealsRequest) SetMethod(method DealsRequestMethod) {
+	d.Method = method
+	d.require(dealsRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DealsRequest) SetParams(params []interface{}) {
@@ -4501,22 +4777,13 @@ func (d *DealsRequest) SetParams(params []interface{}) {
 }
 
 func (d *DealsRequest) UnmarshalJSON(data []byte) error {
-	type embed DealsRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*d),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler DealsRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*d = DealsRequest(unmarshaler.embed)
-	if unmarshaler.Method != "deals_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", d, "deals_request", unmarshaler.Method)
-	}
-	d.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *d, "method")
+	*d = DealsRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
 	if err != nil {
 		return err
 	}
@@ -4529,10 +4796,8 @@ func (d *DealsRequest) MarshalJSON() ([]byte, error) {
 	type embed DealsRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*d),
-		Method: "deals_request",
+		embed: embed(*d),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -4548,6 +4813,26 @@ func (d *DealsRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", d)
+}
+
+// Method name. Fixed value: `deals_request`.
+type DealsRequestMethod string
+
+const (
+	DealsRequestMethodDealsRequest DealsRequestMethod = "deals_request"
+)
+
+func NewDealsRequestMethodFromString(s string) (DealsRequestMethod, error) {
+	switch s {
+	case "deals_request":
+		return DealsRequestMethodDealsRequest, nil
+	}
+	var t DealsRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (d DealsRequestMethod) Ptr() *DealsRequestMethod {
+	return &d
 }
 
 var (
@@ -5059,19 +5344,20 @@ func (d *DealsResponseResultRecordsItem) String() string {
 
 var (
 	dealsSubscribeFieldID     = big.NewInt(1 << 0)
-	dealsSubscribeFieldParams = big.NewInt(1 << 1)
+	dealsSubscribeFieldMethod = big.NewInt(1 << 1)
+	dealsSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type DealsSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `deals_subscribe`.
+	Method DealsSubscribeMethod `json:"method" url:"method"`
 	// Array containing array of markets
 	Params [][]string `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -5084,15 +5370,18 @@ func (d *DealsSubscribe) GetID() int {
 	return d.ID
 }
 
+func (d *DealsSubscribe) GetMethod() DealsSubscribeMethod {
+	if d == nil {
+		return ""
+	}
+	return d.Method
+}
+
 func (d *DealsSubscribe) GetParams() [][]string {
 	if d == nil {
 		return nil
 	}
 	return d.Params
-}
-
-func (d *DealsSubscribe) Method() string {
-	return d.method
 }
 
 func (d *DealsSubscribe) GetExtraProperties() map[string]interface{} {
@@ -5113,6 +5402,13 @@ func (d *DealsSubscribe) SetID(id int) {
 	d.require(dealsSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DealsSubscribe) SetMethod(method DealsSubscribeMethod) {
+	d.Method = method
+	d.require(dealsSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DealsSubscribe) SetParams(params [][]string) {
@@ -5121,22 +5417,13 @@ func (d *DealsSubscribe) SetParams(params [][]string) {
 }
 
 func (d *DealsSubscribe) UnmarshalJSON(data []byte) error {
-	type embed DealsSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*d),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler DealsSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*d = DealsSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "deals_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", d, "deals_subscribe", unmarshaler.Method)
-	}
-	d.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *d, "method")
+	*d = DealsSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
 	if err != nil {
 		return err
 	}
@@ -5149,10 +5436,8 @@ func (d *DealsSubscribe) MarshalJSON() ([]byte, error) {
 	type embed DealsSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*d),
-		Method: "deals_subscribe",
+		embed: embed(*d),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -5170,15 +5455,37 @@ func (d *DealsSubscribe) String() string {
 	return fmt.Sprintf("%#v", d)
 }
 
+// Method name. Fixed value: `deals_subscribe`.
+type DealsSubscribeMethod string
+
+const (
+	DealsSubscribeMethodDealsSubscribe DealsSubscribeMethod = "deals_subscribe"
+)
+
+func NewDealsSubscribeMethodFromString(s string) (DealsSubscribeMethod, error) {
+	switch s {
+	case "deals_subscribe":
+		return DealsSubscribeMethodDealsSubscribe, nil
+	}
+	var t DealsSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (d DealsSubscribeMethod) Ptr() *DealsSubscribeMethod {
+	return &d
+}
+
 var (
 	dealsUpdateFieldID     = big.NewInt(1 << 0)
-	dealsUpdateFieldParams = big.NewInt(1 << 1)
+	dealsUpdateFieldMethod = big.NewInt(1 << 1)
+	dealsUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type DealsUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `deals_update`.
+	Method DealsUpdateMethod `json:"method" url:"method"`
 	// Update event tuple (11 elements):
 	// - [0] Deal ID
 	// - [1] Deal time (Unix timestamp)
@@ -5195,7 +5502,6 @@ type DealsUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -5208,15 +5514,18 @@ func (d *DealsUpdate) GetID() interface{} {
 	return d.ID
 }
 
+func (d *DealsUpdate) GetMethod() DealsUpdateMethod {
+	if d == nil {
+		return ""
+	}
+	return d.Method
+}
+
 func (d *DealsUpdate) GetParams() []interface{} {
 	if d == nil {
 		return nil
 	}
 	return d.Params
-}
-
-func (d *DealsUpdate) Method() string {
-	return d.method
 }
 
 func (d *DealsUpdate) GetExtraProperties() map[string]interface{} {
@@ -5237,6 +5546,13 @@ func (d *DealsUpdate) SetID(id interface{}) {
 	d.require(dealsUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DealsUpdate) SetMethod(method DealsUpdateMethod) {
+	d.Method = method
+	d.require(dealsUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DealsUpdate) SetParams(params []interface{}) {
@@ -5245,22 +5561,13 @@ func (d *DealsUpdate) SetParams(params []interface{}) {
 }
 
 func (d *DealsUpdate) UnmarshalJSON(data []byte) error {
-	type embed DealsUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*d),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler DealsUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*d = DealsUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "deals_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", d, "deals_update", unmarshaler.Method)
-	}
-	d.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *d, "method")
+	*d = DealsUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
 	if err != nil {
 		return err
 	}
@@ -5273,10 +5580,8 @@ func (d *DealsUpdate) MarshalJSON() ([]byte, error) {
 	type embed DealsUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*d),
-		Method: "deals_update",
+		embed: embed(*d),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -5294,6 +5599,26 @@ func (d *DealsUpdate) String() string {
 	return fmt.Sprintf("%#v", d)
 }
 
+// Method name. Fixed value: `deals_update`.
+type DealsUpdateMethod string
+
+const (
+	DealsUpdateMethodDealsUpdate DealsUpdateMethod = "deals_update"
+)
+
+func NewDealsUpdateMethodFromString(s string) (DealsUpdateMethod, error) {
+	switch s {
+	case "deals_update":
+		return DealsUpdateMethodDealsUpdate, nil
+	}
+	var t DealsUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (d DealsUpdateMethod) Ptr() *DealsUpdateMethod {
+	return &d
+}
+
 // Order book level tuple:
 // - [0] Price level (string)
 // - [1] Available amount at the price (string)
@@ -5301,13 +5626,15 @@ type DepthLevel = []interface{}
 
 var (
 	depthRequestFieldID     = big.NewInt(1 << 0)
-	depthRequestFieldParams = big.NewInt(1 << 1)
+	depthRequestFieldMethod = big.NewInt(1 << 1)
+	depthRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type DepthRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `depth_request`.
+	Method DepthRequestMethod `json:"method" url:"method"`
 	// Query parameters:
 	// - [0] Market name
 	// - [1] Limit (max 100)
@@ -5316,7 +5643,6 @@ type DepthRequest struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -5329,15 +5655,18 @@ func (d *DepthRequest) GetID() int {
 	return d.ID
 }
 
+func (d *DepthRequest) GetMethod() DepthRequestMethod {
+	if d == nil {
+		return ""
+	}
+	return d.Method
+}
+
 func (d *DepthRequest) GetParams() []interface{} {
 	if d == nil {
 		return nil
 	}
 	return d.Params
-}
-
-func (d *DepthRequest) Method() string {
-	return d.method
 }
 
 func (d *DepthRequest) GetExtraProperties() map[string]interface{} {
@@ -5358,6 +5687,13 @@ func (d *DepthRequest) SetID(id int) {
 	d.require(depthRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DepthRequest) SetMethod(method DepthRequestMethod) {
+	d.Method = method
+	d.require(depthRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DepthRequest) SetParams(params []interface{}) {
@@ -5366,22 +5702,13 @@ func (d *DepthRequest) SetParams(params []interface{}) {
 }
 
 func (d *DepthRequest) UnmarshalJSON(data []byte) error {
-	type embed DepthRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*d),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler DepthRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*d = DepthRequest(unmarshaler.embed)
-	if unmarshaler.Method != "depth_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", d, "depth_request", unmarshaler.Method)
-	}
-	d.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *d, "method")
+	*d = DepthRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
 	if err != nil {
 		return err
 	}
@@ -5394,10 +5721,8 @@ func (d *DepthRequest) MarshalJSON() ([]byte, error) {
 	type embed DepthRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*d),
-		Method: "depth_request",
+		embed: embed(*d),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -5413,6 +5738,26 @@ func (d *DepthRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", d)
+}
+
+// Method name. Fixed value: `depth_request`.
+type DepthRequestMethod string
+
+const (
+	DepthRequestMethodDepthRequest DepthRequestMethod = "depth_request"
+)
+
+func NewDepthRequestMethodFromString(s string) (DepthRequestMethod, error) {
+	switch s {
+	case "depth_request":
+		return DepthRequestMethodDepthRequest, nil
+	}
+	var t DepthRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (d DepthRequestMethod) Ptr() *DepthRequestMethod {
+	return &d
 }
 
 var (
@@ -5527,12 +5872,14 @@ func (d *DepthResponse) String() string {
 
 var (
 	depthSubscribeFieldID     = big.NewInt(1 << 0)
-	depthSubscribeFieldParams = big.NewInt(1 << 1)
+	depthSubscribeFieldMethod = big.NewInt(1 << 1)
+	depthSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type DepthSubscribe struct {
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `depth_subscribe`.
+	Method DepthSubscribeMethod `json:"method" url:"method"`
 	// Subscription parameters:
 	// - [0] Market name
 	// - [1] Limit (1, 5, 10, 20, 30, 50, or 100)
@@ -5542,7 +5889,6 @@ type DepthSubscribe struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -5555,15 +5901,18 @@ func (d *DepthSubscribe) GetID() int {
 	return d.ID
 }
 
+func (d *DepthSubscribe) GetMethod() DepthSubscribeMethod {
+	if d == nil {
+		return ""
+	}
+	return d.Method
+}
+
 func (d *DepthSubscribe) GetParams() []interface{} {
 	if d == nil {
 		return nil
 	}
 	return d.Params
-}
-
-func (d *DepthSubscribe) Method() string {
-	return d.method
 }
 
 func (d *DepthSubscribe) GetExtraProperties() map[string]interface{} {
@@ -5584,6 +5933,13 @@ func (d *DepthSubscribe) SetID(id int) {
 	d.require(depthSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DepthSubscribe) SetMethod(method DepthSubscribeMethod) {
+	d.Method = method
+	d.require(depthSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DepthSubscribe) SetParams(params []interface{}) {
@@ -5592,22 +5948,13 @@ func (d *DepthSubscribe) SetParams(params []interface{}) {
 }
 
 func (d *DepthSubscribe) UnmarshalJSON(data []byte) error {
-	type embed DepthSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*d),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler DepthSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*d = DepthSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "depth_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", d, "depth_subscribe", unmarshaler.Method)
-	}
-	d.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *d, "method")
+	*d = DepthSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
 	if err != nil {
 		return err
 	}
@@ -5620,10 +5967,8 @@ func (d *DepthSubscribe) MarshalJSON() ([]byte, error) {
 	type embed DepthSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*d),
-		Method: "depth_subscribe",
+		embed: embed(*d),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -5641,14 +5986,36 @@ func (d *DepthSubscribe) String() string {
 	return fmt.Sprintf("%#v", d)
 }
 
+// Method name. Fixed value: `depth_subscribe`.
+type DepthSubscribeMethod string
+
+const (
+	DepthSubscribeMethodDepthSubscribe DepthSubscribeMethod = "depth_subscribe"
+)
+
+func NewDepthSubscribeMethodFromString(s string) (DepthSubscribeMethod, error) {
+	switch s {
+	case "depth_subscribe":
+		return DepthSubscribeMethodDepthSubscribe, nil
+	}
+	var t DepthSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (d DepthSubscribeMethod) Ptr() *DepthSubscribeMethod {
+	return &d
+}
+
 var (
 	depthUpdateFieldID     = big.NewInt(1 << 0)
-	depthUpdateFieldParams = big.NewInt(1 << 1)
+	depthUpdateFieldMethod = big.NewInt(1 << 1)
+	depthUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type DepthUpdate struct {
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `depth_update`.
+	Method DepthUpdateMethod `json:"method" url:"method"`
 	// Update event parameters:
 	// - [0] Full reload flag (true=full snapshot, false=incremental)
 	// - [1] Order book data (DepthUpdateData object)
@@ -5657,7 +6024,6 @@ type DepthUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -5670,15 +6036,18 @@ func (d *DepthUpdate) GetID() interface{} {
 	return d.ID
 }
 
+func (d *DepthUpdate) GetMethod() DepthUpdateMethod {
+	if d == nil {
+		return ""
+	}
+	return d.Method
+}
+
 func (d *DepthUpdate) GetParams() []interface{} {
 	if d == nil {
 		return nil
 	}
 	return d.Params
-}
-
-func (d *DepthUpdate) Method() string {
-	return d.method
 }
 
 func (d *DepthUpdate) GetExtraProperties() map[string]interface{} {
@@ -5699,6 +6068,13 @@ func (d *DepthUpdate) SetID(id interface{}) {
 	d.require(depthUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (d *DepthUpdate) SetMethod(method DepthUpdateMethod) {
+	d.Method = method
+	d.require(depthUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (d *DepthUpdate) SetParams(params []interface{}) {
@@ -5707,22 +6083,13 @@ func (d *DepthUpdate) SetParams(params []interface{}) {
 }
 
 func (d *DepthUpdate) UnmarshalJSON(data []byte) error {
-	type embed DepthUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*d),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler DepthUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*d = DepthUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "depth_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", d, "depth_update", unmarshaler.Method)
-	}
-	d.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *d, "method")
+	*d = DepthUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *d)
 	if err != nil {
 		return err
 	}
@@ -5735,10 +6102,8 @@ func (d *DepthUpdate) MarshalJSON() ([]byte, error) {
 	type embed DepthUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*d),
-		Method: "depth_update",
+		embed: embed(*d),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, d.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -5916,6 +6281,26 @@ func (d *DepthUpdateData) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", d)
+}
+
+// Method name. Fixed value: `depth_update`.
+type DepthUpdateMethod string
+
+const (
+	DepthUpdateMethodDepthUpdate DepthUpdateMethod = "depth_update"
+)
+
+func NewDepthUpdateMethodFromString(s string) (DepthUpdateMethod, error) {
+	switch s {
+	case "depth_update":
+		return DepthUpdateMethodDepthUpdate, nil
+	}
+	var t DepthUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (d DepthUpdateMethod) Ptr() *DepthUpdateMethod {
+	return &d
 }
 
 var (
@@ -6138,17 +6523,18 @@ func (e *ErrorInner) String() string {
 	return fmt.Sprintf("%#v", e)
 }
 
+// Generic wrapped error envelope (fallback). Market-data validation errors use the flat PublicValidationError shape (HTTP 422) instead, and infrastructure-level failures (maintenance, rate limit, internal error, unknown route) are non-JSON or flat. See the API description for the full set of public error shapes.
 var (
 	errorV4FieldSuccess = big.NewInt(1 << 0)
 	errorV4FieldMessage = big.NewInt(1 << 1)
-	errorV4FieldParams  = big.NewInt(1 << 2)
+	errorV4FieldErrors  = big.NewInt(1 << 2)
 )
 
 type ErrorV4 struct {
 	Success *bool `json:"success,omitempty" url:"success,omitempty"`
 	// Error message
 	Message *string  `json:"message,omitempty" url:"message,omitempty"`
-	Params  []string `json:"params,omitempty" url:"params,omitempty"`
+	Errors  []string `json:"errors,omitempty" url:"errors,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -6171,11 +6557,11 @@ func (e *ErrorV4) GetMessage() *string {
 	return e.Message
 }
 
-func (e *ErrorV4) GetParams() []string {
+func (e *ErrorV4) GetErrors() []string {
 	if e == nil {
 		return nil
 	}
-	return e.Params
+	return e.Errors
 }
 
 func (e *ErrorV4) GetExtraProperties() map[string]interface{} {
@@ -6203,11 +6589,11 @@ func (e *ErrorV4) SetMessage(message *string) {
 	e.require(errorV4FieldMessage)
 }
 
-// SetParams sets the Params field and marks it as non-optional;
+// SetErrors sets the Errors field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (e *ErrorV4) SetParams(params []string) {
-	e.Params = params
-	e.require(errorV4FieldParams)
+func (e *ErrorV4) SetErrors(errors []string) {
+	e.Errors = errors
+	e.require(errorV4FieldErrors)
 }
 
 func (e *ErrorV4) UnmarshalJSON(data []byte) error {
@@ -6742,255 +7128,20 @@ func (e ExecutedOrderObjectStp) Ptr() *ExecutedOrderObjectStp {
 }
 
 var (
-	feeDetailsFieldMinAmount = big.NewInt(1 << 0)
-	feeDetailsFieldMaxAmount = big.NewInt(1 << 1)
-	feeDetailsFieldFixed     = big.NewInt(1 << 2)
-	feeDetailsFieldFlex      = big.NewInt(1 << 3)
-)
-
-type FeeDetails struct {
-	MinAmount *string         `json:"min_amount,omitempty" url:"min_amount,omitempty"`
-	MaxAmount *string         `json:"max_amount,omitempty" url:"max_amount,omitempty"`
-	Fixed     *string         `json:"fixed,omitempty" url:"fixed,omitempty"`
-	Flex      *FeeDetailsFlex `json:"flex,omitempty" url:"flex,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeeDetails) GetMinAmount() *string {
-	if f == nil {
-		return nil
-	}
-	return f.MinAmount
-}
-
-func (f *FeeDetails) GetMaxAmount() *string {
-	if f == nil {
-		return nil
-	}
-	return f.MaxAmount
-}
-
-func (f *FeeDetails) GetFixed() *string {
-	if f == nil {
-		return nil
-	}
-	return f.Fixed
-}
-
-func (f *FeeDetails) GetFlex() *FeeDetailsFlex {
-	if f == nil {
-		return nil
-	}
-	return f.Flex
-}
-
-func (f *FeeDetails) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeeDetails) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetMinAmount sets the MinAmount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeDetails) SetMinAmount(minAmount *string) {
-	f.MinAmount = minAmount
-	f.require(feeDetailsFieldMinAmount)
-}
-
-// SetMaxAmount sets the MaxAmount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeDetails) SetMaxAmount(maxAmount *string) {
-	f.MaxAmount = maxAmount
-	f.require(feeDetailsFieldMaxAmount)
-}
-
-// SetFixed sets the Fixed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeDetails) SetFixed(fixed *string) {
-	f.Fixed = fixed
-	f.require(feeDetailsFieldFixed)
-}
-
-// SetFlex sets the Flex field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeDetails) SetFlex(flex *FeeDetailsFlex) {
-	f.Flex = flex
-	f.require(feeDetailsFieldFlex)
-}
-
-func (f *FeeDetails) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeeDetails
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeeDetails(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeeDetails) MarshalJSON() ([]byte, error) {
-	type embed FeeDetails
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeeDetails) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-var (
-	feeDetailsFlexFieldMinFee  = big.NewInt(1 << 0)
-	feeDetailsFlexFieldMaxFee  = big.NewInt(1 << 1)
-	feeDetailsFlexFieldPercent = big.NewInt(1 << 2)
-)
-
-type FeeDetailsFlex struct {
-	MinFee  *string `json:"min_fee,omitempty" url:"min_fee,omitempty"`
-	MaxFee  *string `json:"max_fee,omitempty" url:"max_fee,omitempty"`
-	Percent *string `json:"percent,omitempty" url:"percent,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (f *FeeDetailsFlex) GetMinFee() *string {
-	if f == nil {
-		return nil
-	}
-	return f.MinFee
-}
-
-func (f *FeeDetailsFlex) GetMaxFee() *string {
-	if f == nil {
-		return nil
-	}
-	return f.MaxFee
-}
-
-func (f *FeeDetailsFlex) GetPercent() *string {
-	if f == nil {
-		return nil
-	}
-	return f.Percent
-}
-
-func (f *FeeDetailsFlex) GetExtraProperties() map[string]interface{} {
-	return f.extraProperties
-}
-
-func (f *FeeDetailsFlex) require(field *big.Int) {
-	if f.explicitFields == nil {
-		f.explicitFields = big.NewInt(0)
-	}
-	f.explicitFields.Or(f.explicitFields, field)
-}
-
-// SetMinFee sets the MinFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeDetailsFlex) SetMinFee(minFee *string) {
-	f.MinFee = minFee
-	f.require(feeDetailsFlexFieldMinFee)
-}
-
-// SetMaxFee sets the MaxFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeDetailsFlex) SetMaxFee(maxFee *string) {
-	f.MaxFee = maxFee
-	f.require(feeDetailsFlexFieldMaxFee)
-}
-
-// SetPercent sets the Percent field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FeeDetailsFlex) SetPercent(percent *string) {
-	f.Percent = percent
-	f.require(feeDetailsFlexFieldPercent)
-}
-
-func (f *FeeDetailsFlex) UnmarshalJSON(data []byte) error {
-	type unmarshaler FeeDetailsFlex
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*f = FeeDetailsFlex(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *f)
-	if err != nil {
-		return err
-	}
-	f.extraProperties = extraProperties
-	f.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (f *FeeDetailsFlex) MarshalJSON() ([]byte, error) {
-	type embed FeeDetailsFlex
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*f),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (f *FeeDetailsFlex) String() string {
-	if len(f.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(f); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", f)
-}
-
-var (
 	lastpriceRequestFieldID     = big.NewInt(1 << 0)
-	lastpriceRequestFieldParams = big.NewInt(1 << 1)
+	lastpriceRequestFieldMethod = big.NewInt(1 << 1)
+	lastpriceRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type LastpriceRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `lastprice_request`.
-	Params []interface{} `json:"params" url:"params"`
+	Method LastpriceRequestMethod `json:"method" url:"method"`
+	Params []interface{}          `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -7003,15 +7154,18 @@ func (l *LastpriceRequest) GetID() int {
 	return l.ID
 }
 
+func (l *LastpriceRequest) GetMethod() LastpriceRequestMethod {
+	if l == nil {
+		return ""
+	}
+	return l.Method
+}
+
 func (l *LastpriceRequest) GetParams() []interface{} {
 	if l == nil {
 		return nil
 	}
 	return l.Params
-}
-
-func (l *LastpriceRequest) Method() string {
-	return l.method
 }
 
 func (l *LastpriceRequest) GetExtraProperties() map[string]interface{} {
@@ -7032,6 +7186,13 @@ func (l *LastpriceRequest) SetID(id int) {
 	l.require(lastpriceRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *LastpriceRequest) SetMethod(method LastpriceRequestMethod) {
+	l.Method = method
+	l.require(lastpriceRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (l *LastpriceRequest) SetParams(params []interface{}) {
@@ -7040,22 +7201,13 @@ func (l *LastpriceRequest) SetParams(params []interface{}) {
 }
 
 func (l *LastpriceRequest) UnmarshalJSON(data []byte) error {
-	type embed LastpriceRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*l),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler LastpriceRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*l = LastpriceRequest(unmarshaler.embed)
-	if unmarshaler.Method != "lastprice_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", l, "lastprice_request", unmarshaler.Method)
-	}
-	l.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *l, "method")
+	*l = LastpriceRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *l)
 	if err != nil {
 		return err
 	}
@@ -7068,10 +7220,8 @@ func (l *LastpriceRequest) MarshalJSON() ([]byte, error) {
 	type embed LastpriceRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*l),
-		Method: "lastprice_request",
+		embed: embed(*l),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, l.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -7087,6 +7237,26 @@ func (l *LastpriceRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", l)
+}
+
+// Method name. Fixed value: `lastprice_request`.
+type LastpriceRequestMethod string
+
+const (
+	LastpriceRequestMethodLastpriceRequest LastpriceRequestMethod = "lastprice_request"
+)
+
+func NewLastpriceRequestMethodFromString(s string) (LastpriceRequestMethod, error) {
+	switch s {
+	case "lastprice_request":
+		return LastpriceRequestMethodLastpriceRequest, nil
+	}
+	var t LastpriceRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (l LastpriceRequestMethod) Ptr() *LastpriceRequestMethod {
+	return &l
 }
 
 var (
@@ -7202,18 +7372,19 @@ func (l *LastpriceResponse) String() string {
 
 var (
 	lastpriceSubscribeFieldID     = big.NewInt(1 << 0)
-	lastpriceSubscribeFieldParams = big.NewInt(1 << 1)
+	lastpriceSubscribeFieldMethod = big.NewInt(1 << 1)
+	lastpriceSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type LastpriceSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `lastprice_subscribe`.
-	Params []string `json:"params" url:"params"`
+	Method LastpriceSubscribeMethod `json:"method" url:"method"`
+	Params []string                 `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -7226,15 +7397,18 @@ func (l *LastpriceSubscribe) GetID() int {
 	return l.ID
 }
 
+func (l *LastpriceSubscribe) GetMethod() LastpriceSubscribeMethod {
+	if l == nil {
+		return ""
+	}
+	return l.Method
+}
+
 func (l *LastpriceSubscribe) GetParams() []string {
 	if l == nil {
 		return nil
 	}
 	return l.Params
-}
-
-func (l *LastpriceSubscribe) Method() string {
-	return l.method
 }
 
 func (l *LastpriceSubscribe) GetExtraProperties() map[string]interface{} {
@@ -7255,6 +7429,13 @@ func (l *LastpriceSubscribe) SetID(id int) {
 	l.require(lastpriceSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *LastpriceSubscribe) SetMethod(method LastpriceSubscribeMethod) {
+	l.Method = method
+	l.require(lastpriceSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (l *LastpriceSubscribe) SetParams(params []string) {
@@ -7263,22 +7444,13 @@ func (l *LastpriceSubscribe) SetParams(params []string) {
 }
 
 func (l *LastpriceSubscribe) UnmarshalJSON(data []byte) error {
-	type embed LastpriceSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*l),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler LastpriceSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*l = LastpriceSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "lastprice_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", l, "lastprice_subscribe", unmarshaler.Method)
-	}
-	l.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *l, "method")
+	*l = LastpriceSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *l)
 	if err != nil {
 		return err
 	}
@@ -7291,10 +7463,8 @@ func (l *LastpriceSubscribe) MarshalJSON() ([]byte, error) {
 	type embed LastpriceSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*l),
-		Method: "lastprice_subscribe",
+		embed: embed(*l),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, l.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -7312,14 +7482,36 @@ func (l *LastpriceSubscribe) String() string {
 	return fmt.Sprintf("%#v", l)
 }
 
+// Method name. Fixed value: `lastprice_subscribe`.
+type LastpriceSubscribeMethod string
+
+const (
+	LastpriceSubscribeMethodLastpriceSubscribe LastpriceSubscribeMethod = "lastprice_subscribe"
+)
+
+func NewLastpriceSubscribeMethodFromString(s string) (LastpriceSubscribeMethod, error) {
+	switch s {
+	case "lastprice_subscribe":
+		return LastpriceSubscribeMethodLastpriceSubscribe, nil
+	}
+	var t LastpriceSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (l LastpriceSubscribeMethod) Ptr() *LastpriceSubscribeMethod {
+	return &l
+}
+
 var (
 	lastpriceUpdateFieldID     = big.NewInt(1 << 0)
-	lastpriceUpdateFieldParams = big.NewInt(1 << 1)
+	lastpriceUpdateFieldMethod = big.NewInt(1 << 1)
+	lastpriceUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type LastpriceUpdate struct {
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `lastprice_update`.
+	Method LastpriceUpdateMethod `json:"method" url:"method"`
 	// Update event parameters:
 	// - [0] Market name
 	// - [1] Last price
@@ -7327,7 +7519,6 @@ type LastpriceUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -7340,15 +7531,18 @@ func (l *LastpriceUpdate) GetID() interface{} {
 	return l.ID
 }
 
+func (l *LastpriceUpdate) GetMethod() LastpriceUpdateMethod {
+	if l == nil {
+		return ""
+	}
+	return l.Method
+}
+
 func (l *LastpriceUpdate) GetParams() []interface{} {
 	if l == nil {
 		return nil
 	}
 	return l.Params
-}
-
-func (l *LastpriceUpdate) Method() string {
-	return l.method
 }
 
 func (l *LastpriceUpdate) GetExtraProperties() map[string]interface{} {
@@ -7369,6 +7563,13 @@ func (l *LastpriceUpdate) SetID(id interface{}) {
 	l.require(lastpriceUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *LastpriceUpdate) SetMethod(method LastpriceUpdateMethod) {
+	l.Method = method
+	l.require(lastpriceUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (l *LastpriceUpdate) SetParams(params []interface{}) {
@@ -7377,22 +7578,13 @@ func (l *LastpriceUpdate) SetParams(params []interface{}) {
 }
 
 func (l *LastpriceUpdate) UnmarshalJSON(data []byte) error {
-	type embed LastpriceUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*l),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler LastpriceUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*l = LastpriceUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "lastprice_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", l, "lastprice_update", unmarshaler.Method)
-	}
-	l.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *l, "method")
+	*l = LastpriceUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *l)
 	if err != nil {
 		return err
 	}
@@ -7405,10 +7597,8 @@ func (l *LastpriceUpdate) MarshalJSON() ([]byte, error) {
 	type embed LastpriceUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*l),
-		Method: "lastprice_update",
+		embed: embed(*l),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, l.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -7426,21 +7616,42 @@ func (l *LastpriceUpdate) String() string {
 	return fmt.Sprintf("%#v", l)
 }
 
+// Method name. Fixed value: `lastprice_update`.
+type LastpriceUpdateMethod string
+
+const (
+	LastpriceUpdateMethodLastpriceUpdate LastpriceUpdateMethod = "lastprice_update"
+)
+
+func NewLastpriceUpdateMethodFromString(s string) (LastpriceUpdateMethod, error) {
+	switch s {
+	case "lastprice_update":
+		return LastpriceUpdateMethodLastpriceUpdate, nil
+	}
+	var t LastpriceUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (l LastpriceUpdateMethod) Ptr() *LastpriceUpdateMethod {
+	return &l
+}
+
 var (
 	marginPositionsEventsSubscribeFieldID     = big.NewInt(1 << 0)
-	marginPositionsEventsSubscribeFieldParams = big.NewInt(1 << 1)
+	marginPositionsEventsSubscribeFieldMethod = big.NewInt(1 << 1)
+	marginPositionsEventsSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type MarginPositionsEventsSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `positionsAccountMargin_subscribe`.
+	Method MarginPositionsEventsSubscribeMethod `json:"method" url:"method"`
 	// Empty array
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -7453,15 +7664,18 @@ func (m *MarginPositionsEventsSubscribe) GetID() int {
 	return m.ID
 }
 
+func (m *MarginPositionsEventsSubscribe) GetMethod() MarginPositionsEventsSubscribeMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarginPositionsEventsSubscribe) GetParams() []interface{} {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarginPositionsEventsSubscribe) Method() string {
-	return m.method
 }
 
 func (m *MarginPositionsEventsSubscribe) GetExtraProperties() map[string]interface{} {
@@ -7482,6 +7696,13 @@ func (m *MarginPositionsEventsSubscribe) SetID(id int) {
 	m.require(marginPositionsEventsSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarginPositionsEventsSubscribe) SetMethod(method MarginPositionsEventsSubscribeMethod) {
+	m.Method = method
+	m.require(marginPositionsEventsSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarginPositionsEventsSubscribe) SetParams(params []interface{}) {
@@ -7490,22 +7711,13 @@ func (m *MarginPositionsEventsSubscribe) SetParams(params []interface{}) {
 }
 
 func (m *MarginPositionsEventsSubscribe) UnmarshalJSON(data []byte) error {
-	type embed MarginPositionsEventsSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarginPositionsEventsSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarginPositionsEventsSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "positionsAccountMargin_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "positionsAccountMargin_subscribe", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarginPositionsEventsSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -7518,10 +7730,8 @@ func (m *MarginPositionsEventsSubscribe) MarshalJSON() ([]byte, error) {
 	type embed MarginPositionsEventsSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "positionsAccountMargin_subscribe",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -7539,15 +7749,37 @@ func (m *MarginPositionsEventsSubscribe) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
+// Method name. Fixed value: `positionsAccountMargin_subscribe`.
+type MarginPositionsEventsSubscribeMethod string
+
+const (
+	MarginPositionsEventsSubscribeMethodPositionsAccountMarginSubscribe MarginPositionsEventsSubscribeMethod = "positionsAccountMargin_subscribe"
+)
+
+func NewMarginPositionsEventsSubscribeMethodFromString(s string) (MarginPositionsEventsSubscribeMethod, error) {
+	switch s {
+	case "positionsAccountMargin_subscribe":
+		return MarginPositionsEventsSubscribeMethodPositionsAccountMarginSubscribe, nil
+	}
+	var t MarginPositionsEventsSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarginPositionsEventsSubscribeMethod) Ptr() *MarginPositionsEventsSubscribeMethod {
+	return &m
+}
+
 var (
 	marginPositionsEventsUpdateFieldID     = big.NewInt(1 << 0)
-	marginPositionsEventsUpdateFieldParams = big.NewInt(1 << 1)
+	marginPositionsEventsUpdateFieldMethod = big.NewInt(1 << 1)
+	marginPositionsEventsUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type MarginPositionsEventsUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `positionsAccountMargin_update`.
+	Method MarginPositionsEventsUpdateMethod `json:"method" url:"method"`
 	// Event tuple:
 	// - [0] Event type (1=Margin call, 2=Liquidation)
 	// - [1] Position object with all position details
@@ -7555,7 +7787,6 @@ type MarginPositionsEventsUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -7568,15 +7799,18 @@ func (m *MarginPositionsEventsUpdate) GetID() interface{} {
 	return m.ID
 }
 
+func (m *MarginPositionsEventsUpdate) GetMethod() MarginPositionsEventsUpdateMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarginPositionsEventsUpdate) GetParams() []interface{} {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarginPositionsEventsUpdate) Method() string {
-	return m.method
 }
 
 func (m *MarginPositionsEventsUpdate) GetExtraProperties() map[string]interface{} {
@@ -7597,6 +7831,13 @@ func (m *MarginPositionsEventsUpdate) SetID(id interface{}) {
 	m.require(marginPositionsEventsUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarginPositionsEventsUpdate) SetMethod(method MarginPositionsEventsUpdateMethod) {
+	m.Method = method
+	m.require(marginPositionsEventsUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarginPositionsEventsUpdate) SetParams(params []interface{}) {
@@ -7605,22 +7846,13 @@ func (m *MarginPositionsEventsUpdate) SetParams(params []interface{}) {
 }
 
 func (m *MarginPositionsEventsUpdate) UnmarshalJSON(data []byte) error {
-	type embed MarginPositionsEventsUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarginPositionsEventsUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarginPositionsEventsUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "positionsAccountMargin_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "positionsAccountMargin_update", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarginPositionsEventsUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -7633,10 +7865,8 @@ func (m *MarginPositionsEventsUpdate) MarshalJSON() ([]byte, error) {
 	type embed MarginPositionsEventsUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "positionsAccountMargin_update",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -7654,15 +7884,37 @@ func (m *MarginPositionsEventsUpdate) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
+// Method name. Fixed value: `positionsAccountMargin_update`.
+type MarginPositionsEventsUpdateMethod string
+
+const (
+	MarginPositionsEventsUpdateMethodPositionsAccountMarginUpdate MarginPositionsEventsUpdateMethod = "positionsAccountMargin_update"
+)
+
+func NewMarginPositionsEventsUpdateMethodFromString(s string) (MarginPositionsEventsUpdateMethod, error) {
+	switch s {
+	case "positionsAccountMargin_update":
+		return MarginPositionsEventsUpdateMethodPositionsAccountMarginUpdate, nil
+	}
+	var t MarginPositionsEventsUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarginPositionsEventsUpdateMethod) Ptr() *MarginPositionsEventsUpdateMethod {
+	return &m
+}
+
 var (
 	marketRequestFieldID     = big.NewInt(1 << 0)
-	marketRequestFieldParams = big.NewInt(1 << 1)
+	marketRequestFieldMethod = big.NewInt(1 << 1)
+	marketRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type MarketRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `market_request`.
+	Method MarketRequestMethod `json:"method" url:"method"`
 	// Query parameters:
 	// - [0] Market name
 	// - [1] Period in seconds
@@ -7670,7 +7922,6 @@ type MarketRequest struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -7683,15 +7934,18 @@ func (m *MarketRequest) GetID() int {
 	return m.ID
 }
 
+func (m *MarketRequest) GetMethod() MarketRequestMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarketRequest) GetParams() []interface{} {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarketRequest) Method() string {
-	return m.method
 }
 
 func (m *MarketRequest) GetExtraProperties() map[string]interface{} {
@@ -7712,6 +7966,13 @@ func (m *MarketRequest) SetID(id int) {
 	m.require(marketRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketRequest) SetMethod(method MarketRequestMethod) {
+	m.Method = method
+	m.require(marketRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarketRequest) SetParams(params []interface{}) {
@@ -7720,22 +7981,13 @@ func (m *MarketRequest) SetParams(params []interface{}) {
 }
 
 func (m *MarketRequest) UnmarshalJSON(data []byte) error {
-	type embed MarketRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarketRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarketRequest(unmarshaler.embed)
-	if unmarshaler.Method != "market_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "market_request", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarketRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -7748,10 +8000,8 @@ func (m *MarketRequest) MarshalJSON() ([]byte, error) {
 	type embed MarketRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "market_request",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -7767,6 +8017,26 @@ func (m *MarketRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", m)
+}
+
+// Method name. Fixed value: `market_request`.
+type MarketRequestMethod string
+
+const (
+	MarketRequestMethodMarketRequest MarketRequestMethod = "market_request"
+)
+
+func NewMarketRequestMethodFromString(s string) (MarketRequestMethod, error) {
+	switch s {
+	case "market_request":
+		return MarketRequestMethodMarketRequest, nil
+	}
+	var t MarketRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarketRequestMethod) Ptr() *MarketRequestMethod {
+	return &m
 }
 
 var (
@@ -8079,17 +8349,18 @@ func (m *MarketStatistics) String() string {
 
 var (
 	marketSubscribeFieldID     = big.NewInt(1 << 0)
-	marketSubscribeFieldParams = big.NewInt(1 << 1)
+	marketSubscribeFieldMethod = big.NewInt(1 << 1)
+	marketSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type MarketSubscribe struct {
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `market_subscribe`.
-	Params []string `json:"params" url:"params"`
+	Method MarketSubscribeMethod `json:"method" url:"method"`
+	Params []string              `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -8102,15 +8373,18 @@ func (m *MarketSubscribe) GetID() int {
 	return m.ID
 }
 
+func (m *MarketSubscribe) GetMethod() MarketSubscribeMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarketSubscribe) GetParams() []string {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarketSubscribe) Method() string {
-	return m.method
 }
 
 func (m *MarketSubscribe) GetExtraProperties() map[string]interface{} {
@@ -8131,6 +8405,13 @@ func (m *MarketSubscribe) SetID(id int) {
 	m.require(marketSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketSubscribe) SetMethod(method MarketSubscribeMethod) {
+	m.Method = method
+	m.require(marketSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarketSubscribe) SetParams(params []string) {
@@ -8139,22 +8420,13 @@ func (m *MarketSubscribe) SetParams(params []string) {
 }
 
 func (m *MarketSubscribe) UnmarshalJSON(data []byte) error {
-	type embed MarketSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarketSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarketSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "market_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "market_subscribe", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarketSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -8167,10 +8439,8 @@ func (m *MarketSubscribe) MarshalJSON() ([]byte, error) {
 	type embed MarketSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "market_subscribe",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -8188,20 +8458,41 @@ func (m *MarketSubscribe) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
+// Method name. Fixed value: `market_subscribe`.
+type MarketSubscribeMethod string
+
+const (
+	MarketSubscribeMethodMarketSubscribe MarketSubscribeMethod = "market_subscribe"
+)
+
+func NewMarketSubscribeMethodFromString(s string) (MarketSubscribeMethod, error) {
+	switch s {
+	case "market_subscribe":
+		return MarketSubscribeMethodMarketSubscribe, nil
+	}
+	var t MarketSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarketSubscribeMethod) Ptr() *MarketSubscribeMethod {
+	return &m
+}
+
 var (
 	marketTodayRequestFieldID     = big.NewInt(1 << 0)
-	marketTodayRequestFieldParams = big.NewInt(1 << 1)
+	marketTodayRequestFieldMethod = big.NewInt(1 << 1)
+	marketTodayRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type MarketTodayRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `marketToday_query`.
-	Params []interface{} `json:"params" url:"params"`
+	Method MarketTodayRequestMethod `json:"method" url:"method"`
+	Params []interface{}            `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -8214,15 +8505,18 @@ func (m *MarketTodayRequest) GetID() int {
 	return m.ID
 }
 
+func (m *MarketTodayRequest) GetMethod() MarketTodayRequestMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarketTodayRequest) GetParams() []interface{} {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarketTodayRequest) Method() string {
-	return m.method
 }
 
 func (m *MarketTodayRequest) GetExtraProperties() map[string]interface{} {
@@ -8243,6 +8537,13 @@ func (m *MarketTodayRequest) SetID(id int) {
 	m.require(marketTodayRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketTodayRequest) SetMethod(method MarketTodayRequestMethod) {
+	m.Method = method
+	m.require(marketTodayRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarketTodayRequest) SetParams(params []interface{}) {
@@ -8251,22 +8552,13 @@ func (m *MarketTodayRequest) SetParams(params []interface{}) {
 }
 
 func (m *MarketTodayRequest) UnmarshalJSON(data []byte) error {
-	type embed MarketTodayRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarketTodayRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarketTodayRequest(unmarshaler.embed)
-	if unmarshaler.Method != "marketToday_query" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "marketToday_query", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarketTodayRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -8279,10 +8571,8 @@ func (m *MarketTodayRequest) MarshalJSON() ([]byte, error) {
 	type embed MarketTodayRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "marketToday_query",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -8298,6 +8588,26 @@ func (m *MarketTodayRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", m)
+}
+
+// Method name. Fixed value: `marketToday_query`.
+type MarketTodayRequestMethod string
+
+const (
+	MarketTodayRequestMethodMarketTodayQuery MarketTodayRequestMethod = "marketToday_query"
+)
+
+func NewMarketTodayRequestMethodFromString(s string) (MarketTodayRequestMethod, error) {
+	switch s {
+	case "marketToday_query":
+		return MarketTodayRequestMethodMarketTodayQuery, nil
+	}
+	var t MarketTodayRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarketTodayRequestMethod) Ptr() *MarketTodayRequestMethod {
+	return &m
 }
 
 var (
@@ -8576,17 +8886,18 @@ func (m *MarketTodayStatistics) String() string {
 
 var (
 	marketTodaySubscribeFieldID     = big.NewInt(1 << 0)
-	marketTodaySubscribeFieldParams = big.NewInt(1 << 1)
+	marketTodaySubscribeFieldMethod = big.NewInt(1 << 1)
+	marketTodaySubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type MarketTodaySubscribe struct {
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `marketToday_subscribe`.
-	Params []string `json:"params" url:"params"`
+	Method MarketTodaySubscribeMethod `json:"method" url:"method"`
+	Params []string                   `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -8599,15 +8910,18 @@ func (m *MarketTodaySubscribe) GetID() int {
 	return m.ID
 }
 
+func (m *MarketTodaySubscribe) GetMethod() MarketTodaySubscribeMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarketTodaySubscribe) GetParams() []string {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarketTodaySubscribe) Method() string {
-	return m.method
 }
 
 func (m *MarketTodaySubscribe) GetExtraProperties() map[string]interface{} {
@@ -8628,6 +8942,13 @@ func (m *MarketTodaySubscribe) SetID(id int) {
 	m.require(marketTodaySubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketTodaySubscribe) SetMethod(method MarketTodaySubscribeMethod) {
+	m.Method = method
+	m.require(marketTodaySubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarketTodaySubscribe) SetParams(params []string) {
@@ -8636,22 +8957,13 @@ func (m *MarketTodaySubscribe) SetParams(params []string) {
 }
 
 func (m *MarketTodaySubscribe) UnmarshalJSON(data []byte) error {
-	type embed MarketTodaySubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarketTodaySubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarketTodaySubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "marketToday_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "marketToday_subscribe", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarketTodaySubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -8664,10 +8976,8 @@ func (m *MarketTodaySubscribe) MarshalJSON() ([]byte, error) {
 	type embed MarketTodaySubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "marketToday_subscribe",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -8685,14 +8995,36 @@ func (m *MarketTodaySubscribe) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
+// Method name. Fixed value: `marketToday_subscribe`.
+type MarketTodaySubscribeMethod string
+
+const (
+	MarketTodaySubscribeMethodMarketTodaySubscribe MarketTodaySubscribeMethod = "marketToday_subscribe"
+)
+
+func NewMarketTodaySubscribeMethodFromString(s string) (MarketTodaySubscribeMethod, error) {
+	switch s {
+	case "marketToday_subscribe":
+		return MarketTodaySubscribeMethodMarketTodaySubscribe, nil
+	}
+	var t MarketTodaySubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarketTodaySubscribeMethod) Ptr() *MarketTodaySubscribeMethod {
+	return &m
+}
+
 var (
 	marketTodayUpdateFieldID     = big.NewInt(1 << 0)
-	marketTodayUpdateFieldParams = big.NewInt(1 << 1)
+	marketTodayUpdateFieldMethod = big.NewInt(1 << 1)
+	marketTodayUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type MarketTodayUpdate struct {
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `marketToday_update`.
+	Method MarketTodayUpdateMethod `json:"method" url:"method"`
 	// Update event parameters:
 	// - [0] Market name
 	// - [1] MarketTodayStatistics object
@@ -8700,7 +9032,6 @@ type MarketTodayUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -8713,15 +9044,18 @@ func (m *MarketTodayUpdate) GetID() interface{} {
 	return m.ID
 }
 
+func (m *MarketTodayUpdate) GetMethod() MarketTodayUpdateMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarketTodayUpdate) GetParams() []interface{} {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarketTodayUpdate) Method() string {
-	return m.method
 }
 
 func (m *MarketTodayUpdate) GetExtraProperties() map[string]interface{} {
@@ -8742,6 +9076,13 @@ func (m *MarketTodayUpdate) SetID(id interface{}) {
 	m.require(marketTodayUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketTodayUpdate) SetMethod(method MarketTodayUpdateMethod) {
+	m.Method = method
+	m.require(marketTodayUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarketTodayUpdate) SetParams(params []interface{}) {
@@ -8750,22 +9091,13 @@ func (m *MarketTodayUpdate) SetParams(params []interface{}) {
 }
 
 func (m *MarketTodayUpdate) UnmarshalJSON(data []byte) error {
-	type embed MarketTodayUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarketTodayUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarketTodayUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "marketToday_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "marketToday_update", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarketTodayUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -8778,10 +9110,8 @@ func (m *MarketTodayUpdate) MarshalJSON() ([]byte, error) {
 	type embed MarketTodayUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "marketToday_update",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -8799,14 +9129,36 @@ func (m *MarketTodayUpdate) String() string {
 	return fmt.Sprintf("%#v", m)
 }
 
+// Method name. Fixed value: `marketToday_update`.
+type MarketTodayUpdateMethod string
+
+const (
+	MarketTodayUpdateMethodMarketTodayUpdate MarketTodayUpdateMethod = "marketToday_update"
+)
+
+func NewMarketTodayUpdateMethodFromString(s string) (MarketTodayUpdateMethod, error) {
+	switch s {
+	case "marketToday_update":
+		return MarketTodayUpdateMethodMarketTodayUpdate, nil
+	}
+	var t MarketTodayUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarketTodayUpdateMethod) Ptr() *MarketTodayUpdateMethod {
+	return &m
+}
+
 var (
 	marketUpdateFieldID     = big.NewInt(1 << 0)
-	marketUpdateFieldParams = big.NewInt(1 << 1)
+	marketUpdateFieldMethod = big.NewInt(1 << 1)
+	marketUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type MarketUpdate struct {
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `market_update`.
+	Method MarketUpdateMethod `json:"method" url:"method"`
 	// Update event parameters:
 	// - [0] Market name
 	// - [1] MarketStatistics object
@@ -8814,7 +9166,6 @@ type MarketUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -8827,15 +9178,18 @@ func (m *MarketUpdate) GetID() interface{} {
 	return m.ID
 }
 
+func (m *MarketUpdate) GetMethod() MarketUpdateMethod {
+	if m == nil {
+		return ""
+	}
+	return m.Method
+}
+
 func (m *MarketUpdate) GetParams() []interface{} {
 	if m == nil {
 		return nil
 	}
 	return m.Params
-}
-
-func (m *MarketUpdate) Method() string {
-	return m.method
 }
 
 func (m *MarketUpdate) GetExtraProperties() map[string]interface{} {
@@ -8856,6 +9210,13 @@ func (m *MarketUpdate) SetID(id interface{}) {
 	m.require(marketUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *MarketUpdate) SetMethod(method MarketUpdateMethod) {
+	m.Method = method
+	m.require(marketUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *MarketUpdate) SetParams(params []interface{}) {
@@ -8864,22 +9225,13 @@ func (m *MarketUpdate) SetParams(params []interface{}) {
 }
 
 func (m *MarketUpdate) UnmarshalJSON(data []byte) error {
-	type embed MarketUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*m),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler MarketUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*m = MarketUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "market_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", m, "market_update", unmarshaler.Method)
-	}
-	m.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *m, "method")
+	*m = MarketUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *m)
 	if err != nil {
 		return err
 	}
@@ -8892,10 +9244,8 @@ func (m *MarketUpdate) MarshalJSON() ([]byte, error) {
 	type embed MarketUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*m),
-		Method: "market_update",
+		embed: embed(*m),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, m.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -8911,6 +9261,26 @@ func (m *MarketUpdate) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", m)
+}
+
+// Method name. Fixed value: `market_update`.
+type MarketUpdateMethod string
+
+const (
+	MarketUpdateMethodMarketUpdate MarketUpdateMethod = "market_update"
+)
+
+func NewMarketUpdateMethodFromString(s string) (MarketUpdateMethod, error) {
+	switch s {
+	case "market_update":
+		return MarketUpdateMethodMarketUpdate, nil
+	}
+	var t MarketUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m MarketUpdateMethod) Ptr() *MarketUpdateMethod {
+	return &m
 }
 
 var (
@@ -9561,15 +9931,20 @@ func (o OrderObjectStp) Ptr() *OrderObjectStp {
 	return &o
 }
 
+// Order lifecycle status. `NEW` — accepted, not yet matched. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIAL_FILLED` — partially executed, remainder still active. `PARTIAL_CANCELED` — partially filled, remainder canceled. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention).
+type OrderStatus = string
+
 var (
 	ordersExecutedRequestFieldID     = big.NewInt(1 << 0)
-	ordersExecutedRequestFieldParams = big.NewInt(1 << 1)
+	ordersExecutedRequestFieldMethod = big.NewInt(1 << 1)
+	ordersExecutedRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type OrdersExecutedRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `ordersExecuted_request`.
+	Method OrdersExecutedRequestMethod `json:"method" url:"method"`
 	// Query parameters tuple:
 	// - [0] Filter object with market and order_types
 	// - [1] Offset
@@ -9578,7 +9953,6 @@ type OrdersExecutedRequest struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -9591,15 +9965,18 @@ func (o *OrdersExecutedRequest) GetID() int {
 	return o.ID
 }
 
+func (o *OrdersExecutedRequest) GetMethod() OrdersExecutedRequestMethod {
+	if o == nil {
+		return ""
+	}
+	return o.Method
+}
+
 func (o *OrdersExecutedRequest) GetParams() []interface{} {
 	if o == nil {
 		return nil
 	}
 	return o.Params
-}
-
-func (o *OrdersExecutedRequest) Method() string {
-	return o.method
 }
 
 func (o *OrdersExecutedRequest) GetExtraProperties() map[string]interface{} {
@@ -9620,6 +9997,13 @@ func (o *OrdersExecutedRequest) SetID(id int) {
 	o.require(ordersExecutedRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrdersExecutedRequest) SetMethod(method OrdersExecutedRequestMethod) {
+	o.Method = method
+	o.require(ordersExecutedRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (o *OrdersExecutedRequest) SetParams(params []interface{}) {
@@ -9628,22 +10012,13 @@ func (o *OrdersExecutedRequest) SetParams(params []interface{}) {
 }
 
 func (o *OrdersExecutedRequest) UnmarshalJSON(data []byte) error {
-	type embed OrdersExecutedRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*o),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler OrdersExecutedRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*o = OrdersExecutedRequest(unmarshaler.embed)
-	if unmarshaler.Method != "ordersExecuted_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", o, "ordersExecuted_request", unmarshaler.Method)
-	}
-	o.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *o, "method")
+	*o = OrdersExecutedRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
 	if err != nil {
 		return err
 	}
@@ -9656,10 +10031,8 @@ func (o *OrdersExecutedRequest) MarshalJSON() ([]byte, error) {
 	type embed OrdersExecutedRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*o),
-		Method: "ordersExecuted_request",
+		embed: embed(*o),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -9675,6 +10048,26 @@ func (o *OrdersExecutedRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", o)
+}
+
+// Method name. Fixed value: `ordersExecuted_request`.
+type OrdersExecutedRequestMethod string
+
+const (
+	OrdersExecutedRequestMethodOrdersExecutedRequest OrdersExecutedRequestMethod = "ordersExecuted_request"
+)
+
+func NewOrdersExecutedRequestMethodFromString(s string) (OrdersExecutedRequestMethod, error) {
+	switch s {
+	case "ordersExecuted_request":
+		return OrdersExecutedRequestMethodOrdersExecutedRequest, nil
+	}
+	var t OrdersExecutedRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OrdersExecutedRequestMethod) Ptr() *OrdersExecutedRequestMethod {
+	return &o
 }
 
 var (
@@ -9903,13 +10296,15 @@ func (o *OrdersExecutedResponseResult) String() string {
 
 var (
 	ordersExecutedSubscribeFieldID     = big.NewInt(1 << 0)
-	ordersExecutedSubscribeFieldParams = big.NewInt(1 << 1)
+	ordersExecutedSubscribeFieldMethod = big.NewInt(1 << 1)
+	ordersExecutedSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type OrdersExecutedSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `ordersExecuted_subscribe`.
+	Method OrdersExecutedSubscribeMethod `json:"method" url:"method"`
 	// Subscription parameters tuple:
 	// - [0] Array of market names
 	// - [1] Filter (0=Limit and Market, 1=Limit, 2=Market)
@@ -9917,7 +10312,6 @@ type OrdersExecutedSubscribe struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -9930,15 +10324,18 @@ func (o *OrdersExecutedSubscribe) GetID() int {
 	return o.ID
 }
 
+func (o *OrdersExecutedSubscribe) GetMethod() OrdersExecutedSubscribeMethod {
+	if o == nil {
+		return ""
+	}
+	return o.Method
+}
+
 func (o *OrdersExecutedSubscribe) GetParams() []interface{} {
 	if o == nil {
 		return nil
 	}
 	return o.Params
-}
-
-func (o *OrdersExecutedSubscribe) Method() string {
-	return o.method
 }
 
 func (o *OrdersExecutedSubscribe) GetExtraProperties() map[string]interface{} {
@@ -9959,6 +10356,13 @@ func (o *OrdersExecutedSubscribe) SetID(id int) {
 	o.require(ordersExecutedSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrdersExecutedSubscribe) SetMethod(method OrdersExecutedSubscribeMethod) {
+	o.Method = method
+	o.require(ordersExecutedSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (o *OrdersExecutedSubscribe) SetParams(params []interface{}) {
@@ -9967,22 +10371,13 @@ func (o *OrdersExecutedSubscribe) SetParams(params []interface{}) {
 }
 
 func (o *OrdersExecutedSubscribe) UnmarshalJSON(data []byte) error {
-	type embed OrdersExecutedSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*o),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler OrdersExecutedSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*o = OrdersExecutedSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "ordersExecuted_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", o, "ordersExecuted_subscribe", unmarshaler.Method)
-	}
-	o.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *o, "method")
+	*o = OrdersExecutedSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
 	if err != nil {
 		return err
 	}
@@ -9995,10 +10390,8 @@ func (o *OrdersExecutedSubscribe) MarshalJSON() ([]byte, error) {
 	type embed OrdersExecutedSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*o),
-		Method: "ordersExecuted_subscribe",
+		embed: embed(*o),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -10016,21 +10409,42 @@ func (o *OrdersExecutedSubscribe) String() string {
 	return fmt.Sprintf("%#v", o)
 }
 
+// Method name. Fixed value: `ordersExecuted_subscribe`.
+type OrdersExecutedSubscribeMethod string
+
+const (
+	OrdersExecutedSubscribeMethodOrdersExecutedSubscribe OrdersExecutedSubscribeMethod = "ordersExecuted_subscribe"
+)
+
+func NewOrdersExecutedSubscribeMethodFromString(s string) (OrdersExecutedSubscribeMethod, error) {
+	switch s {
+	case "ordersExecuted_subscribe":
+		return OrdersExecutedSubscribeMethodOrdersExecutedSubscribe, nil
+	}
+	var t OrdersExecutedSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OrdersExecutedSubscribeMethod) Ptr() *OrdersExecutedSubscribeMethod {
+	return &o
+}
+
 var (
 	ordersExecutedUpdateFieldID     = big.NewInt(1 << 0)
-	ordersExecutedUpdateFieldParams = big.NewInt(1 << 1)
+	ordersExecutedUpdateFieldMethod = big.NewInt(1 << 1)
+	ordersExecutedUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type OrdersExecutedUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `ordersExecuted_update`.
+	Method OrdersExecutedUpdateMethod `json:"method" url:"method"`
 	// Array containing executed order object
 	Params []*ExecutedOrderObject `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -10043,15 +10457,18 @@ func (o *OrdersExecutedUpdate) GetID() interface{} {
 	return o.ID
 }
 
+func (o *OrdersExecutedUpdate) GetMethod() OrdersExecutedUpdateMethod {
+	if o == nil {
+		return ""
+	}
+	return o.Method
+}
+
 func (o *OrdersExecutedUpdate) GetParams() []*ExecutedOrderObject {
 	if o == nil {
 		return nil
 	}
 	return o.Params
-}
-
-func (o *OrdersExecutedUpdate) Method() string {
-	return o.method
 }
 
 func (o *OrdersExecutedUpdate) GetExtraProperties() map[string]interface{} {
@@ -10072,6 +10489,13 @@ func (o *OrdersExecutedUpdate) SetID(id interface{}) {
 	o.require(ordersExecutedUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrdersExecutedUpdate) SetMethod(method OrdersExecutedUpdateMethod) {
+	o.Method = method
+	o.require(ordersExecutedUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (o *OrdersExecutedUpdate) SetParams(params []*ExecutedOrderObject) {
@@ -10080,22 +10504,13 @@ func (o *OrdersExecutedUpdate) SetParams(params []*ExecutedOrderObject) {
 }
 
 func (o *OrdersExecutedUpdate) UnmarshalJSON(data []byte) error {
-	type embed OrdersExecutedUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*o),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler OrdersExecutedUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*o = OrdersExecutedUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "ordersExecuted_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", o, "ordersExecuted_update", unmarshaler.Method)
-	}
-	o.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *o, "method")
+	*o = OrdersExecutedUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
 	if err != nil {
 		return err
 	}
@@ -10108,10 +10523,8 @@ func (o *OrdersExecutedUpdate) MarshalJSON() ([]byte, error) {
 	type embed OrdersExecutedUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*o),
-		Method: "ordersExecuted_update",
+		embed: embed(*o),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -10129,21 +10542,42 @@ func (o *OrdersExecutedUpdate) String() string {
 	return fmt.Sprintf("%#v", o)
 }
 
+// Method name. Fixed value: `ordersExecuted_update`.
+type OrdersExecutedUpdateMethod string
+
+const (
+	OrdersExecutedUpdateMethodOrdersExecutedUpdate OrdersExecutedUpdateMethod = "ordersExecuted_update"
+)
+
+func NewOrdersExecutedUpdateMethodFromString(s string) (OrdersExecutedUpdateMethod, error) {
+	switch s {
+	case "ordersExecuted_update":
+		return OrdersExecutedUpdateMethodOrdersExecutedUpdate, nil
+	}
+	var t OrdersExecutedUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OrdersExecutedUpdateMethod) Ptr() *OrdersExecutedUpdateMethod {
+	return &o
+}
+
 var (
 	ordersPendingRequestFieldID     = big.NewInt(1 << 0)
-	ordersPendingRequestFieldParams = big.NewInt(1 << 1)
+	ordersPendingRequestFieldMethod = big.NewInt(1 << 1)
+	ordersPendingRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type OrdersPendingRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `ordersPending_request`.
+	Method OrdersPendingRequestMethod `json:"method" url:"method"`
 	// Array with market, offset, and limit
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -10156,15 +10590,18 @@ func (o *OrdersPendingRequest) GetID() int {
 	return o.ID
 }
 
+func (o *OrdersPendingRequest) GetMethod() OrdersPendingRequestMethod {
+	if o == nil {
+		return ""
+	}
+	return o.Method
+}
+
 func (o *OrdersPendingRequest) GetParams() []interface{} {
 	if o == nil {
 		return nil
 	}
 	return o.Params
-}
-
-func (o *OrdersPendingRequest) Method() string {
-	return o.method
 }
 
 func (o *OrdersPendingRequest) GetExtraProperties() map[string]interface{} {
@@ -10185,6 +10622,13 @@ func (o *OrdersPendingRequest) SetID(id int) {
 	o.require(ordersPendingRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrdersPendingRequest) SetMethod(method OrdersPendingRequestMethod) {
+	o.Method = method
+	o.require(ordersPendingRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (o *OrdersPendingRequest) SetParams(params []interface{}) {
@@ -10193,22 +10637,13 @@ func (o *OrdersPendingRequest) SetParams(params []interface{}) {
 }
 
 func (o *OrdersPendingRequest) UnmarshalJSON(data []byte) error {
-	type embed OrdersPendingRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*o),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler OrdersPendingRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*o = OrdersPendingRequest(unmarshaler.embed)
-	if unmarshaler.Method != "ordersPending_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", o, "ordersPending_request", unmarshaler.Method)
-	}
-	o.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *o, "method")
+	*o = OrdersPendingRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
 	if err != nil {
 		return err
 	}
@@ -10221,10 +10656,8 @@ func (o *OrdersPendingRequest) MarshalJSON() ([]byte, error) {
 	type embed OrdersPendingRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*o),
-		Method: "ordersPending_request",
+		embed: embed(*o),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -10240,6 +10673,26 @@ func (o *OrdersPendingRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", o)
+}
+
+// Method name. Fixed value: `ordersPending_request`.
+type OrdersPendingRequestMethod string
+
+const (
+	OrdersPendingRequestMethodOrdersPendingRequest OrdersPendingRequestMethod = "ordersPending_request"
+)
+
+func NewOrdersPendingRequestMethodFromString(s string) (OrdersPendingRequestMethod, error) {
+	switch s {
+	case "ordersPending_request":
+		return OrdersPendingRequestMethodOrdersPendingRequest, nil
+	}
+	var t OrdersPendingRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OrdersPendingRequestMethod) Ptr() *OrdersPendingRequestMethod {
+	return &o
 }
 
 var (
@@ -10485,19 +10938,20 @@ func (o *OrdersPendingResponseResult) String() string {
 
 var (
 	ordersPendingSubscribeFieldID     = big.NewInt(1 << 0)
-	ordersPendingSubscribeFieldParams = big.NewInt(1 << 1)
+	ordersPendingSubscribeFieldMethod = big.NewInt(1 << 1)
+	ordersPendingSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type OrdersPendingSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `ordersPending_subscribe`.
+	Method OrdersPendingSubscribeMethod `json:"method" url:"method"`
 	// Array of markets to subscribe to
 	Params []string `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -10510,15 +10964,18 @@ func (o *OrdersPendingSubscribe) GetID() int {
 	return o.ID
 }
 
+func (o *OrdersPendingSubscribe) GetMethod() OrdersPendingSubscribeMethod {
+	if o == nil {
+		return ""
+	}
+	return o.Method
+}
+
 func (o *OrdersPendingSubscribe) GetParams() []string {
 	if o == nil {
 		return nil
 	}
 	return o.Params
-}
-
-func (o *OrdersPendingSubscribe) Method() string {
-	return o.method
 }
 
 func (o *OrdersPendingSubscribe) GetExtraProperties() map[string]interface{} {
@@ -10539,6 +10996,13 @@ func (o *OrdersPendingSubscribe) SetID(id int) {
 	o.require(ordersPendingSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrdersPendingSubscribe) SetMethod(method OrdersPendingSubscribeMethod) {
+	o.Method = method
+	o.require(ordersPendingSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (o *OrdersPendingSubscribe) SetParams(params []string) {
@@ -10547,22 +11011,13 @@ func (o *OrdersPendingSubscribe) SetParams(params []string) {
 }
 
 func (o *OrdersPendingSubscribe) UnmarshalJSON(data []byte) error {
-	type embed OrdersPendingSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*o),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler OrdersPendingSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*o = OrdersPendingSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "ordersPending_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", o, "ordersPending_subscribe", unmarshaler.Method)
-	}
-	o.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *o, "method")
+	*o = OrdersPendingSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
 	if err != nil {
 		return err
 	}
@@ -10575,10 +11030,8 @@ func (o *OrdersPendingSubscribe) MarshalJSON() ([]byte, error) {
 	type embed OrdersPendingSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*o),
-		Method: "ordersPending_subscribe",
+		embed: embed(*o),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -10596,21 +11049,42 @@ func (o *OrdersPendingSubscribe) String() string {
 	return fmt.Sprintf("%#v", o)
 }
 
+// Method name. Fixed value: `ordersPending_subscribe`.
+type OrdersPendingSubscribeMethod string
+
+const (
+	OrdersPendingSubscribeMethodOrdersPendingSubscribe OrdersPendingSubscribeMethod = "ordersPending_subscribe"
+)
+
+func NewOrdersPendingSubscribeMethodFromString(s string) (OrdersPendingSubscribeMethod, error) {
+	switch s {
+	case "ordersPending_subscribe":
+		return OrdersPendingSubscribeMethodOrdersPendingSubscribe, nil
+	}
+	var t OrdersPendingSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OrdersPendingSubscribeMethod) Ptr() *OrdersPendingSubscribeMethod {
+	return &o
+}
+
 var (
 	ordersPendingUpdateFieldID     = big.NewInt(1 << 0)
-	ordersPendingUpdateFieldParams = big.NewInt(1 << 1)
+	ordersPendingUpdateFieldMethod = big.NewInt(1 << 1)
+	ordersPendingUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type OrdersPendingUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `ordersPending_update`.
+	Method OrdersPendingUpdateMethod `json:"method" url:"method"`
 	// Array with update event ID and order object
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -10623,15 +11097,18 @@ func (o *OrdersPendingUpdate) GetID() interface{} {
 	return o.ID
 }
 
+func (o *OrdersPendingUpdate) GetMethod() OrdersPendingUpdateMethod {
+	if o == nil {
+		return ""
+	}
+	return o.Method
+}
+
 func (o *OrdersPendingUpdate) GetParams() []interface{} {
 	if o == nil {
 		return nil
 	}
 	return o.Params
-}
-
-func (o *OrdersPendingUpdate) Method() string {
-	return o.method
 }
 
 func (o *OrdersPendingUpdate) GetExtraProperties() map[string]interface{} {
@@ -10652,6 +11129,13 @@ func (o *OrdersPendingUpdate) SetID(id interface{}) {
 	o.require(ordersPendingUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrdersPendingUpdate) SetMethod(method OrdersPendingUpdateMethod) {
+	o.Method = method
+	o.require(ordersPendingUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (o *OrdersPendingUpdate) SetParams(params []interface{}) {
@@ -10660,22 +11144,13 @@ func (o *OrdersPendingUpdate) SetParams(params []interface{}) {
 }
 
 func (o *OrdersPendingUpdate) UnmarshalJSON(data []byte) error {
-	type embed OrdersPendingUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*o),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler OrdersPendingUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*o = OrdersPendingUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "ordersPending_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", o, "ordersPending_update", unmarshaler.Method)
-	}
-	o.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *o, "method")
+	*o = OrdersPendingUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
 	if err != nil {
 		return err
 	}
@@ -10688,10 +11163,8 @@ func (o *OrdersPendingUpdate) MarshalJSON() ([]byte, error) {
 	type embed OrdersPendingUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*o),
-		Method: "ordersPending_update",
+		embed: embed(*o),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -10709,6 +11182,26 @@ func (o *OrdersPendingUpdate) String() string {
 	return fmt.Sprintf("%#v", o)
 }
 
+// Method name. Fixed value: `ordersPending_update`.
+type OrdersPendingUpdateMethod string
+
+const (
+	OrdersPendingUpdateMethodOrdersPendingUpdate OrdersPendingUpdateMethod = "ordersPending_update"
+)
+
+func NewOrdersPendingUpdateMethodFromString(s string) (OrdersPendingUpdateMethod, error) {
+	switch s {
+	case "ordersPending_update":
+		return OrdersPendingUpdateMethodOrdersPendingUpdate, nil
+	}
+	var t OrdersPendingUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OrdersPendingUpdateMethod) Ptr() *OrdersPendingUpdateMethod {
+	return &o
+}
+
 var (
 	pingRequestFieldID     = big.NewInt(1 << 0)
 	pingRequestFieldMethod = big.NewInt(1 << 1)
@@ -10719,8 +11212,8 @@ type PingRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `ping`.
-	Method *string       `json:"method,omitempty" url:"method,omitempty"`
-	Params []interface{} `json:"params,omitempty" url:"params,omitempty"`
+	Method *PingRequestMethod `json:"method,omitempty" url:"method,omitempty"`
+	Params []interface{}      `json:"params,omitempty" url:"params,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -10734,6 +11227,13 @@ func (p *PingRequest) GetID() int {
 		return 0
 	}
 	return p.ID
+}
+
+func (p *PingRequest) GetMethod() *PingRequestMethod {
+	if p == nil {
+		return nil
+	}
+	return p.Method
 }
 
 func (p *PingRequest) GetParams() []interface{} {
@@ -10763,7 +11263,7 @@ func (p *PingRequest) SetID(id int) {
 
 // SetMethod sets the Method field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (p *PingRequest) SetMethod(method *string) {
+func (p *PingRequest) SetMethod(method *PingRequestMethod) {
 	p.Method = method
 	p.require(pingRequestFieldMethod)
 }
@@ -10812,6 +11312,26 @@ func (p *PingRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", p)
+}
+
+// Method name. Fixed value: `ping`.
+type PingRequestMethod string
+
+const (
+	PingRequestMethodPing PingRequestMethod = "ping"
+)
+
+func NewPingRequestMethodFromString(s string) (PingRequestMethod, error) {
+	switch s {
+	case "ping":
+		return PingRequestMethodPing, nil
+	}
+	var t PingRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (p PingRequestMethod) Ptr() *PingRequestMethod {
+	return &p
 }
 
 var (
@@ -10946,19 +11466,20 @@ func (p PingResponseResult) Ptr() *PingResponseResult {
 
 var (
 	positionsSubscribeFieldID     = big.NewInt(1 << 0)
-	positionsSubscribeFieldParams = big.NewInt(1 << 1)
+	positionsSubscribeFieldMethod = big.NewInt(1 << 1)
+	positionsSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type PositionsSubscribe struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `positionsMargin_subscribe`.
+	Method PositionsSubscribeMethod `json:"method" url:"method"`
 	// Empty array for positions subscription
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -10971,15 +11492,18 @@ func (p *PositionsSubscribe) GetID() int {
 	return p.ID
 }
 
+func (p *PositionsSubscribe) GetMethod() PositionsSubscribeMethod {
+	if p == nil {
+		return ""
+	}
+	return p.Method
+}
+
 func (p *PositionsSubscribe) GetParams() []interface{} {
 	if p == nil {
 		return nil
 	}
 	return p.Params
-}
-
-func (p *PositionsSubscribe) Method() string {
-	return p.method
 }
 
 func (p *PositionsSubscribe) GetExtraProperties() map[string]interface{} {
@@ -11000,6 +11524,13 @@ func (p *PositionsSubscribe) SetID(id int) {
 	p.require(positionsSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (p *PositionsSubscribe) SetMethod(method PositionsSubscribeMethod) {
+	p.Method = method
+	p.require(positionsSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (p *PositionsSubscribe) SetParams(params []interface{}) {
@@ -11008,22 +11539,13 @@ func (p *PositionsSubscribe) SetParams(params []interface{}) {
 }
 
 func (p *PositionsSubscribe) UnmarshalJSON(data []byte) error {
-	type embed PositionsSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*p),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler PositionsSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*p = PositionsSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "positionsMargin_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", p, "positionsMargin_subscribe", unmarshaler.Method)
-	}
-	p.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *p, "method")
+	*p = PositionsSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *p)
 	if err != nil {
 		return err
 	}
@@ -11036,10 +11558,8 @@ func (p *PositionsSubscribe) MarshalJSON() ([]byte, error) {
 	type embed PositionsSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*p),
-		Method: "positionsMargin_subscribe",
+		embed: embed(*p),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, p.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -11057,20 +11577,41 @@ func (p *PositionsSubscribe) String() string {
 	return fmt.Sprintf("%#v", p)
 }
 
+// Method name. Fixed value: `positionsMargin_subscribe`.
+type PositionsSubscribeMethod string
+
+const (
+	PositionsSubscribeMethodPositionsMarginSubscribe PositionsSubscribeMethod = "positionsMargin_subscribe"
+)
+
+func NewPositionsSubscribeMethodFromString(s string) (PositionsSubscribeMethod, error) {
+	switch s {
+	case "positionsMargin_subscribe":
+		return PositionsSubscribeMethodPositionsMarginSubscribe, nil
+	}
+	var t PositionsSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (p PositionsSubscribeMethod) Ptr() *PositionsSubscribeMethod {
+	return &p
+}
+
 var (
 	positionsUpdateFieldID     = big.NewInt(1 << 0)
-	positionsUpdateFieldParams = big.NewInt(1 << 1)
+	positionsUpdateFieldMethod = big.NewInt(1 << 1)
+	positionsUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type PositionsUpdate struct {
 	// Update events have null id
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `positionsMargin_update`.
+	Method PositionsUpdateMethod  `json:"method" url:"method"`
 	Params *PositionsUpdateParams `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -11083,15 +11624,18 @@ func (p *PositionsUpdate) GetID() interface{} {
 	return p.ID
 }
 
+func (p *PositionsUpdate) GetMethod() PositionsUpdateMethod {
+	if p == nil {
+		return ""
+	}
+	return p.Method
+}
+
 func (p *PositionsUpdate) GetParams() *PositionsUpdateParams {
 	if p == nil {
 		return nil
 	}
 	return p.Params
-}
-
-func (p *PositionsUpdate) Method() string {
-	return p.method
 }
 
 func (p *PositionsUpdate) GetExtraProperties() map[string]interface{} {
@@ -11112,6 +11656,13 @@ func (p *PositionsUpdate) SetID(id interface{}) {
 	p.require(positionsUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (p *PositionsUpdate) SetMethod(method PositionsUpdateMethod) {
+	p.Method = method
+	p.require(positionsUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (p *PositionsUpdate) SetParams(params *PositionsUpdateParams) {
@@ -11120,22 +11671,13 @@ func (p *PositionsUpdate) SetParams(params *PositionsUpdateParams) {
 }
 
 func (p *PositionsUpdate) UnmarshalJSON(data []byte) error {
-	type embed PositionsUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*p),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler PositionsUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*p = PositionsUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "positionsMargin_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", p, "positionsMargin_update", unmarshaler.Method)
-	}
-	p.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *p, "method")
+	*p = PositionsUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *p)
 	if err != nil {
 		return err
 	}
@@ -11148,10 +11690,8 @@ func (p *PositionsUpdate) MarshalJSON() ([]byte, error) {
 	type embed PositionsUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*p),
-		Method: "positionsMargin_update",
+		embed: embed(*p),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, p.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -11167,6 +11707,26 @@ func (p *PositionsUpdate) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", p)
+}
+
+// Method name. Fixed value: `positionsMargin_update`.
+type PositionsUpdateMethod string
+
+const (
+	PositionsUpdateMethodPositionsMarginUpdate PositionsUpdateMethod = "positionsMargin_update"
+)
+
+func NewPositionsUpdateMethodFromString(s string) (PositionsUpdateMethod, error) {
+	switch s {
+	case "positionsMargin_update":
+		return PositionsUpdateMethodPositionsMarginUpdate, nil
+	}
+	var t PositionsUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (p PositionsUpdateMethod) Ptr() *PositionsUpdateMethod {
+	return &p
 }
 
 var (
@@ -11644,227 +12204,8 @@ func (p PositionsUpdateParamsRecordsItemPositionSide) Ptr() *PositionsUpdatePara
 	return &p
 }
 
-var (
-	providerFeeDetailsFieldMinAmount        = big.NewInt(1 << 0)
-	providerFeeDetailsFieldMaxAmount        = big.NewInt(1 << 1)
-	providerFeeDetailsFieldFixed            = big.NewInt(1 << 2)
-	providerFeeDetailsFieldFlex             = big.NewInt(1 << 3)
-	providerFeeDetailsFieldIsDepositable    = big.NewInt(1 << 4)
-	providerFeeDetailsFieldIsAPIDepositable = big.NewInt(1 << 5)
-	providerFeeDetailsFieldIsWithdrawal     = big.NewInt(1 << 6)
-	providerFeeDetailsFieldIsAPIWithdrawal  = big.NewInt(1 << 7)
-	providerFeeDetailsFieldName             = big.NewInt(1 << 8)
-	providerFeeDetailsFieldTicker           = big.NewInt(1 << 9)
-)
-
-type ProviderFeeDetails struct {
-	MinAmount        *string `json:"min_amount,omitempty" url:"min_amount,omitempty"`
-	MaxAmount        *string `json:"max_amount,omitempty" url:"max_amount,omitempty"`
-	Fixed            *string `json:"fixed,omitempty" url:"fixed,omitempty"`
-	Flex             *string `json:"flex,omitempty" url:"flex,omitempty"`
-	IsDepositable    *bool   `json:"is_depositable,omitempty" url:"is_depositable,omitempty"`
-	IsAPIDepositable *bool   `json:"is_api_depositable,omitempty" url:"is_api_depositable,omitempty"`
-	IsWithdrawal     *bool   `json:"is_withdrawal,omitempty" url:"is_withdrawal,omitempty"`
-	IsAPIWithdrawal  *bool   `json:"is_api_withdrawal,omitempty" url:"is_api_withdrawal,omitempty"`
-	Name             *string `json:"name,omitempty" url:"name,omitempty"`
-	Ticker           *string `json:"ticker,omitempty" url:"ticker,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (p *ProviderFeeDetails) GetMinAmount() *string {
-	if p == nil {
-		return nil
-	}
-	return p.MinAmount
-}
-
-func (p *ProviderFeeDetails) GetMaxAmount() *string {
-	if p == nil {
-		return nil
-	}
-	return p.MaxAmount
-}
-
-func (p *ProviderFeeDetails) GetFixed() *string {
-	if p == nil {
-		return nil
-	}
-	return p.Fixed
-}
-
-func (p *ProviderFeeDetails) GetFlex() *string {
-	if p == nil {
-		return nil
-	}
-	return p.Flex
-}
-
-func (p *ProviderFeeDetails) GetIsDepositable() *bool {
-	if p == nil {
-		return nil
-	}
-	return p.IsDepositable
-}
-
-func (p *ProviderFeeDetails) GetIsAPIDepositable() *bool {
-	if p == nil {
-		return nil
-	}
-	return p.IsAPIDepositable
-}
-
-func (p *ProviderFeeDetails) GetIsWithdrawal() *bool {
-	if p == nil {
-		return nil
-	}
-	return p.IsWithdrawal
-}
-
-func (p *ProviderFeeDetails) GetIsAPIWithdrawal() *bool {
-	if p == nil {
-		return nil
-	}
-	return p.IsAPIWithdrawal
-}
-
-func (p *ProviderFeeDetails) GetName() *string {
-	if p == nil {
-		return nil
-	}
-	return p.Name
-}
-
-func (p *ProviderFeeDetails) GetTicker() *string {
-	if p == nil {
-		return nil
-	}
-	return p.Ticker
-}
-
-func (p *ProviderFeeDetails) GetExtraProperties() map[string]interface{} {
-	return p.extraProperties
-}
-
-func (p *ProviderFeeDetails) require(field *big.Int) {
-	if p.explicitFields == nil {
-		p.explicitFields = big.NewInt(0)
-	}
-	p.explicitFields.Or(p.explicitFields, field)
-}
-
-// SetMinAmount sets the MinAmount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetMinAmount(minAmount *string) {
-	p.MinAmount = minAmount
-	p.require(providerFeeDetailsFieldMinAmount)
-}
-
-// SetMaxAmount sets the MaxAmount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetMaxAmount(maxAmount *string) {
-	p.MaxAmount = maxAmount
-	p.require(providerFeeDetailsFieldMaxAmount)
-}
-
-// SetFixed sets the Fixed field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetFixed(fixed *string) {
-	p.Fixed = fixed
-	p.require(providerFeeDetailsFieldFixed)
-}
-
-// SetFlex sets the Flex field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetFlex(flex *string) {
-	p.Flex = flex
-	p.require(providerFeeDetailsFieldFlex)
-}
-
-// SetIsDepositable sets the IsDepositable field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetIsDepositable(isDepositable *bool) {
-	p.IsDepositable = isDepositable
-	p.require(providerFeeDetailsFieldIsDepositable)
-}
-
-// SetIsAPIDepositable sets the IsAPIDepositable field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetIsAPIDepositable(isAPIDepositable *bool) {
-	p.IsAPIDepositable = isAPIDepositable
-	p.require(providerFeeDetailsFieldIsAPIDepositable)
-}
-
-// SetIsWithdrawal sets the IsWithdrawal field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetIsWithdrawal(isWithdrawal *bool) {
-	p.IsWithdrawal = isWithdrawal
-	p.require(providerFeeDetailsFieldIsWithdrawal)
-}
-
-// SetIsAPIWithdrawal sets the IsAPIWithdrawal field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetIsAPIWithdrawal(isAPIWithdrawal *bool) {
-	p.IsAPIWithdrawal = isAPIWithdrawal
-	p.require(providerFeeDetailsFieldIsAPIWithdrawal)
-}
-
-// SetName sets the Name field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetName(name *string) {
-	p.Name = name
-	p.require(providerFeeDetailsFieldName)
-}
-
-// SetTicker sets the Ticker field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (p *ProviderFeeDetails) SetTicker(ticker *string) {
-	p.Ticker = ticker
-	p.require(providerFeeDetailsFieldTicker)
-}
-
-func (p *ProviderFeeDetails) UnmarshalJSON(data []byte) error {
-	type unmarshaler ProviderFeeDetails
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*p = ProviderFeeDetails(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *p)
-	if err != nil {
-		return err
-	}
-	p.extraProperties = extraProperties
-	p.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (p *ProviderFeeDetails) MarshalJSON() ([]byte, error) {
-	type embed ProviderFeeDetails
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*p),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, p.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (p *ProviderFeeDetails) String() string {
-	if len(p.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(p.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(p); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", p)
-}
+// Flat field-keyed validation error (HTTP 422) returned by the market-data endpoints. Each key is the offending request field and the value is an array of human-readable messages. There is no success/message envelope and no `params` field.
+type PublicValidationError = map[string][]string
 
 var (
 	subscriptionResponseFieldID     = big.NewInt(1 << 0)
@@ -11978,19 +12319,26 @@ func (s *SubscriptionResponse) String() string {
 	return fmt.Sprintf("%#v", s)
 }
 
+var (
+	subscriptionResponseResultFieldStatus = big.NewInt(1 << 0)
+)
+
 type SubscriptionResponseResult struct {
 	// Fixed value: `success`.
+	Status SubscriptionResponseResultStatus `json:"status" url:"status"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	status         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
 }
 
-func (s *SubscriptionResponseResult) Status() string {
-	return s.status
+func (s *SubscriptionResponseResult) GetStatus() SubscriptionResponseResultStatus {
+	if s == nil {
+		return ""
+	}
+	return s.Status
 }
 
 func (s *SubscriptionResponseResult) GetExtraProperties() map[string]interface{} {
@@ -12004,23 +12352,21 @@ func (s *SubscriptionResponseResult) require(field *big.Int) {
 	s.explicitFields.Or(s.explicitFields, field)
 }
 
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (s *SubscriptionResponseResult) SetStatus(status SubscriptionResponseResultStatus) {
+	s.Status = status
+	s.require(subscriptionResponseResultFieldStatus)
+}
+
 func (s *SubscriptionResponseResult) UnmarshalJSON(data []byte) error {
-	type embed SubscriptionResponseResult
-	var unmarshaler = struct {
-		embed
-		Status string `json:"status"`
-	}{
-		embed: embed(*s),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler SubscriptionResponseResult
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*s = SubscriptionResponseResult(unmarshaler.embed)
-	if unmarshaler.Status != "success" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", s, "success", unmarshaler.Status)
-	}
-	s.status = unmarshaler.Status
-	extraProperties, err := internal.ExtractExtraProperties(data, *s, "status")
+	*s = SubscriptionResponseResult(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *s)
 	if err != nil {
 		return err
 	}
@@ -12033,10 +12379,8 @@ func (s *SubscriptionResponseResult) MarshalJSON() ([]byte, error) {
 	type embed SubscriptionResponseResult
 	var marshaler = struct {
 		embed
-		Status string `json:"status"`
 	}{
-		embed:  embed(*s),
-		Status: "success",
+		embed: embed(*s),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, s.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -12054,6 +12398,26 @@ func (s *SubscriptionResponseResult) String() string {
 	return fmt.Sprintf("%#v", s)
 }
 
+// Fixed value: `success`.
+type SubscriptionResponseResultStatus string
+
+const (
+	SubscriptionResponseResultStatusSuccess SubscriptionResponseResultStatus = "success"
+)
+
+func NewSubscriptionResponseResultStatusFromString(s string) (SubscriptionResponseResultStatus, error) {
+	switch s {
+	case "success":
+		return SubscriptionResponseResultStatusSuccess, nil
+	}
+	var t SubscriptionResponseResultStatus
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (s SubscriptionResponseResultStatus) Ptr() *SubscriptionResponseResultStatus {
+	return &s
+}
+
 var (
 	timeRequestFieldID     = big.NewInt(1 << 0)
 	timeRequestFieldMethod = big.NewInt(1 << 1)
@@ -12064,8 +12428,8 @@ type TimeRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `time`.
-	Method *string       `json:"method,omitempty" url:"method,omitempty"`
-	Params []interface{} `json:"params,omitempty" url:"params,omitempty"`
+	Method *TimeRequestMethod `json:"method,omitempty" url:"method,omitempty"`
+	Params []interface{}      `json:"params,omitempty" url:"params,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12079,6 +12443,13 @@ func (t *TimeRequest) GetID() int {
 		return 0
 	}
 	return t.ID
+}
+
+func (t *TimeRequest) GetMethod() *TimeRequestMethod {
+	if t == nil {
+		return nil
+	}
+	return t.Method
 }
 
 func (t *TimeRequest) GetParams() []interface{} {
@@ -12108,7 +12479,7 @@ func (t *TimeRequest) SetID(id int) {
 
 // SetMethod sets the Method field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (t *TimeRequest) SetMethod(method *string) {
+func (t *TimeRequest) SetMethod(method *TimeRequestMethod) {
 	t.Method = method
 	t.require(timeRequestFieldMethod)
 }
@@ -12157,6 +12528,26 @@ func (t *TimeRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", t)
+}
+
+// Method name. Fixed value: `time`.
+type TimeRequestMethod string
+
+const (
+	TimeRequestMethodTime TimeRequestMethod = "time"
+)
+
+func NewTimeRequestMethodFromString(s string) (TimeRequestMethod, error) {
+	switch s {
+	case "time":
+		return TimeRequestMethodTime, nil
+	}
+	var t TimeRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TimeRequestMethod) Ptr() *TimeRequestMethod {
+	return &t
 }
 
 var (
@@ -12460,13 +12851,15 @@ func (t TradeType) Ptr() *TradeType {
 
 var (
 	tradesRequestFieldID     = big.NewInt(1 << 0)
-	tradesRequestFieldParams = big.NewInt(1 << 1)
+	tradesRequestFieldMethod = big.NewInt(1 << 1)
+	tradesRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type TradesRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `trades_request`.
+	Method TradesRequestMethod `json:"method" url:"method"`
 	// Query parameters:
 	// - [0] Market name
 	// - [1] Limit (number of trades to return)
@@ -12475,7 +12868,6 @@ type TradesRequest struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -12488,15 +12880,18 @@ func (t *TradesRequest) GetID() int {
 	return t.ID
 }
 
+func (t *TradesRequest) GetMethod() TradesRequestMethod {
+	if t == nil {
+		return ""
+	}
+	return t.Method
+}
+
 func (t *TradesRequest) GetParams() []interface{} {
 	if t == nil {
 		return nil
 	}
 	return t.Params
-}
-
-func (t *TradesRequest) Method() string {
-	return t.method
 }
 
 func (t *TradesRequest) GetExtraProperties() map[string]interface{} {
@@ -12517,6 +12912,13 @@ func (t *TradesRequest) SetID(id int) {
 	t.require(tradesRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TradesRequest) SetMethod(method TradesRequestMethod) {
+	t.Method = method
+	t.require(tradesRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (t *TradesRequest) SetParams(params []interface{}) {
@@ -12525,22 +12927,13 @@ func (t *TradesRequest) SetParams(params []interface{}) {
 }
 
 func (t *TradesRequest) UnmarshalJSON(data []byte) error {
-	type embed TradesRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*t),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler TradesRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*t = TradesRequest(unmarshaler.embed)
-	if unmarshaler.Method != "trades_request" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", t, "trades_request", unmarshaler.Method)
-	}
-	t.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *t, "method")
+	*t = TradesRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
 	if err != nil {
 		return err
 	}
@@ -12553,10 +12946,8 @@ func (t *TradesRequest) MarshalJSON() ([]byte, error) {
 	type embed TradesRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*t),
-		Method: "trades_request",
+		embed: embed(*t),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -12572,6 +12963,26 @@ func (t *TradesRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", t)
+}
+
+// Method name. Fixed value: `trades_request`.
+type TradesRequestMethod string
+
+const (
+	TradesRequestMethodTradesRequest TradesRequestMethod = "trades_request"
+)
+
+func NewTradesRequestMethodFromString(s string) (TradesRequestMethod, error) {
+	switch s {
+	case "trades_request":
+		return TradesRequestMethodTradesRequest, nil
+	}
+	var t TradesRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TradesRequestMethod) Ptr() *TradesRequestMethod {
+	return &t
 }
 
 var (
@@ -12686,18 +13097,19 @@ func (t *TradesResponse) String() string {
 
 var (
 	tradesSubscribeFieldID     = big.NewInt(1 << 0)
-	tradesSubscribeFieldParams = big.NewInt(1 << 1)
+	tradesSubscribeFieldMethod = big.NewInt(1 << 1)
+	tradesSubscribeFieldParams = big.NewInt(1 << 2)
 )
 
 type TradesSubscribe struct {
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `trades_subscribe`.
+	Method TradesSubscribeMethod `json:"method" url:"method"`
 	// Market names (empty array to subscribe to all markets)
 	Params []string `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -12710,15 +13122,18 @@ func (t *TradesSubscribe) GetID() int {
 	return t.ID
 }
 
+func (t *TradesSubscribe) GetMethod() TradesSubscribeMethod {
+	if t == nil {
+		return ""
+	}
+	return t.Method
+}
+
 func (t *TradesSubscribe) GetParams() []string {
 	if t == nil {
 		return nil
 	}
 	return t.Params
-}
-
-func (t *TradesSubscribe) Method() string {
-	return t.method
 }
 
 func (t *TradesSubscribe) GetExtraProperties() map[string]interface{} {
@@ -12739,6 +13154,13 @@ func (t *TradesSubscribe) SetID(id int) {
 	t.require(tradesSubscribeFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TradesSubscribe) SetMethod(method TradesSubscribeMethod) {
+	t.Method = method
+	t.require(tradesSubscribeFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (t *TradesSubscribe) SetParams(params []string) {
@@ -12747,22 +13169,13 @@ func (t *TradesSubscribe) SetParams(params []string) {
 }
 
 func (t *TradesSubscribe) UnmarshalJSON(data []byte) error {
-	type embed TradesSubscribe
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*t),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler TradesSubscribe
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*t = TradesSubscribe(unmarshaler.embed)
-	if unmarshaler.Method != "trades_subscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", t, "trades_subscribe", unmarshaler.Method)
-	}
-	t.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *t, "method")
+	*t = TradesSubscribe(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
 	if err != nil {
 		return err
 	}
@@ -12775,10 +13188,8 @@ func (t *TradesSubscribe) MarshalJSON() ([]byte, error) {
 	type embed TradesSubscribe
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*t),
-		Method: "trades_subscribe",
+		embed: embed(*t),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -12796,14 +13207,36 @@ func (t *TradesSubscribe) String() string {
 	return fmt.Sprintf("%#v", t)
 }
 
+// Method name. Fixed value: `trades_subscribe`.
+type TradesSubscribeMethod string
+
+const (
+	TradesSubscribeMethodTradesSubscribe TradesSubscribeMethod = "trades_subscribe"
+)
+
+func NewTradesSubscribeMethodFromString(s string) (TradesSubscribeMethod, error) {
+	switch s {
+	case "trades_subscribe":
+		return TradesSubscribeMethodTradesSubscribe, nil
+	}
+	var t TradesSubscribeMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TradesSubscribeMethod) Ptr() *TradesSubscribeMethod {
+	return &t
+}
+
 var (
 	tradesUpdateFieldID     = big.NewInt(1 << 0)
-	tradesUpdateFieldParams = big.NewInt(1 << 1)
+	tradesUpdateFieldMethod = big.NewInt(1 << 1)
+	tradesUpdateFieldParams = big.NewInt(1 << 2)
 )
 
 type TradesUpdate struct {
 	ID interface{} `json:"id,omitempty" url:"id,omitempty"`
 	// Method name. Fixed value: `trades_update`.
+	Method TradesUpdateMethod `json:"method" url:"method"`
 	// Update event parameters:
 	// - [0] Market name
 	// - [1] Array of Trade objects
@@ -12811,7 +13244,6 @@ type TradesUpdate struct {
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -12824,15 +13256,18 @@ func (t *TradesUpdate) GetID() interface{} {
 	return t.ID
 }
 
+func (t *TradesUpdate) GetMethod() TradesUpdateMethod {
+	if t == nil {
+		return ""
+	}
+	return t.Method
+}
+
 func (t *TradesUpdate) GetParams() []interface{} {
 	if t == nil {
 		return nil
 	}
 	return t.Params
-}
-
-func (t *TradesUpdate) Method() string {
-	return t.method
 }
 
 func (t *TradesUpdate) GetExtraProperties() map[string]interface{} {
@@ -12853,6 +13288,13 @@ func (t *TradesUpdate) SetID(id interface{}) {
 	t.require(tradesUpdateFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TradesUpdate) SetMethod(method TradesUpdateMethod) {
+	t.Method = method
+	t.require(tradesUpdateFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (t *TradesUpdate) SetParams(params []interface{}) {
@@ -12861,22 +13303,13 @@ func (t *TradesUpdate) SetParams(params []interface{}) {
 }
 
 func (t *TradesUpdate) UnmarshalJSON(data []byte) error {
-	type embed TradesUpdate
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*t),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler TradesUpdate
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*t = TradesUpdate(unmarshaler.embed)
-	if unmarshaler.Method != "trades_update" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", t, "trades_update", unmarshaler.Method)
-	}
-	t.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *t, "method")
+	*t = TradesUpdate(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
 	if err != nil {
 		return err
 	}
@@ -12889,10 +13322,8 @@ func (t *TradesUpdate) MarshalJSON() ([]byte, error) {
 	type embed TradesUpdate
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*t),
-		Method: "trades_update",
+		embed: embed(*t),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -12910,12 +13341,50 @@ func (t *TradesUpdate) String() string {
 	return fmt.Sprintf("%#v", t)
 }
 
-var (
-	unauthorizedErrorBodyFieldData = big.NewInt(1 << 0)
+// Method name. Fixed value: `trades_update`.
+type TradesUpdateMethod string
+
+const (
+	TradesUpdateMethodTradesUpdate TradesUpdateMethod = "trades_update"
 )
 
-type UnauthorizedErrorBody struct {
-	Data *UnauthorizedErrorBodyData `json:"data,omitempty" url:"data,omitempty"`
+func NewTradesUpdateMethodFromString(s string) (TradesUpdateMethod, error) {
+	switch s {
+	case "trades_update":
+		return TradesUpdateMethodTradesUpdate, nil
+	}
+	var t TradesUpdateMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TradesUpdateMethod) Ptr() *TradesUpdateMethod {
+	return &t
+}
+
+// Beneficiary information for travel rule compliance
+var (
+	travelRuleBeneficiaryFieldType             = big.NewInt(1 << 0)
+	travelRuleBeneficiaryFieldFirstName        = big.NewInt(1 << 1)
+	travelRuleBeneficiaryFieldLastName         = big.NewInt(1 << 2)
+	travelRuleBeneficiaryFieldFullName         = big.NewInt(1 << 3)
+	travelRuleBeneficiaryFieldResidenceCountry = big.NewInt(1 << 4)
+	travelRuleBeneficiaryFieldAddress          = big.NewInt(1 << 5)
+)
+
+type TravelRuleBeneficiary struct {
+	// Party type:
+	// - `individual` - Natural person. Requires `firstName` and `lastName`.
+	// - `entity` - Legal entity. Requires `fullName`.
+	Type TravelRuleBeneficiaryType `json:"type" url:"type"`
+	// First name. Required if type = `individual`.
+	FirstName *string `json:"firstName,omitempty" url:"firstName,omitempty"`
+	// Last name. Required if type = `individual`.
+	LastName *string `json:"lastName,omitempty" url:"lastName,omitempty"`
+	// Full legal name. Required if type = `entity`.
+	FullName *string `json:"fullName,omitempty" url:"fullName,omitempty"`
+	// ISO 3166-1 alpha-3 country code (3 letters, e.g., `NLD`, `DEU`, `GBR`)
+	ResidenceCountry string             `json:"residenceCountry" url:"residenceCountry"`
+	Address          *TravelRuleAddress `json:"address" url:"address"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -12924,76 +13393,181 @@ type UnauthorizedErrorBody struct {
 	rawJSON         json.RawMessage
 }
 
-func (u *UnauthorizedErrorBody) GetData() *UnauthorizedErrorBodyData {
-	if u == nil {
+func (t *TravelRuleBeneficiary) GetType() TravelRuleBeneficiaryType {
+	if t == nil {
+		return ""
+	}
+	return t.Type
+}
+
+func (t *TravelRuleBeneficiary) GetFirstName() *string {
+	if t == nil {
 		return nil
 	}
-	return u.Data
+	return t.FirstName
 }
 
-func (u *UnauthorizedErrorBody) GetExtraProperties() map[string]interface{} {
-	return u.extraProperties
-}
-
-func (u *UnauthorizedErrorBody) require(field *big.Int) {
-	if u.explicitFields == nil {
-		u.explicitFields = big.NewInt(0)
+func (t *TravelRuleBeneficiary) GetLastName() *string {
+	if t == nil {
+		return nil
 	}
-	u.explicitFields.Or(u.explicitFields, field)
+	return t.LastName
 }
 
-// SetData sets the Data field and marks it as non-optional;
+func (t *TravelRuleBeneficiary) GetFullName() *string {
+	if t == nil {
+		return nil
+	}
+	return t.FullName
+}
+
+func (t *TravelRuleBeneficiary) GetResidenceCountry() string {
+	if t == nil {
+		return ""
+	}
+	return t.ResidenceCountry
+}
+
+func (t *TravelRuleBeneficiary) GetAddress() *TravelRuleAddress {
+	if t == nil {
+		return nil
+	}
+	return t.Address
+}
+
+func (t *TravelRuleBeneficiary) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TravelRuleBeneficiary) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetType sets the Type field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnauthorizedErrorBody) SetData(data *UnauthorizedErrorBodyData) {
-	u.Data = data
-	u.require(unauthorizedErrorBodyFieldData)
+func (t *TravelRuleBeneficiary) SetType(type_ TravelRuleBeneficiaryType) {
+	t.Type = type_
+	t.require(travelRuleBeneficiaryFieldType)
 }
 
-func (u *UnauthorizedErrorBody) UnmarshalJSON(data []byte) error {
-	type unmarshaler UnauthorizedErrorBody
+// SetFirstName sets the FirstName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TravelRuleBeneficiary) SetFirstName(firstName *string) {
+	t.FirstName = firstName
+	t.require(travelRuleBeneficiaryFieldFirstName)
+}
+
+// SetLastName sets the LastName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TravelRuleBeneficiary) SetLastName(lastName *string) {
+	t.LastName = lastName
+	t.require(travelRuleBeneficiaryFieldLastName)
+}
+
+// SetFullName sets the FullName field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TravelRuleBeneficiary) SetFullName(fullName *string) {
+	t.FullName = fullName
+	t.require(travelRuleBeneficiaryFieldFullName)
+}
+
+// SetResidenceCountry sets the ResidenceCountry field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TravelRuleBeneficiary) SetResidenceCountry(residenceCountry string) {
+	t.ResidenceCountry = residenceCountry
+	t.require(travelRuleBeneficiaryFieldResidenceCountry)
+}
+
+// SetAddress sets the Address field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TravelRuleBeneficiary) SetAddress(address *TravelRuleAddress) {
+	t.Address = address
+	t.require(travelRuleBeneficiaryFieldAddress)
+}
+
+func (t *TravelRuleBeneficiary) UnmarshalJSON(data []byte) error {
+	type unmarshaler TravelRuleBeneficiary
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*u = UnauthorizedErrorBody(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	*t = TravelRuleBeneficiary(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
 	if err != nil {
 		return err
 	}
-	u.extraProperties = extraProperties
-	u.rawJSON = json.RawMessage(data)
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (u *UnauthorizedErrorBody) MarshalJSON() ([]byte, error) {
-	type embed UnauthorizedErrorBody
+func (t *TravelRuleBeneficiary) MarshalJSON() ([]byte, error) {
+	type embed TravelRuleBeneficiary
 	var marshaler = struct {
 		embed
 	}{
-		embed: embed(*u),
+		embed: embed(*t),
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (u *UnauthorizedErrorBody) String() string {
-	if len(u.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+func (t *TravelRuleBeneficiary) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(u); err == nil {
+	if value, err := internal.StringifyJSON(t); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", u)
+	return fmt.Sprintf("%#v", t)
 }
 
-var (
-	unauthorizedErrorBodyDataFieldMessage = big.NewInt(1 << 0)
+// Party type:
+// - `individual` - Natural person. Requires `firstName` and `lastName`.
+// - `entity` - Legal entity. Requires `fullName`.
+type TravelRuleBeneficiaryType string
+
+const (
+	TravelRuleBeneficiaryTypeIndividual TravelRuleBeneficiaryType = "individual"
+	TravelRuleBeneficiaryTypeEntity     TravelRuleBeneficiaryType = "entity"
 )
 
-type UnauthorizedErrorBodyData struct {
-	Message []string `json:"message,omitempty" url:"message,omitempty"`
+func NewTravelRuleBeneficiaryTypeFromString(s string) (TravelRuleBeneficiaryType, error) {
+	switch s {
+	case "individual":
+		return TravelRuleBeneficiaryTypeIndividual, nil
+	case "entity":
+		return TravelRuleBeneficiaryTypeEntity, nil
+	}
+	var t TravelRuleBeneficiaryType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TravelRuleBeneficiaryType) Ptr() *TravelRuleBeneficiaryType {
+	return &t
+}
+
+// Travel Rule data for withdrawals. Required when the Travel Rule API is enabled for the user's region and the withdrawal is Travel Rule-eligible.
+//
+// **Backward Compatibility**: When the Travel Rule API is disabled for the user's region, this new format is still accepted and automatically mapped to the legacy format.
+var (
+	travelRuleWithdrawalFieldWalletType  = big.NewInt(1 << 0)
+	travelRuleWithdrawalFieldBeneficiary = big.NewInt(1 << 1)
+	travelRuleWithdrawalFieldVaspData    = big.NewInt(1 << 2)
+)
+
+type TravelRuleWithdrawal struct {
+	// Wallet type:
+	// - `hosted` - VASP-hosted wallet (exchange, custodian). Requires `vaspData` object.
+	// - `unhosted` - Self-custody wallet (hardware wallet, software wallet).
+	WalletType  TravelRuleWithdrawalWalletType `json:"walletType" url:"walletType"`
+	Beneficiary *TravelRuleBeneficiary         `json:"beneficiary" url:"beneficiary"`
+	VaspData    *TravelRuleVasp                `json:"vaspData,omitempty" url:"vaspData,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -13002,78 +13576,129 @@ type UnauthorizedErrorBodyData struct {
 	rawJSON         json.RawMessage
 }
 
-func (u *UnauthorizedErrorBodyData) GetMessage() []string {
-	if u == nil {
+func (t *TravelRuleWithdrawal) GetWalletType() TravelRuleWithdrawalWalletType {
+	if t == nil {
+		return ""
+	}
+	return t.WalletType
+}
+
+func (t *TravelRuleWithdrawal) GetBeneficiary() *TravelRuleBeneficiary {
+	if t == nil {
 		return nil
 	}
-	return u.Message
+	return t.Beneficiary
 }
 
-func (u *UnauthorizedErrorBodyData) GetExtraProperties() map[string]interface{} {
-	return u.extraProperties
-}
-
-func (u *UnauthorizedErrorBodyData) require(field *big.Int) {
-	if u.explicitFields == nil {
-		u.explicitFields = big.NewInt(0)
+func (t *TravelRuleWithdrawal) GetVaspData() *TravelRuleVasp {
+	if t == nil {
+		return nil
 	}
-	u.explicitFields.Or(u.explicitFields, field)
+	return t.VaspData
 }
 
-// SetMessage sets the Message field and marks it as non-optional;
+func (t *TravelRuleWithdrawal) GetExtraProperties() map[string]interface{} {
+	return t.extraProperties
+}
+
+func (t *TravelRuleWithdrawal) require(field *big.Int) {
+	if t.explicitFields == nil {
+		t.explicitFields = big.NewInt(0)
+	}
+	t.explicitFields.Or(t.explicitFields, field)
+}
+
+// SetWalletType sets the WalletType field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnauthorizedErrorBodyData) SetMessage(message []string) {
-	u.Message = message
-	u.require(unauthorizedErrorBodyDataFieldMessage)
+func (t *TravelRuleWithdrawal) SetWalletType(walletType TravelRuleWithdrawalWalletType) {
+	t.WalletType = walletType
+	t.require(travelRuleWithdrawalFieldWalletType)
 }
 
-func (u *UnauthorizedErrorBodyData) UnmarshalJSON(data []byte) error {
-	type unmarshaler UnauthorizedErrorBodyData
+// SetBeneficiary sets the Beneficiary field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TravelRuleWithdrawal) SetBeneficiary(beneficiary *TravelRuleBeneficiary) {
+	t.Beneficiary = beneficiary
+	t.require(travelRuleWithdrawalFieldBeneficiary)
+}
+
+// SetVaspData sets the VaspData field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (t *TravelRuleWithdrawal) SetVaspData(vaspData *TravelRuleVasp) {
+	t.VaspData = vaspData
+	t.require(travelRuleWithdrawalFieldVaspData)
+}
+
+func (t *TravelRuleWithdrawal) UnmarshalJSON(data []byte) error {
+	type unmarshaler TravelRuleWithdrawal
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*u = UnauthorizedErrorBodyData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *u)
+	*t = TravelRuleWithdrawal(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *t)
 	if err != nil {
 		return err
 	}
-	u.extraProperties = extraProperties
-	u.rawJSON = json.RawMessage(data)
+	t.extraProperties = extraProperties
+	t.rawJSON = json.RawMessage(data)
 	return nil
 }
 
-func (u *UnauthorizedErrorBodyData) MarshalJSON() ([]byte, error) {
-	type embed UnauthorizedErrorBodyData
+func (t *TravelRuleWithdrawal) MarshalJSON() ([]byte, error) {
+	type embed TravelRuleWithdrawal
 	var marshaler = struct {
 		embed
 	}{
-		embed: embed(*u),
+		embed: embed(*t),
 	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, t.explicitFields)
 	return json.Marshal(explicitMarshaler)
 }
 
-func (u *UnauthorizedErrorBodyData) String() string {
-	if len(u.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
+func (t *TravelRuleWithdrawal) String() string {
+	if len(t.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(t.rawJSON); err == nil {
 			return value
 		}
 	}
-	if value, err := internal.StringifyJSON(u); err == nil {
+	if value, err := internal.StringifyJSON(t); err == nil {
 		return value
 	}
-	return fmt.Sprintf("%#v", u)
+	return fmt.Sprintf("%#v", t)
+}
+
+// Wallet type:
+// - `hosted` - VASP-hosted wallet (exchange, custodian). Requires `vaspData` object.
+// - `unhosted` - Self-custody wallet (hardware wallet, software wallet).
+type TravelRuleWithdrawalWalletType string
+
+const (
+	TravelRuleWithdrawalWalletTypeHosted   TravelRuleWithdrawalWalletType = "hosted"
+	TravelRuleWithdrawalWalletTypeUnhosted TravelRuleWithdrawalWalletType = "unhosted"
+)
+
+func NewTravelRuleWithdrawalWalletTypeFromString(s string) (TravelRuleWithdrawalWalletType, error) {
+	switch s {
+	case "hosted":
+		return TravelRuleWithdrawalWalletTypeHosted, nil
+	case "unhosted":
+		return TravelRuleWithdrawalWalletTypeUnhosted, nil
+	}
+	var t TravelRuleWithdrawalWalletType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (t TravelRuleWithdrawalWalletType) Ptr() *TravelRuleWithdrawalWalletType {
+	return &t
 }
 
 var (
-	unprocessableEntityErrorBodyFieldCode    = big.NewInt(1 << 0)
-	unprocessableEntityErrorBodyFieldMessage = big.NewInt(1 << 1)
+	unprocessableEntityErrorBodyFieldErrors = big.NewInt(1 << 0)
 )
 
 type UnprocessableEntityErrorBody struct {
-	Code    *int    `json:"code,omitempty" url:"code,omitempty"`
-	Message *string `json:"message,omitempty" url:"message,omitempty"`
+	Errors map[string][]string `json:"errors,omitempty" url:"errors,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -13082,18 +13707,11 @@ type UnprocessableEntityErrorBody struct {
 	rawJSON         json.RawMessage
 }
 
-func (u *UnprocessableEntityErrorBody) GetCode() *int {
+func (u *UnprocessableEntityErrorBody) GetErrors() map[string][]string {
 	if u == nil {
 		return nil
 	}
-	return u.Code
-}
-
-func (u *UnprocessableEntityErrorBody) GetMessage() *string {
-	if u == nil {
-		return nil
-	}
-	return u.Message
+	return u.Errors
 }
 
 func (u *UnprocessableEntityErrorBody) GetExtraProperties() map[string]interface{} {
@@ -13107,18 +13725,11 @@ func (u *UnprocessableEntityErrorBody) require(field *big.Int) {
 	u.explicitFields.Or(u.explicitFields, field)
 }
 
-// SetCode sets the Code field and marks it as non-optional;
+// SetErrors sets the Errors field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnprocessableEntityErrorBody) SetCode(code *int) {
-	u.Code = code
-	u.require(unprocessableEntityErrorBodyFieldCode)
-}
-
-// SetMessage sets the Message field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnprocessableEntityErrorBody) SetMessage(message *string) {
-	u.Message = message
-	u.require(unprocessableEntityErrorBodyFieldMessage)
+func (u *UnprocessableEntityErrorBody) SetErrors(errors map[string][]string) {
+	u.Errors = errors
+	u.require(unprocessableEntityErrorBodyFieldErrors)
 }
 
 func (u *UnprocessableEntityErrorBody) UnmarshalJSON(data []byte) error {
@@ -13161,130 +13772,21 @@ func (u *UnprocessableEntityErrorBody) String() string {
 }
 
 var (
-	unprocessableEntityErrorBodyErrorsFieldClientID     = big.NewInt(1 << 0)
-	unprocessableEntityErrorBodyErrorsFieldClientSecret = big.NewInt(1 << 1)
-	unprocessableEntityErrorBodyErrorsFieldCode         = big.NewInt(1 << 2)
-)
-
-type UnprocessableEntityErrorBodyErrors struct {
-	ClientID     []string `json:"client_id,omitempty" url:"client_id,omitempty"`
-	ClientSecret []string `json:"client_secret,omitempty" url:"client_secret,omitempty"`
-	Code         []string `json:"code,omitempty" url:"code,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) GetClientID() []string {
-	if u == nil {
-		return nil
-	}
-	return u.ClientID
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) GetClientSecret() []string {
-	if u == nil {
-		return nil
-	}
-	return u.ClientSecret
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) GetCode() []string {
-	if u == nil {
-		return nil
-	}
-	return u.Code
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) GetExtraProperties() map[string]interface{} {
-	return u.extraProperties
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) require(field *big.Int) {
-	if u.explicitFields == nil {
-		u.explicitFields = big.NewInt(0)
-	}
-	u.explicitFields.Or(u.explicitFields, field)
-}
-
-// SetClientID sets the ClientID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnprocessableEntityErrorBodyErrors) SetClientID(clientID []string) {
-	u.ClientID = clientID
-	u.require(unprocessableEntityErrorBodyErrorsFieldClientID)
-}
-
-// SetClientSecret sets the ClientSecret field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnprocessableEntityErrorBodyErrors) SetClientSecret(clientSecret []string) {
-	u.ClientSecret = clientSecret
-	u.require(unprocessableEntityErrorBodyErrorsFieldClientSecret)
-}
-
-// SetCode sets the Code field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnprocessableEntityErrorBodyErrors) SetCode(code []string) {
-	u.Code = code
-	u.require(unprocessableEntityErrorBodyErrorsFieldCode)
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) UnmarshalJSON(data []byte) error {
-	type unmarshaler UnprocessableEntityErrorBodyErrors
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*u = UnprocessableEntityErrorBodyErrors(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *u)
-	if err != nil {
-		return err
-	}
-	u.extraProperties = extraProperties
-	u.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) MarshalJSON() ([]byte, error) {
-	type embed UnprocessableEntityErrorBodyErrors
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*u),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (u *UnprocessableEntityErrorBodyErrors) String() string {
-	if len(u.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(u.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(u); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", u)
-}
-
-var (
 	unsubscribeRequestFieldID     = big.NewInt(1 << 0)
-	unsubscribeRequestFieldParams = big.NewInt(1 << 1)
+	unsubscribeRequestFieldMethod = big.NewInt(1 << 1)
+	unsubscribeRequestFieldParams = big.NewInt(1 << 2)
 )
 
 type UnsubscribeRequest struct {
 	// Unique request identifier
 	ID int `json:"id" url:"id"`
 	// Method name. Fixed value: `positionsMargin_unsubscribe`.
+	Method UnsubscribeRequestMethod `json:"method" url:"method"`
 	// Empty array for unsubscribe
 	Params []interface{} `json:"params" url:"params"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
-	method         string
 
 	extraProperties map[string]interface{}
 	rawJSON         json.RawMessage
@@ -13297,15 +13799,18 @@ func (u *UnsubscribeRequest) GetID() int {
 	return u.ID
 }
 
+func (u *UnsubscribeRequest) GetMethod() UnsubscribeRequestMethod {
+	if u == nil {
+		return ""
+	}
+	return u.Method
+}
+
 func (u *UnsubscribeRequest) GetParams() []interface{} {
 	if u == nil {
 		return nil
 	}
 	return u.Params
-}
-
-func (u *UnsubscribeRequest) Method() string {
-	return u.method
 }
 
 func (u *UnsubscribeRequest) GetExtraProperties() map[string]interface{} {
@@ -13326,6 +13831,13 @@ func (u *UnsubscribeRequest) SetID(id int) {
 	u.require(unsubscribeRequestFieldID)
 }
 
+// SetMethod sets the Method field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UnsubscribeRequest) SetMethod(method UnsubscribeRequestMethod) {
+	u.Method = method
+	u.require(unsubscribeRequestFieldMethod)
+}
+
 // SetParams sets the Params field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (u *UnsubscribeRequest) SetParams(params []interface{}) {
@@ -13334,22 +13846,13 @@ func (u *UnsubscribeRequest) SetParams(params []interface{}) {
 }
 
 func (u *UnsubscribeRequest) UnmarshalJSON(data []byte) error {
-	type embed UnsubscribeRequest
-	var unmarshaler = struct {
-		embed
-		Method string `json:"method"`
-	}{
-		embed: embed(*u),
-	}
-	if err := json.Unmarshal(data, &unmarshaler); err != nil {
+	type unmarshaler UnsubscribeRequest
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*u = UnsubscribeRequest(unmarshaler.embed)
-	if unmarshaler.Method != "positionsMargin_unsubscribe" {
-		return fmt.Errorf("unexpected value for literal on type %T; expected %v got %v", u, "positionsMargin_unsubscribe", unmarshaler.Method)
-	}
-	u.method = unmarshaler.Method
-	extraProperties, err := internal.ExtractExtraProperties(data, *u, "method")
+	*u = UnsubscribeRequest(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *u)
 	if err != nil {
 		return err
 	}
@@ -13362,10 +13865,8 @@ func (u *UnsubscribeRequest) MarshalJSON() ([]byte, error) {
 	type embed UnsubscribeRequest
 	var marshaler = struct {
 		embed
-		Method string `json:"method"`
 	}{
-		embed:  embed(*u),
-		Method: "positionsMargin_unsubscribe",
+		embed: embed(*u),
 	}
 	explicitMarshaler := internal.HandleExplicitFields(marshaler, u.explicitFields)
 	return json.Marshal(explicitMarshaler)
@@ -13381,4 +13882,24 @@ func (u *UnsubscribeRequest) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", u)
+}
+
+// Method name. Fixed value: `positionsMargin_unsubscribe`.
+type UnsubscribeRequestMethod string
+
+const (
+	UnsubscribeRequestMethodPositionsMarginUnsubscribe UnsubscribeRequestMethod = "positionsMargin_unsubscribe"
+)
+
+func NewUnsubscribeRequestMethodFromString(s string) (UnsubscribeRequestMethod, error) {
+	switch s {
+	case "positionsMargin_unsubscribe":
+		return UnsubscribeRequestMethodPositionsMarginUnsubscribe, nil
+	}
+	var t UnsubscribeRequestMethod
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (u UnsubscribeRequestMethod) Ptr() *UnsubscribeRequestMethod {
+	return &u
 }

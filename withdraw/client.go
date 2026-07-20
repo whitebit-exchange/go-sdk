@@ -89,3 +89,32 @@ func (c *Client) CreateWithdrawPay(
 	}
 	return response.Body, nil
 }
+
+// The endpoint creates a signed, single-use Express Withdraw payment token that charges a specific amount from a WhiteBIT user's balance to the partner's [Main balance](/glossary#balance-main) in an instant, off-chain, zero-[fee](/glossary#fee) internal transfer. The response returns a URL that embeds the token; the paying user confirms the exact [ticker](/glossary#ticker) and amount on the WhiteBIT-hosted confirmation surface.
+//
+// Token and payment constraints:
+// - Each token is single-use: WhiteBIT marks the token used at confirmation and rejects any replay.
+// - Each token expires 90 seconds after creation; the `expireAt` response field carries the authoritative expiry timestamp. Generate the token as close as possible to the moment of presenting the URL to the user.
+// - The [ticker](/glossary#ticker) must be a withdrawal-enabled cryptocurrency; the endpoint rejects [fiat](/glossary#fiat) tickers.
+// - Each payment is capped at the equivalent of 10,000 USDT; WhiteBIT enforces the cap at token creation and re-enforces the cap at confirmation.
+// - WhiteBIT rejects self-payments: the paying user and the token creator must be different WhiteBIT accounts.
+// - The endpoint is idempotent per `externalId`: re-submitting the same `externalId` with an identical `ticker` and `amount` while the token is still valid returns the same token instead of creating a duplicate charge. After the token expires, the same `externalId` receives a fresh token.
+//
+// <Note>
+// Standard private-API rate limits apply — see [Rate limits](/api-reference/rate-limits). The endpoint carries no endpoint-specific limit.
+// </Note>
+func (c *Client) CreateExpressWithdrawToken(
+	ctx context.Context,
+	request *sdk.CreateExpressWithdrawTokenRequest,
+	opts ...option.RequestOption,
+) (*sdk.CreateExpressWithdrawTokenResponse, error) {
+	response, err := c.WithRawResponse.CreateExpressWithdrawToken(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}

@@ -14,14 +14,8 @@ var (
 )
 
 type GetMarketFeeRequest struct {
-	// Market to query.
-	//
-	// If the request includes the `market` parameter, the system returns fees for the specified market only.
-	//
-	// When fee values are identical across markets, the response contains identical values regardless of the specified market.
-	//
-	// Example: BTC_USDT
-	Market string `json:"-" url:"market"`
+	// Optional. Currently ignored by the API — all market fees are returned regardless of the value provided. Retained for backward compatibility. Example: BTC_USDT
+	Market *string `json:"-" url:"market,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -36,7 +30,7 @@ func (g *GetMarketFeeRequest) require(field *big.Int) {
 
 // SetMarket sets the Market field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetMarketFeeRequest) SetMarket(market string) {
+func (g *GetMarketFeeRequest) SetMarket(market *string) {
 	g.Market = market
 	g.require(getMarketFeeRequestFieldMarket)
 }
@@ -47,6 +41,7 @@ var (
 	getMarketFeeResponseFieldMaker        = big.NewInt(1 << 2)
 	getMarketFeeResponseFieldFuturesTaker = big.NewInt(1 << 3)
 	getMarketFeeResponseFieldFuturesMaker = big.NewInt(1 << 4)
+	getMarketFeeResponseFieldCustomFee    = big.NewInt(1 << 5)
 )
 
 type GetMarketFeeResponse struct {
@@ -55,10 +50,12 @@ type GetMarketFeeResponse struct {
 	Taker *string `json:"taker,omitempty" url:"taker,omitempty"`
 	// Maker fee percentage
 	Maker *string `json:"maker,omitempty" url:"maker,omitempty"`
-	// Effective futures taker fee rate for the specified market. The system returns the lower value between the custom fee (if assigned) and the default market fee.
+	// Default effective futures taker fee rate. The system returns the lower value between the custom fee (if assigned) and the default market fee.
 	FuturesTaker *string `json:"futures_taker,omitempty" url:"futures_taker,omitempty"`
-	// Effective futures maker fee rate for the specified market. The system returns the lower value between the custom fee (if assigned) and the default market fee.
+	// Default effective futures maker fee rate. The system returns the lower value between the custom fee (if assigned) and the default market fee.
 	FuturesMaker *string `json:"futures_maker,omitempty" url:"futures_maker,omitempty"`
+	// Per-market fee overrides, keyed by market name. Each value contains the market's custom `taker` and `maker` rates.
+	CustomFee map[string]*GetMarketFeeResponseCustomFeeValue `json:"custom_fee,omitempty" url:"custom_fee,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -100,6 +97,13 @@ func (g *GetMarketFeeResponse) GetFuturesMaker() *string {
 		return nil
 	}
 	return g.FuturesMaker
+}
+
+func (g *GetMarketFeeResponse) GetCustomFee() map[string]*GetMarketFeeResponseCustomFeeValue {
+	if g == nil {
+		return nil
+	}
+	return g.CustomFee
 }
 
 func (g *GetMarketFeeResponse) GetExtraProperties() map[string]interface{} {
@@ -148,6 +152,13 @@ func (g *GetMarketFeeResponse) SetFuturesMaker(futuresMaker *string) {
 	g.require(getMarketFeeResponseFieldFuturesMaker)
 }
 
+// SetCustomFee sets the CustomFee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetMarketFeeResponse) SetCustomFee(customFee map[string]*GetMarketFeeResponseCustomFeeValue) {
+	g.CustomFee = customFee
+	g.require(getMarketFeeResponseFieldCustomFee)
+}
+
 func (g *GetMarketFeeResponse) UnmarshalJSON(data []byte) error {
 	type unmarshaler GetMarketFeeResponse
 	var value unmarshaler
@@ -176,6 +187,102 @@ func (g *GetMarketFeeResponse) MarshalJSON() ([]byte, error) {
 }
 
 func (g *GetMarketFeeResponse) String() string {
+	if len(g.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(g); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", g)
+}
+
+var (
+	getMarketFeeResponseCustomFeeValueFieldTaker = big.NewInt(1 << 0)
+	getMarketFeeResponseCustomFeeValueFieldMaker = big.NewInt(1 << 1)
+)
+
+type GetMarketFeeResponseCustomFeeValue struct {
+	// Custom taker fee percentage for the market
+	Taker *string `json:"taker,omitempty" url:"taker,omitempty"`
+	// Custom maker fee percentage for the market
+	Maker *string `json:"maker,omitempty" url:"maker,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (g *GetMarketFeeResponseCustomFeeValue) GetTaker() *string {
+	if g == nil {
+		return nil
+	}
+	return g.Taker
+}
+
+func (g *GetMarketFeeResponseCustomFeeValue) GetMaker() *string {
+	if g == nil {
+		return nil
+	}
+	return g.Maker
+}
+
+func (g *GetMarketFeeResponseCustomFeeValue) GetExtraProperties() map[string]interface{} {
+	return g.extraProperties
+}
+
+func (g *GetMarketFeeResponseCustomFeeValue) require(field *big.Int) {
+	if g.explicitFields == nil {
+		g.explicitFields = big.NewInt(0)
+	}
+	g.explicitFields.Or(g.explicitFields, field)
+}
+
+// SetTaker sets the Taker field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetMarketFeeResponseCustomFeeValue) SetTaker(taker *string) {
+	g.Taker = taker
+	g.require(getMarketFeeResponseCustomFeeValueFieldTaker)
+}
+
+// SetMaker sets the Maker field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetMarketFeeResponseCustomFeeValue) SetMaker(maker *string) {
+	g.Maker = maker
+	g.require(getMarketFeeResponseCustomFeeValueFieldMaker)
+}
+
+func (g *GetMarketFeeResponseCustomFeeValue) UnmarshalJSON(data []byte) error {
+	type unmarshaler GetMarketFeeResponseCustomFeeValue
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*g = GetMarketFeeResponseCustomFeeValue(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *g)
+	if err != nil {
+		return err
+	}
+	g.extraProperties = extraProperties
+	g.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (g *GetMarketFeeResponseCustomFeeValue) MarshalJSON() ([]byte, error) {
+	type embed GetMarketFeeResponseCustomFeeValue
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (g *GetMarketFeeResponseCustomFeeValue) String() string {
 	if len(g.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
 			return value

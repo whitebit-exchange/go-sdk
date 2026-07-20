@@ -28,7 +28,7 @@ type CreateNewAddressRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -71,7 +71,7 @@ func (c *CreateNewAddressRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateNewAddressRequest) SetNonce(nonce string) {
+func (c *CreateNewAddressRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createNewAddressRequestFieldNonce)
 }
@@ -112,7 +112,7 @@ type GetDepositAddressRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -148,7 +148,7 @@ func (g *GetDepositAddressRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetDepositAddressRequest) SetNonce(nonce string) {
+func (g *GetDepositAddressRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getDepositAddressRequestFieldNonce)
 }
@@ -194,8 +194,8 @@ type GetFiatDepositURLRequest struct {
 	Provider string `json:"provider" url:"-"`
 	// Deposit amount
 	Amount string `json:"amount" url:"-"`
-	// Unique transaction identifier on client's side
-	UniqueID *string `json:"unique_id,omitempty" url:"-"`
+	// Unique transaction identifier on client's side. Any string up to 255 characters; not validated as a UUID.
+	UniqueID string `json:"uniqueId" url:"-"`
 	// Customer information (required for USD/EUR with VISAMASTER [provider](/glossary#provider))
 	Customer *GetFiatDepositURLRequestCustomer `json:"customer,omitempty" url:"-"`
 	// Customer will be redirected to this URL by acquiring [provider](/glossary#provider) after success deposit. To activate this feature, please contact support
@@ -207,7 +207,7 @@ type GetFiatDepositURLRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -243,7 +243,7 @@ func (g *GetFiatDepositURLRequest) SetAmount(amount string) {
 
 // SetUniqueID sets the UniqueID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetFiatDepositURLRequest) SetUniqueID(uniqueID *string) {
+func (g *GetFiatDepositURLRequest) SetUniqueID(uniqueID string) {
 	g.UniqueID = uniqueID
 	g.require(getFiatDepositURLRequestFieldUniqueID)
 }
@@ -285,7 +285,7 @@ func (g *GetFiatDepositURLRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetFiatDepositURLRequest) SetNonce(nonce string) {
+func (g *GetFiatDepositURLRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getFiatDepositURLRequestFieldNonce)
 }
@@ -367,13 +367,13 @@ var (
 
 type RefundDepositRequest struct {
 	// Transaction UUID of the deposit. Obtain from the [deposit.canceled](/platform/webhook) webhook (`uniqueId` field) or from the deposit/withdraw history in the WhiteBIT interface.
-	TransactionID *string `json:"transaction_id,omitempty" url:"-"`
+	TransactionID string `json:"transactionId" url:"-"`
 	// Destination wallet address for the refund. The address must support the same network and asset as the original deposit. Cannot be a WhiteBIT address. Does not have to match the original deposit address.
 	Address string `json:"address" url:"-"`
 	// Base64-encoded request body. See the [authentication guide](/private/http-auth) for signature generation details.
 	Request string `json:"request" url:"-"`
 	// A unique identifier for the request. Use a monotonically increasing value such as a Unix timestamp in milliseconds.
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -388,7 +388,7 @@ func (r *RefundDepositRequest) require(field *big.Int) {
 
 // SetTransactionID sets the TransactionID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (r *RefundDepositRequest) SetTransactionID(transactionID *string) {
+func (r *RefundDepositRequest) SetTransactionID(transactionID string) {
 	r.TransactionID = transactionID
 	r.require(refundDepositRequestFieldTransactionID)
 }
@@ -409,7 +409,7 @@ func (r *RefundDepositRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (r *RefundDepositRequest) SetNonce(nonce string) {
+func (r *RefundDepositRequest) SetNonce(nonce int) {
 	r.Nonce = nonce
 	r.require(refundDepositRequestFieldNonce)
 }

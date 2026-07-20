@@ -381,25 +381,3 @@ func TestPublicAPIV4FundingHistoryWithWireMock(
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "TestPublicAPIV4FundingHistoryWithWireMock", "GET", "/api/v4/public/funding-history/BTC_PERP", map[string]string{"startDate": "1752480000", "endDate": "1752537600", "limit": "100", "offset": "0"}, 1)
 }
-
-func TestPublicAPIV4MiningPoolOverviewWithWireMock(
-	t *testing.T,
-) {
-	wiremockPort := os.Getenv("WIREMOCK_PORT")
-	if wiremockPort == "" {
-		wiremockPort = "8080"
-	}
-	WireMockBaseURL := "http://localhost:" + wiremockPort
-	client := client.NewClient(
-		option.WithBaseURL(WireMockBaseURL),
-	)
-	_, invocationErr := client.PublicAPIV4.MiningPoolOverview(
-		context.TODO(),
-		option.WithHTTPHeader(
-			http.Header{"X-Test-Id": []string{"TestPublicAPIV4MiningPoolOverviewWithWireMock"}},
-		),
-	)
-
-	require.NoError(t, invocationErr, "Client method call should succeed")
-	VerifyRequestCount(t, "TestPublicAPIV4MiningPoolOverviewWithWireMock", "GET", "/api/v4/public/mining-pool", nil, 1)
-}

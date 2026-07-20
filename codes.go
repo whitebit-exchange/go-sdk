@@ -24,7 +24,7 @@ type ApplyCodeRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -60,7 +60,7 @@ func (a *ApplyCodeRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (a *ApplyCodeRequest) SetNonce(nonce string) {
+func (a *ApplyCodeRequest) SetNonce(nonce int) {
 	a.Nonce = nonce
 	a.require(applyCodeRequestFieldNonce)
 }
@@ -98,16 +98,16 @@ var (
 type CreateCodeRequest struct {
 	// Currency's [ticker](/glossary#ticker). Example: BTC
 	Ticker string `json:"ticker" url:"-"`
-	// Amount to transfer. Max [precision](/glossary#precision) = 8, value must be greater than zero and less than or equal to the [main balance](/glossary#balance-main).
+	// Amount to transfer. Up to 18 decimal places, value greater than zero and capped at 1e17 (10^17), and not exceeding the [main balance](/glossary#balance-main).
 	Amount string `json:"amount" url:"-"`
 	// Passphrase for applying [WhiteBIT codes](/glossary#whitebit-codes). Passphrase must contain only latin letters, numbers and symbols (like !@#$%^, no whitespaces). Max: 25 symbols.
 	Passphrase *string `json:"passphrase,omitempty" url:"-"`
-	// Additional text description for [code](/glossary#whitebit-codes). Visible only for creator. Max: 75 symbols.
+	// Additional text description for [code](/glossary#whitebit-codes). Visible only for creator. Max: 280 symbols.
 	Description *string `json:"description,omitempty" url:"-"`
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -157,7 +157,7 @@ func (c *CreateCodeRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateCodeRequest) SetNonce(nonce string) {
+func (c *CreateCodeRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createCodeRequestFieldNonce)
 }
@@ -198,7 +198,7 @@ type GetCodesHistoryRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -234,7 +234,7 @@ func (g *GetCodesHistoryRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetCodesHistoryRequest) SetNonce(nonce string) {
+func (g *GetCodesHistoryRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getCodesHistoryRequestFieldNonce)
 }
@@ -275,7 +275,7 @@ type GetMyCodesRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -311,7 +311,7 @@ func (g *GetMyCodesRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetMyCodesRequest) SetNonce(nonce string) {
+func (g *GetMyCodesRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getMyCodesRequestFieldNonce)
 }

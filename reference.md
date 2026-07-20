@@ -13,6 +13,16 @@
 
 The endpoint creates a quote for converting one currency to another. Quote lifetime is 10 seconds, then quote will be expired.
 
+The minimum convert size is derived from the resulting proceeds, not a fixed per-pair floor: a request is rejected as too small when `rate × amount` rounds to zero in the target currency. Account balance is pre-checked at estimate time and re-checked at confirm time, because balance can change within the 10-second quote window. There is an absolute server-side maximum on the conversion amount.
+
+<Note>
+The endpoint can be used to obtain a pre-execution price estimate for a market order. Call the endpoint with the desired amount before placing a market order to see the approximate execution price.
+</Note>
+
+<Note>
+Error `message` values may be returned as translation keys (for example `validation.required`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+</Note>
+
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
@@ -79,7 +89,7 @@ client.ConvertEstimate(
 <dl>
 <dd>
 
-**amount:** `string` — Amount to convert or receive.
+**amount:** `string` — Amount to convert or receive. The value is silently truncated to 8 decimal places before evaluation; excess decimals do not raise an error.
     
 </dd>
 </dl>
@@ -120,6 +130,16 @@ client.ConvertEstimate(
 <dd>
 
 The endpoint confirms an estimated quote.
+
+An expired quote returns code `20` (`api.converter.quoteExpired`), which is distinct from a quote that could not be found (code `0`). Balance is re-checked at confirm time and can fail with code `37` even when the estimate succeeded, because balance may change within the 10-second quote window.
+
+<Note>
+A re-confirmed (already used) quote and a quote that never existed both return code `0` with the `quoteId` field key `frontendServerSide.converter.quoteInvalid`. The response alone does not distinguish "already used" from "never existed".
+</Note>
+
+<Note>
+Error `message` values may be returned as translation keys (for example `api.converter.quoteExpired`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+</Note>
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -200,12 +220,19 @@ client.ConvertConfirm(
 <dl>
 <dd>
 
-The endpoint returns convert history.
+The endpoint returns convert history, sorted by `id` descending (newest first).
+
+The `from`–`to` window is capped at 30 days per request, even though data is retained for 6 months. A wider range is rejected with code `30` (`api.validation.dateTime.maxRange`).
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
-**Note:** The endpoint can retrieve data not older than 6 months from current month. For older data, use the Report on the History page.
+
+<Note>
+Error `message` values may be returned as translation keys (for example `api.validation.dateTime.maxRange`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+</Note>
+
+**Note:** The endpoint can retrieve data not older than 6 months from the current month. For older data, use the Report on the History page.
 </dd>
 </dl>
 </dd>
@@ -260,7 +287,7 @@ client.ConvertHistory(
 <dl>
 <dd>
 
-**from:** `*string` — From time filter. Example: 1699260637. Default: now()
+**from:** `*string` — From time filter (Unix seconds). Must be no more than 30 days before `to` and no older than 6 months. Example: 1699260637. Default: now()
     
 </dd>
 </dl>
@@ -268,7 +295,7 @@ client.ConvertHistory(
 <dl>
 <dd>
 
-**to:** `*string` — To time filter. Example: 1699260637. Default: now() +
+**to:** `*string` — To time filter (Unix seconds). Must be no more than 30 days after `from`. Example: 1699260637. Default: now()
     
 </dd>
 </dl>
@@ -284,7 +311,7 @@ client.ConvertHistory(
 <dl>
 <dd>
 
-**limit:** `*string` — How many records to receive. Default: 100
+**limit:** `*int` — How many records to receive. Allowed range: 1–100. Default: 100
     
 </dd>
 </dl>
@@ -292,7 +319,7 @@ client.ConvertHistory(
 <dl>
 <dd>
 
-**offset:** `*string` — Amount to convert or receive. Default 0
+**offset:** `*int` — Number of records to skip for pagination. Minimum: 0. Default: 0
     
 </dd>
 </dl>
@@ -320,637 +347,6 @@ client.ConvertHistory(
 </dl>
 </details>
 
-## Authentication
-<details><summary><code>client.Authentication.OAuth20Authorization() -> error</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint initiates the OAuth 2.0 authorization flow for user authentication and obtaining an authorization code.
-
-**Using the State Parameter (Best Practice)**
-
-The `state` parameter is crucial for security in OAuth flows:
-
-- Generate a cryptographically secure random string
-- Store it in the session before redirecting
-- Validate it matches when handling the callback
-- This prevents CSRF attacks
-<Note>
-**Note:** OAuth scopes are predefined during client application setup and cannot be modified during the authorization request. The access token will include all scopes that were approved during client creation.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetAuthLoginRequest{
-        ClientID: "YOUR_CLIENT_ID",
-        State: sdk.String(
-            "SECURE_RANDOM_STATE",
-        ),
-    }
-client.Authentication.OAuth20Authorization(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**clientID:** `string` — The application's client ID
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**state:** `*string` — A secure random string used to maintain state between the request and callback and prevent CSRF attacks (Recommended)
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.Authentication.GetAccessToken(request) -> *sdk.PostOauth2TokenResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint activates an access token by exchanging an authorization code.
-
-<Warning>
-**Important Notes:**
-
-- Access token duration is 300 seconds
-- The IP of the client must be added to WB Allowlist
-</Warning>
-
-**Request Headers:**
-- Content-Type: application/x-www-form-urlencoded
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.PostOauth2TokenRequest{
-        ClientID: "YOUR_CLIENT_ID",
-        ClientSecret: "YOUR_CLIENT_SECRET",
-        Code: "AUTHORIZATION_CODE",
-    }
-client.Authentication.GetAccessToken(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**clientID:** `string` — The application's client ID
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**clientSecret:** `string` — The application's client secret
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**code:** `string` — The authorization code received from the authorization endpoint
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.Authentication.RefreshToken(request) -> *sdk.PostOauth2RefreshTokenResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-This endpoint creates a new access token using a refresh token.
-
-**Request Headers:**
-- Content-Type: application/x-www-form-urlencoded
-
-<Warning>
-**Important Notes:**
-
-- Refresh token duration is 600 seconds
-- Rate limit: 1 request per second
-- The IP of the client must be added to WB Allowlist
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.PostOauth2RefreshTokenRequest{
-        ClientID: "YOUR_CLIENT_ID",
-        ClientSecret: "YOUR_CLIENT_SECRET",
-        Token: "REFRESH_TOKEN",
-    }
-client.Authentication.RefreshToken(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**clientID:** `string` — The application's client ID
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**clientSecret:** `string` — The application's client secret
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**token:** `string` — The refresh token received from the token endpoint
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-## AccountEndpoints
-<details><summary><code>client.AccountEndpoints.GetAccountTransactions(request) -> map[string]any</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-This endpoint retrieves a paginated list of account transactions.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := map[string]any{
-        "key": "value",
-    }
-client.AccountEndpoints.GetAccountTransactions(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `map[string]any` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AccountEndpoints.GetCurrencyConversions(request) -> map[string]any</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-This endpoint retrieves the history of currency conversions.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := map[string]any{
-        "key": "value",
-    }
-client.AccountEndpoints.GetCurrencyConversions(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `map[string]any` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AccountEndpoints.GetOrdersHistory(request) -> map[string]any</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-This endpoint retrieves the history of trading orders.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := map[string]any{
-        "key": "value",
-    }
-client.AccountEndpoints.GetOrdersHistory(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `map[string]any` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AccountEndpoints.GetExecutedDeals(request) -> map[string]any</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-This endpoint retrieves the history of executed deals.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := map[string]any{
-        "key": "value",
-    }
-client.AccountEndpoints.GetExecutedDeals(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `map[string]any` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AccountEndpoints.GetMainAccountBalance(request) -> map[string]any</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-This endpoint retrieves the main account balance information.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := map[string]any{
-        "key": "value",
-    }
-client.AccountEndpoints.GetMainAccountBalance(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `map[string]any` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.AccountEndpoints.GetSpotAccountBalance(request) -> map[string]any</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-This endpoint retrieves the spot trading account balance information.
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := map[string]any{
-        "key": "value",
-    }
-client.AccountEndpoints.GetSpotAccountBalance(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**request:** `map[string]any` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
 ## PublicAPIV4
 <details><summary><code>client.PublicAPIV4.MaintenanceStatus() -> *sdk.GetAPIV4PublicPlatformStatusResponse</code></summary>
 <dl>
@@ -964,7 +360,7 @@ client.AccountEndpoints.GetSpotAccountBalance(
 <dl>
 <dd>
 
-The endpoint retrieves maintenance status
+The endpoint retrieves the current maintenance status of the WhiteBIT platform. Use the response to detect scheduled downtime and pause trading automation during maintenance windows. The `status` field returns `"system operational"` when all platform services are available, or `"system maintenance"` when the platform is undergoing planned maintenance.
 </dd>
 </dl>
 </dd>
@@ -1006,10 +402,14 @@ client.PublicAPIV4.MaintenanceStatus(
 <dl>
 <dd>
 
-The endpoint retrieves all information about available spot and futures markets.
+The endpoint retrieves configuration and trading rules for all available spot, futures, and TradFi futures markets. Use the response to discover tradeable pairs, check minimum order sizes, and read fee schedules. Each entry includes precision settings, fee ratios, and order-size constraints for the market.
 
 <Note>
-The API caches the response for 1 second
+Market configuration is reference data, re-synced from the database approximately every 10 seconds. Polling more frequently returns identical data. The cache is shared across all callers.
+</Note>
+
+<Note>
+TradFi futures markets are region-gated. Markets not available in a given region are omitted from the response entirely and do not appear under any other market type.
 </Note>
 
 <Warning>
@@ -1106,10 +506,10 @@ client.PublicAPIV4.MarketActivity(
 <dl>
 <dd>
 
-The endpoint retrieves the assets status.
+The endpoint retrieves the deposit and withdrawal status for every supported asset. Use the response to check whether deposits and withdrawals are enabled, read per-network fee and limit details, and determine required blockchain confirmation counts. The response includes crypto assets, fiat currencies, and fiat payment methods.
 
 <Note>
-The API caches the response for 1 second
+Asset status is reference data, re-synced approximately once per minute. Polling more frequently returns identical data. The cache is shared across all callers.
 </Note>
 
 <Warning>
@@ -1223,7 +623,7 @@ client.PublicAPIV4.Orderbook(
 <dl>
 <dd>
 
-**level:** `*int` — Optional parameter that controls the aggregation level. Level 0 – default, no aggregation. Levels 1–5 provide increasing aggregation of the order book.
+**level:** `*int` — Aggregation level for price grouping. Level 0 applies no aggregation. Levels 1–5 provide increasing aggregation of the order book.
     
 </dd>
 </dl>
@@ -1374,7 +774,7 @@ client.PublicAPIV4.RecentTrades(
 <dl>
 <dd>
 
-**type_:** `*sdk.GetAPIV4PublicTradesMarketRequestType` — Can be buy or sell
+**type_:** `*sdk.GetAPIV4PublicTradesMarketRequestType` — Filter by trade side. Omit to return both buy and sell trades.
     
 </dd>
 </dl>
@@ -1386,7 +786,7 @@ client.PublicAPIV4.RecentTrades(
 </dl>
 </details>
 
-<details><summary><code>client.PublicAPIV4.Fee() -> map[string]any</code></summary>
+<details><summary><code>client.PublicAPIV4.Fee() -> map[string]*sdk.FeeInfo</code></summary>
 <dl>
 <dd>
 
@@ -1398,10 +798,10 @@ client.PublicAPIV4.RecentTrades(
 <dl>
 <dd>
 
-The endpoint retrieves the list of [fees](/glossary#fee) and min/max amounts for deposits and withdrawals
+The endpoint retrieves the [fee](/glossary#fee) schedule and deposit/withdrawal limits for every supported asset. Use the response to display fee estimates before a user initiates a deposit or withdrawal. The response is keyed by currency ticker; each entry contains deposit and withdrawal fee amounts and min/max transfer limits.
 
 <Note>
-The API caches the response for 1 second
+The fee schedule is reference data, re-synced approximately once per minute. Polling more frequently returns identical data. The cache is shared across all callers.
 </Note>
 
 <Warning>
@@ -1448,10 +848,10 @@ client.PublicAPIV4.Fee(
 <dl>
 <dd>
 
-The endpoint retrieves the current server time.
+The endpoint retrieves the current server time as a Unix timestamp. Use the response to synchronize local clocks before generating HMAC signatures for authenticated requests. The endpoint takes no parameters and has no request-validation errors; it returns HTTP 200 on success and fails only at the infrastructure level (see the API description).
 
 <Note>
-The API caches the response for 1 second
+The server time is computed per request and is not cached.
 </Note>
 
 <Warning>
@@ -1498,10 +898,10 @@ client.PublicAPIV4.ServerTime(
 <dl>
 <dd>
 
-The endpoint retrieves the current API life-state.
+The endpoint checks API availability by returning a simple health-check response. Use the endpoint to verify network connectivity and confirm the API server is reachable. A successful response contains the string `"pong"`. The endpoint takes no parameters and has no request-validation errors; it returns HTTP 200 on success and fails only at the infrastructure level (see the API description).
 
 <Note>
-The API caches the response for 1 second
+The health-check response is generated per request and is not cached.
 </Note>
 
 <Warning>
@@ -1548,10 +948,10 @@ client.PublicAPIV4.ServerStatus(
 <dl>
 <dd>
 
-The endpoint returns the list of [markets](/glossary#market) that are available for [collateral](/glossary#collateral) trading
+The endpoint returns the list of [market](/glossary#market) pair names available for [collateral](/glossary#collateral) trading. Use the response to determine which markets support margin positions. Each item in the result array is a market pair name in `BASE_QUOTE` format (e.g., `BTC_USDT`).
 
 <Note>
-The API caches the response for 1 second
+The collateral market list is reference data, re-synced approximately every 10 seconds. Polling more frequently returns identical data. The cache is shared across all callers.
 </Note>
 
 <Warning>
@@ -1598,7 +998,7 @@ client.PublicAPIV4.CollateralMarketsList(
 <dl>
 <dd>
 
-The endpoint returns the list of available futures markets.
+The endpoint returns detailed information for all available futures markets. Use the response to read current pricing, open interest, funding rates, and leverage bracket configuration. Each entry includes the predicted next funding rate, settlement timestamps, and maximum allowed position sizes per leverage level.
 
 <Note>
 The API caches the response for 1 second
@@ -1648,11 +1048,23 @@ client.PublicAPIV4.AvailableFuturesMarketsList(
 <dl>
 <dd>
 
-The endpoint returns the funding rate history for a specified futures market.
+The endpoint returns the funding rate history for a specified futures market. Use the response to analyze historical funding rate trends and settlement prices. Results are sorted by funding time in descending order and support offset-based pagination via `limit` and `offset` parameters.
 
 <Warning>
 Rate limit 2000 requests/10 sec.
 </Warning>
+
+<Note>
+This endpoint supports pagination. Use `limit` (default: 100, max: 100) and `offset` (default: 0, max: 1000000) to page through results.
+</Note>
+
+<Note>
+The response is a plain array with no `total`, `has_more`, or cursor — a returned count below `limit` marks the last page (an empty array means no further records).
+</Note>
+
+<Note>
+Funding history is served per request at the API layer, with no application-level cache.
+</Note>
 </dd>
 </dl>
 </dd>
@@ -1725,7 +1137,7 @@ client.PublicAPIV4.FundingHistory(
 <dl>
 <dd>
 
-**limit:** `*int` — Number of records to return. Default: 100, Maximum: 1000
+**limit:** `*int` — Number of records to return. Default: 100, Maximum: 100
     
 </dd>
 </dl>
@@ -1733,56 +1145,8 @@ client.PublicAPIV4.FundingHistory(
 <dl>
 <dd>
 
-**offset:** `*int` — Number of records to skip
+**offset:** `*int` — Number of records to skip. Maximum: 1000000
     
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.PublicAPIV4.MiningPoolOverview() -> *sdk.GetAPIV4PublicMiningPoolResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint returns overall information about the current mining pool state.
-
-Hash rate is expressed in H units.
-
-<Warning>
-Rate limit 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-client.PublicAPIV4.MiningPoolOverview(
-        context.TODO(),
-    )
-}
-```
 </dd>
 </dl>
 </dd>
@@ -1808,6 +1172,22 @@ client.PublicAPIV4.MiningPoolOverview(
 
 The endpoint retrieves the [main balance](/glossary#balance-main) by currency [ticker](/glossary#ticker) or all balances.
 
+An unknown or non-existent `ticker` is not an error: the endpoint returns a zero balance (`{"main_balance": "0"}`) for it. Omitting `ticker` returns balances for every currency.
+
+<Accordion title="Errors">
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "ticker": ["validation.string"]
+  }
+}
+```
+</Accordion>
+
+Beyond the validation error above, this endpoint can return only the [common authentication errors](/api-reference/authentication).
+
 <Warning>
   Rate limit: 1000 requests/10 sec.
 </Warning>
@@ -1831,7 +1211,7 @@ The API does not cache the response.
 ```go
 request := &sdk.GetMainBalanceRequest{
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.MainAccount.GetMainBalance(
         context.TODO(),
@@ -1868,7 +1248,7 @@ client.MainAccount.GetMainBalance(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -1898,9 +1278,11 @@ The endpoint retrieves the history of deposits and withdraws.
 - `Successful` - 3, 7
 - `Canceled` - 4, 9
 - `Unconfirmed by user` - 5
-- `Additional data required` - 21
+- `AML frozen` - 21
 - `Uncredited` - 22
 - `Pending` - 15
+
+`Successful` (3, 7) is a final state. A credited deposit does not later transition to `AML frozen` (21) or `Uncredited` (22); those checks happen before crediting.
 
 **Travel Rule Deposit check status codes:**
 - `Awaiting verification` - 27: The transaction has been frozen due to the lack of data required under the Travel Rule. The user is required to provide this data manually through the exchange interface.
@@ -1909,19 +1291,31 @@ The endpoint retrieves the history of deposits and withdraws.
 ⚠️ Due to regulatory requirements in Turkey and [EU](/glossary#european-economic-area-eea), the system places every inbound crypto deposit on hold (frozen) until confirming the transaction's origin. The sender must provide certain details if the transaction is from another Virtual Asset Service Provider (VASP) or verify the address if from a self-hosted wallet. The system credits deposited funds to the account only after successful verification.
 
 **Withdraw status codes:**
-- `Pending` - 1, 2, 6, 10, 11, 12, 13, 14, 15, 16, 17
+- `Pending` - 1, 2, 6, 10–17 (withdrawal in progress).
 - `Successful` - 3, 7
 - `Canceled` - 4
 - `Unconfirmed by user` - 5
-- `Additional data required` - 21
+- `AML frozen` - 21
 - `Partially successful` - 18
 
 <Warning>
 Rate limit: 200 requests/10 sec.
 </Warning>
 
+<Warning>
+Requests with `limit` values above 100 return large payloads. Use high limits only when necessary and ensure the client application can handle large response sizes.
+</Warning>
+
 <Note>
 The API does not cache the response.
+</Note>
+
+<Note>
+Results are sorted newest first (descending by timestamp).
+</Note>
+
+<Note>
+**No date filtering:** the endpoint does not accept `startDate` / `endDate` parameters, and pagination is capped at `offset + limit ≤ 10000` (requests beyond the cap return `Offset is too big. Please use offset + limit less than 10000.`). To read more than 10,000 records, narrow the result set with the available filters (`transactionMethod`, `ticker`, `status`) and paginate within each subset; for a complete history export beyond the cap, use the Report on the History page.
 </Note>
 </dd>
 </dl>
@@ -1955,7 +1349,7 @@ request := &sdk.GetDepositWithdrawHistoryRequest{
             7,
         },
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.MainAccount.GetDepositWithdrawHistory(
         context.TODO(),
@@ -2024,7 +1418,7 @@ client.MainAccount.GetDepositWithdrawHistory(
 <dl>
 <dd>
 
-**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return.
+**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return. Default: 50, Min: 1, Max: 500
     
 </dd>
 </dl>
@@ -2060,7 +1454,7 @@ Can be used for filtering transactions by status codes.
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -2086,6 +1480,12 @@ Can be used for filtering transactions by status codes.
 <dd>
 
 The endpoint retrieves a deposit address of the cryptocurrency.
+
+<Note>
+Sub-accounts use this endpoint with their own API key once deposits are enabled for the
+account. Crypto deposits are disabled by default — to enable them, contact your assigned
+Account Manager or email institutional@whitebit.com.
+</Note>
 
 <Accordion title="Errors">
 ```json
@@ -2143,7 +1543,7 @@ The API does not cache the response.
 request := &sdk.GetDepositAddressRequest{
         Ticker: "BTC",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Deposit.GetDepositAddress(
         context.TODO(),
@@ -2188,7 +1588,7 @@ client.Deposit.GetDepositAddress(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -2307,8 +1707,78 @@ The endpoint works on demand. Contact WhiteBIT support and provide the API key t
   "code": 0,
   "message": "Validation failed",
   "errors": {
-    "successLink": ["Uri domain must have only https scheme"],
-    "failureLink": ["Uri domain must have only https scheme"]
+    "successLink": ["Your domain scheme incorrect. Use https only"],
+    "failureLink": ["Your domain scheme incorrect. Use https only"]
+  }
+}
+```
+
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "ticker": ["Currency is not depositable via API"]
+  }
+}
+```
+
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "user": ["User not verified"]
+  }
+}
+```
+
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "amount": ["Amount is too big for deposit"]
+  }
+}
+```
+
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "amount": ["Daily limit reached"]
+  }
+}
+```
+
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "amount": ["Expiration date cannot be used for this provider"]
+  }
+}
+```
+
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "customer.birthDate": ["You must be at least 18 years old"]
+  }
+}
+```
+
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "address": ["Invalid credit card number"]
   }
 }
 ```
@@ -2343,11 +1813,9 @@ request := &sdk.GetFiatDepositURLRequest{
         Ticker: "UAH",
         Provider: "VISAMASTER",
         Amount: "100",
-        UniqueID: sdk.String(
-            "{{generateID}}",
-        ),
+        UniqueID: "{{generateID}}",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Deposit.GetFiatDepositURL(
         context.TODO(),
@@ -2392,7 +1860,7 @@ client.Deposit.GetFiatDepositURL(
 <dl>
 <dd>
 
-**uniqueID:** `*string` — Unique transaction identifier on client's side
+**uniqueID:** `string` — Unique transaction identifier on client's side. Any string up to 255 characters; not validated as a UUID.
     
 </dd>
 </dl>
@@ -2440,7 +1908,7 @@ client.Deposit.GetFiatDepositURL(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -2593,12 +2061,10 @@ Refund processing does not complete instantly. Use the [refund.successful](/plat
 
 ```go
 request := &sdk.RefundDepositRequest{
-        TransactionID: sdk.String(
-            "54bffeb7-7a8f-43f8-bcd8-f14ec10fee85",
-        ),
+        TransactionID: "54bffeb7-7a8f-43f8-bcd8-f14ec10fee85",
         Address: "0x1234567890abcdef1234567890abcdef12345678",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Deposit.RefundDeposit(
         context.TODO(),
@@ -2619,7 +2085,7 @@ client.Deposit.RefundDeposit(
 <dl>
 <dd>
 
-**transactionID:** `*string` — Transaction UUID of the deposit. Obtain from the [deposit.canceled](/platform/webhook) webhook (`uniqueId` field) or from the deposit/withdraw history in the WhiteBIT interface.
+**transactionID:** `string` — Transaction UUID of the deposit. Obtain from the [deposit.canceled](/platform/webhook) webhook (`uniqueId` field) or from the deposit/withdraw history in the WhiteBIT interface.
     
 </dd>
 </dl>
@@ -2643,7 +2109,7 @@ client.Deposit.RefundDeposit(
 <dl>
 <dd>
 
-**nonce:** `string` — A unique identifier for the request. Use a monotonically increasing value such as a Unix timestamp in milliseconds.
+**nonce:** `int` — A unique identifier for the request. Use a monotonically increasing value such as a Unix timestamp in milliseconds.
     
 </dd>
 </dl>
@@ -2668,6 +2134,11 @@ client.Deposit.RefundDeposit(
 <dd>
 
 The endpoint creates a new address even when the last created address is not used. The endpoint is not available by default, contact support@whitebit.com to get permissions to use the endpoint.
+
+<Note>
+For sub-accounts, crypto deposits must also be enabled for the account (disabled by
+default). To enable them, contact your assigned Account Manager or email institutional@whitebit.com.
+</Note>
 
 **Address types:**
 
@@ -2700,7 +2171,7 @@ The API does not cache the response.
 request := &sdk.CreateNewAddressRequest{
         Ticker: "XLM",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Deposit.CreateNewAddress(
         context.TODO(),
@@ -2753,7 +2224,7 @@ client.Deposit.CreateNewAddress(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -2803,7 +2274,7 @@ request := &sdk.IssueJwtTokenRequest{
         NonceWindow: sdk.Bool(
             false,
         ),
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Jwt.IssueJwtToken(
         context.TODO(),
@@ -2840,7 +2311,7 @@ client.Jwt.IssueJwtToken(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -2867,6 +2338,20 @@ client.Jwt.IssueJwtToken(
 The V4 endpoint can be used to retrieve the WebSocket token for user.
 The token is required to authorize WebSocket connections for private API access.
 
+<Accordion title="Errors">
+```json
+{
+  "code": 30,
+  "message": "Validation failed",
+  "errors": {
+    "user": ["user not found"]
+  }
+}
+```
+</Accordion>
+
+Beyond the error above, this endpoint can return only the [common authentication errors](/api-reference/authentication).
+
 <Warning>
 Rate limit: 10 requests/60 sec.
 </Warning>
@@ -2890,7 +2375,7 @@ The API does not cache the response.
 ```go
 request := &sdk.GetWebSocketTokenRequest{
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Jwt.GetWebSocketToken(
         context.TODO(),
@@ -2919,7 +2404,7 @@ client.Jwt.GetWebSocketToken(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -2975,11 +2460,9 @@ request := &sdk.CreateWithdrawRequest{
         Ticker: "ETH",
         Amount: "0.9",
         Address: "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
-        UniqueID: sdk.String(
-            "24529041",
-        ),
+        UniqueID: "24529041",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Withdraw.CreateWithdraw(
         context.TODO(),
@@ -3040,9 +2523,9 @@ Currency's [ticker](/glossary#ticker). Example: BTC
 <dl>
 <dd>
 
-**uniqueID:** `*string` 
+**uniqueID:** `string` 
 
-Unique transaction identifier.
+Unique transaction identifier. Any string up to 255 characters; not validated as a UUID.
 
 ⚠️ Generate a new unique ID for each withdrawal request.
     
@@ -3084,11 +2567,25 @@ Cryptocurrency network. Available for multi network currencies. Example: OMNI
 <dl>
 <dd>
 
+**customerIP:** `*string` 
+
+End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed.
+
+⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
 **beneficiary:** `*sdk.CreateWithdrawRequestBeneficiary` 
 
-Beneficiary information data array.
+Beneficiary information.
 
-⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
+⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
+
+Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `tin` is required for UAH_IBAN; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
     
 </dd>
 </dl>
@@ -3098,9 +2595,13 @@ Beneficiary information data array.
 
 **travelRule:** `*sdk.CreateWithdrawRequestTravelRule` 
 
-Travel Rule information data array.
+Travel Rule information for regulatory compliance.
 
 ⚠️ Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
+
+See [Travel Rule Overview](/api-reference/travel-rule/overview) for complete documentation.
+
+**Legacy format:** The API still accepts the old flat format (`type`, `vasp`, `name`, `address` fields), but this format will not pass Travel Rule verification. To complete Travel Rule compliance, use the new structured format with `walletType`, `beneficiary`, and `vasp` objects.
     
 </dd>
 </dl>
@@ -3128,7 +2629,7 @@ Description of withdrawal destination
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -3183,11 +2684,9 @@ request := &sdk.WithdrawRequest{
         Ticker: "ETH",
         Amount: "0.9",
         Address: "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
-        UniqueID: sdk.String(
-            "24529041",
-        ),
+        UniqueID: "24529041",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Withdraw.CreateWithdrawPay(
         context.TODO(),
@@ -3240,7 +2739,7 @@ client.Withdraw.CreateWithdrawPay(
 <dl>
 <dd>
 
-**uniqueID:** `*string` — Unique transaction identifier. ⚠️ Generate a new unique ID for each withdrawal request.
+**uniqueID:** `string` — Unique transaction identifier. Any string up to 255 characters; not validated as a UUID. ⚠️ Generate a new unique ID for each withdrawal request.
     
 </dd>
 </dl>
@@ -3272,6 +2771,14 @@ client.Withdraw.CreateWithdrawPay(
 <dl>
 <dd>
 
+**customerIP:** `*string` — End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed. ⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
 **beneficiary:** `map[string]any` — Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
     
 </dd>
@@ -3296,7 +2803,124 @@ client.Withdraw.CreateWithdrawPay(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.Withdraw.CreateExpressWithdrawToken(request) -> *sdk.CreateExpressWithdrawTokenResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint creates a signed, single-use Express Withdraw payment token that charges a specific amount from a WhiteBIT user's balance to the partner's [Main balance](/glossary#balance-main) in an instant, off-chain, zero-[fee](/glossary#fee) internal transfer. The response returns a URL that embeds the token; the paying user confirms the exact [ticker](/glossary#ticker) and amount on the WhiteBIT-hosted confirmation surface.
+
+Token and payment constraints:
+- Each token is single-use: WhiteBIT marks the token used at confirmation and rejects any replay.
+- Each token expires 90 seconds after creation; the `expireAt` response field carries the authoritative expiry timestamp. Generate the token as close as possible to the moment of presenting the URL to the user.
+- The [ticker](/glossary#ticker) must be a withdrawal-enabled cryptocurrency; the endpoint rejects [fiat](/glossary#fiat) tickers.
+- Each payment is capped at the equivalent of 10,000 USDT; WhiteBIT enforces the cap at token creation and re-enforces the cap at confirmation.
+- WhiteBIT rejects self-payments: the paying user and the token creator must be different WhiteBIT accounts.
+- The endpoint is idempotent per `externalId`: re-submitting the same `externalId` with an identical `ticker` and `amount` while the token is still valid returns the same token instead of creating a duplicate charge. After the token expires, the same `externalId` receives a fresh token.
+
+<Note>
+Standard private-API rate limits apply — see [Rate limits](/api-reference/rate-limits). The endpoint carries no endpoint-specific limit.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CreateExpressWithdrawTokenRequest{
+        Ticker: "USDT",
+        Amount: "25.50",
+        ExternalID: "order-100294",
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.Withdraw.CreateExpressWithdrawToken(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**ticker:** `string` 
+
+Currency [ticker](/glossary#ticker) to charge. Example: USDT
+
+⚠️ The ticker must be a withdrawal-enabled cryptocurrency; the endpoint rejects [fiat](/glossary#fiat) tickers. Use [Asset Status endpoint](/public/http-v4/asset-status-list) to check the withdrawal status of a currency.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**amount:** `string` 
+
+Amount to charge in the specified [ticker](/glossary#ticker). Numeric string.
+
+⚠️ The amount converted to USDT-equivalent must not exceed 10,000; the endpoint rejects larger amounts with error code `191`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**externalID:** `string` — Partner-side reference for the payment (order or invoice identifier), unique per partner account. The identifier powers idempotency and replay protection: a pending `externalId` with an identical `ticker` and `amount` returns the same token; the endpoint rejects an already-paid `externalId` with error code `19`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -3353,7 +2977,7 @@ request := &sdk.TransferBetweenBalancesRequest{
         Ticker: "XLM",
         Amount: "0.9",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Transfer.BetweenBalances(
         context.TODO(),
@@ -3438,7 +3062,7 @@ Balance TO which funds will move to. Acceptable values: [**main**](/glossary#bal
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -3496,7 +3120,7 @@ request := &sdk.CreateCodeRequest{
             "some description",
         ),
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Codes.CreateCode(
         context.TODO(),
@@ -3525,7 +3149,7 @@ client.Codes.CreateCode(
 <dl>
 <dd>
 
-**amount:** `string` — Amount to transfer. Max [precision](/glossary#precision) = 8, value must be greater than zero and less than or equal to the [main balance](/glossary#balance-main).
+**amount:** `string` — Amount to transfer. Up to 18 decimal places, value greater than zero and capped at 1e17 (10^17), and not exceeding the [main balance](/glossary#balance-main).
     
 </dd>
 </dl>
@@ -3541,7 +3165,7 @@ client.Codes.CreateCode(
 <dl>
 <dd>
 
-**description:** `*string` — Additional text description for [code](/glossary#whitebit-codes). Visible only for creator. Max: 75 symbols.
+**description:** `*string` — Additional text description for [code](/glossary#whitebit-codes). Visible only for creator. Max: 280 symbols.
     
 </dd>
 </dl>
@@ -3557,7 +3181,7 @@ client.Codes.CreateCode(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -3590,6 +3214,13 @@ Rate limit: 60 requests/1 sec.
 <Note>
 The API does not cache the response.
 </Note>
+
+<Note>
+To avoid leaking whether a code exists, most failure modes — invalid format, expired,
+non-existent, or wrong passphrase — collapse to one generic rejection on field `code`.
+Only two cases are distinguishable at the API surface: a code that has already been
+applied, and a code created by the same account.
+</Note>
 </dd>
 </dl>
 </dd>
@@ -3610,7 +3241,7 @@ request := &sdk.ApplyCodeRequest{
             "some passphrase",
         ),
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Codes.ApplyCode(
         context.TODO(),
@@ -3655,7 +3286,7 @@ client.Codes.ApplyCode(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -3688,6 +3319,10 @@ Rate limit: 1000 requests/10 sec.
 <Note>
 The API does not cache the response.
 </Note>
+
+<Note>
+Results are sorted by creation date, newest first. Pagination is capped at `offset + limit ≤ 10000`; for a complete history export beyond the cap, use the Report on the History page.
+</Note>
 </dd>
 </dl>
 </dd>
@@ -3704,7 +3339,7 @@ The API does not cache the response.
 ```go
 request := &sdk.GetMyCodesRequest{
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Codes.GetMyCodes(
         context.TODO(),
@@ -3749,7 +3384,7 @@ client.Codes.GetMyCodes(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -3782,6 +3417,14 @@ Rate limit: 1000 requests/10 sec.
 <Note>
 The API does not cache the response.
 </Note>
+
+<Note>
+Results are sorted by date, newest first.
+</Note>
+
+<Note>
+**No date filtering:** the endpoint does not accept `startDate` / `endDate` parameters, and pagination is capped at `offset + limit ≤ 10000` (`limit` ≤ 100). For a complete history export beyond the cap, use the Report on the History page.
+</Note>
 </dd>
 </dl>
 </dd>
@@ -3798,7 +3441,7 @@ The API does not cache the response.
 ```go
 request := &sdk.GetCodesHistoryRequest{
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Codes.GetCodesHistory(
         context.TODO(),
@@ -3843,1518 +3486,7 @@ client.Codes.GetCodesHistory(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-## Crypto Lending - Fixed
-<details><summary><code>client.CryptoLendingFixed.GetFixedPlans(request) -> []*sdk.FixedPlan</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint retrieves all active [plans](/glossary#crypto-lending).
-
-<Note>
-These endpoints are available only for B2B partner services. Fill the institutional services form to get permissions to use these endpoints.
-</Note>
-
-**Note:** When target currency is different from source currency, interest amount in target currency will be calculated using `interestRatio` value.
-
-**Examples:**
-- When source currency = USDT, target currency = BTC and interest ratio = 40000, interest is received in BTC and equals the USDT interest amount divided by the interest ratio (e.g. 0.000025 BTC per 1 USDT of interest).
-- When source currency equals target currency, interest ratio equals 1.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetFixedPlansRequest{
-        Ticker: sdk.String(
-            "USDT",
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFixed.GetFixedPlans(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**ticker:** `*string` — [Invest plan](/glossary#crypto-lending) source currency's [ticker](/glossary#ticker). Example: BTC
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFixed.CreateFixedInvestment(request) -> *sdk.CreateFixedInvestmentResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint creates a new investment to the specified [invest plan](/glossary#crypto-lending).
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.CreateFixedInvestmentRequest{
-        PlanID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
-        Amount: "100",
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFixed.CreateFixedInvestment(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**planID:** `string` — [Invest plan](/glossary#crypto-lending) identifier
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**amount:** `string` — Investment amount
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFixed.CloseFixedInvestment(request) -> map[string]any</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint closes active investment.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.CloseFixedInvestmentRequest{
-        ID: "0d7b66ff-1909-4938-ab7a-d16d9a64dcd5",
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFixed.CloseFixedInvestment(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**id:** `string` — Investment identifier
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFixed.GetFixedInvestmentsHistory(request) -> *sdk.GetFixedInvestmentsHistoryResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint retrieves an investments history.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetFixedInvestmentsHistoryRequest{
-        ID: sdk.String(
-            "0d7b66ff-1909-4938-ab7a-d16d9a64dcd5",
-        ),
-        Ticker: sdk.String(
-            "USDT",
-        ),
-        Status: sdk.Int(
-            1,
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFixed.GetFixedInvestmentsHistory(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**id:** `*string` — Investment identifier
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**ticker:** `*string` — [Invest plan](/glossary#crypto-lending) source currency's [ticker](/glossary#ticker)
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**status:** `*int` — Investment status (1 - active, 2 - closed)
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` — Use the OFFSET clause to return entries starting from a particular line.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFixed.GetInterestPaymentHistory(request) -> *sdk.GetInterestPaymentHistoryResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint retrieves the history of interest payments.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetInterestPaymentHistoryRequest{
-        PlanID: sdk.String(
-            "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
-        ),
-        Ticker: sdk.String(
-            "USDT",
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFixed.GetInterestPaymentHistory(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**planID:** `*string` — [Invest plan](/glossary#crypto-lending) identifier
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**ticker:** `*string` — [Invest plan](/glossary#crypto-lending) target currency's [ticker](/glossary#ticker)
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` — Use the OFFSET clause to return entries starting from a particular line.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-## Crypto Lending - Flex
-<details><summary><code>client.CryptoLendingFlex.GetFlexPlans(request) -> []*sdk.FlexPlan</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Retrieve list of active [Flex Plans](/glossary#crypto-lending).
-
-Available after September 22, 2025.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetFlexPlansRequest{
-        Limit: sdk.Int(
-            50,
-        ),
-        Offset: sdk.Int(
-            0,
-        ),
-        Ticker: sdk.String(
-            "USDT",
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.GetFlexPlans(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**limit:** `*int` — Pagination limit.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` — Pagination offset.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**ticker:** `*string` — Filter by currency [ticker](/glossary#ticker). Example: USDT
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFlex.GetUserFlexInvestments(request) -> *sdk.GetUserFlexInvestmentsResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Retrieve user's investment portfolio with optional filtering.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetUserFlexInvestmentsRequest{
-        Limit: sdk.Int(
-            100,
-        ),
-        Offset: sdk.Int(
-            0,
-        ),
-        Ticker: sdk.String(
-            "USDT",
-        ),
-        Plan: sdk.String(
-            "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        ),
-        Investment: sdk.String(
-            "invest_id_123",
-        ),
-        InvestmentStatus: sdk.Int(
-            1,
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.GetUserFlexInvestments(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**limit:** `*int` — Pagination limit. Default: 100.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` — Pagination offset. Default: 0.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**ticker:** `*string` — Filter by currency [ticker](/glossary#ticker). Example: USDT.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**plan:** `*string` — Filter by plan ID (UUID).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**investment:** `*string` — Filter by investment ID.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**investmentStatus:** `*int` — Filter by status (1=ACTIVE, 0=CLOSED).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFlex.GetFlexInvestmentHistory(request) -> *sdk.GetFlexInvestmentHistoryResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Retrieve complete investment operations history with advanced filtering.
-
-**Available Action Types:**
-- 1: INVEST - Investment creation
-- 2: REINVEST - Automatic reinvestment
-- 3: WITHDRAW_FROM_INVESTMENT - Partial withdrawal
-- 4: DAILY_EARNING - Daily earnings
-- 5: CLOSE_INVESTMENT - Investment closure
-- 6: OPEN_INVESTMENT - Investment opening
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetFlexInvestmentHistoryRequest{
-        Limit: sdk.Int(
-            50,
-        ),
-        Offset: sdk.Int(
-            0,
-        ),
-        Plan: sdk.String(
-            "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        ),
-        Investment: sdk.String(
-            "inv_123",
-        ),
-        Transaction: sdk.String(
-            "tx_456",
-        ),
-        DateFrom: sdk.Int(
-            1640995200,
-        ),
-        DateTo: sdk.Int(
-            1641081600,
-        ),
-        ActionTypes: []int{
-            1,
-            2,
-            4,
-        },
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.GetFlexInvestmentHistory(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**limit:** `*int` — Pagination limit.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` — Pagination offset.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**plan:** `*string` — Filter by plan ID (UUID).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**investment:** `*string` — Filter by investment ID.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**transaction:** `*string` — Filter by transaction ID.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**dateFrom:** `*int` — Filter from date (timestamp).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**dateTo:** `*int` — Filter to date (timestamp).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**actionTypes:** `[]int` — Array of operation type IDs. See table below.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFlex.GetFlexPaymentHistory(request) -> *sdk.GetFlexPaymentHistoryResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Retrieve investment earnings history (ONLY DAILY_EARNING operations).
-
-**Note:** The endpoint automatically filters to show ONLY DAILY_EARNING operations (type 4).
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetFlexPaymentHistoryRequest{
-        Limit: sdk.Int(
-            50,
-        ),
-        Offset: sdk.Int(
-            0,
-        ),
-        Plan: sdk.String(
-            "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        ),
-        Investment: sdk.String(
-            "inv_123",
-        ),
-        Transaction: sdk.String(
-            "tx_456",
-        ),
-        DateFrom: sdk.Int(
-            1640995200,
-        ),
-        DateTo: sdk.Int(
-            1641081600,
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.GetFlexPaymentHistory(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**limit:** `*int` — Pagination limit.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` — Pagination offset.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**plan:** `*string` — Filter by plan ID (UUID).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**investment:** `*string` — Filter by investment ID.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**transaction:** `*string` — Filter by transaction ID.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**dateFrom:** `*int` — Filter from date (timestamp).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**dateTo:** `*int` — Filter to date (timestamp).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFlex.CreateFlexInvestment(request) -> *sdk.CreateFlexInvestmentResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Create new investment in a Flex plan.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.CreateFlexInvestmentRequest{
-        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        Amount: "1000.500000",
-        WithReinvest: sdk.Bool(
-            true,
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.CreateFlexInvestment(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**plan:** `string` — Plan external ID (UUID).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**amount:** `string` — Investment amount.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**withReinvest:** `*bool` — Enable auto-reinvestment.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFlex.WithdrawFromFlexInvestment(request) -> *sdk.WithdrawFromFlexInvestmentResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Withdraw specified amount from user's investment.
-
-**Note:** Plan must be active and accessible to user.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.WithdrawFromFlexInvestmentRequest{
-        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        Amount: "500.250000",
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.WithdrawFromFlexInvestment(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**plan:** `string` — Plan external ID (UUID).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**amount:** `string` — Withdrawal amount.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFlex.CloseFlexInvestment(request) -> *sdk.CloseFlexInvestmentResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Completely close investment and withdraw all funds.
-
-**Validation Rules:**
-- plan: required, string, UUID format, must exist
-- Investment must be ACTIVE
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.CloseFlexInvestmentRequest{
-        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.CloseFlexInvestment(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**plan:** `string` — Plan external ID (UUID).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.CryptoLendingFlex.UpdateFlexAutoReinvestment(request) -> *sdk.UpdateFlexAutoReinvestmentResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Enable/disable automatic reinvestment for user's investment.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.UpdateFlexAutoReinvestmentRequest{
-        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
-        Enabled: sdk.Bool(
-            true,
-        ),
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.CryptoLendingFlex.UpdateFlexAutoReinvestment(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**plan:** `string` — Plan external ID (UUID).
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**enabled:** `*bool` — Enable or disable auto-reinvestment.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -5367,7 +3499,7 @@ client.CryptoLendingFlex.UpdateFlexAutoReinvestment(
 </details>
 
 ## Fees
-<details><summary><code>client.Fees.GetFees(request) -> []*sdk.FeeInfo</code></summary>
+<details><summary><code>client.Fees.GetFees(request) -> []*sdk.MainAccountFeeInfo</code></summary>
 <dl>
 <dd>
 
@@ -5381,6 +3513,8 @@ client.CryptoLendingFlex.UpdateFlexAutoReinvestment(
 
 Returns an array of objects containing deposit/withdrawal [fees](/glossary#fee) for the corresponding currencies.
 Zero value in amount fields means that the setting is disabled.
+
+The endpoint takes no input beyond the signed request envelope and returns the full per-currency fee schedule on success. It can return only the [common authentication errors](/api-reference/authentication).
 
 <Warning>
 Rate limit: 1000 requests/10 sec.
@@ -5405,7 +3539,7 @@ The API does not cache the response.
 ```go
 request := &sdk.GetFeesRequest{
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.Fees.GetFees(
         context.TODO(),
@@ -5434,7 +3568,7 @@ client.Fees.GetFees(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -5465,6 +3599,15 @@ The endpoint creates new [sub-account](/glossary#sub-account).
 The `email` field requirement depends on the `shareKyc` parameter:
 - When `shareKyc` is `false` or not provided: `email` is **required**
 - When `shareKyc` is `true`: `email` is **optional**
+</Note>
+
+<Note>
+Crypto deposits are disabled by default. Once deposits are enabled for the account, the
+capability applies to the account and its sub-accounts; enablement is not available via
+API. To request it, contact your assigned Account Manager or email institutional@whitebit.com.
+Once enabled, a sub-account generates deposit addresses through the standard
+[deposit-address endpoint](/api-reference/account-wallet/get-cryptocurrency-deposit-address)
+using its own API key with deposit permission.
 </Note>
 
 <Warning>
@@ -6127,6 +4270,14 @@ Rate limit: 1000 requests/10 sec.
 <Note>
 The API does not cache the response.
 </Note>
+
+<Note>
+Results are sorted by transaction id descending (newest transfer first). The response is a plain array with no `total`, `has_more`, or cursor — a returned count below `limit` marks the last page (an empty array means no further records).
+</Note>
+
+<Note>
+**No date filtering:** the endpoint does not accept `startDate` / `endDate` parameters, and pagination is capped at `offset + limit ≤ 10000` (`limit` ≤ 100). The required `id` parameter already scopes results to a single sub-account; for a complete history export beyond the cap, use the Report on the History page.
+</Note>
 </dd>
 </dl>
 </dd>
@@ -6199,6 +4350,252 @@ client.SubAccount.GetSubAccountTransferHistory(
 </dl>
 </details>
 
+<details><summary><code>client.SubAccount.ListUnconfirmedSubAccountWithdrawals(request) -> *sdk.ListUnconfirmedSubAccountWithdrawalsResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns a paginated list of withdrawal transactions in `unconfirmed_by_main_account` status,
+created by [sub-accounts](/glossary#sub-account) of the authenticated main account and awaiting main account confirmation.
+Results are ordered by creation time, newest first.
+
+<Note>
+The sub-account withdrawal endpoints are not available by default. To request access, contact institutional@whitebit.com.
+A `404 Not Found` response indicates the endpoint is not enabled for the account.
+</Note>
+
+<Note>
+The sub-account feature must be enabled for the region.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.ListUnconfirmedSubAccountWithdrawalsRequest{
+        Limit: sdk.Int(
+            100,
+        ),
+        Offset: sdk.Int(
+            0,
+        ),
+    }
+client.SubAccount.ListUnconfirmedSubAccountWithdrawals(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Number of records to return.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Number of records to skip.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**subAccountID:** `*string` — Filter by specific sub-account external ID. If omitted, returns withdrawals from all sub-accounts.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.SubAccount.ConfirmSubAccountWithdrawal(request) -> map[string]any</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint confirms a single withdrawal transaction created by a [sub-account](/glossary#sub-account)
+of the authenticated main account. Confirmation is the main account action that approves a withdrawal
+held in `unconfirmed_by_main_account` status and releases it for processing.
+
+Identify the target transaction by its external id, obtained from
+[List Unconfirmed Sub-Account Withdrawals](/api-reference/sub-accounts/list-unconfirmed-sub-account-withdrawals).
+Confirmation is the only main account action on an unconfirmed withdrawal; a withdrawal left unconfirmed
+expires after a retention period. A successful call returns an empty object.
+
+<Note>
+The sub-account withdrawal endpoints are not available by default. To request access, contact institutional@whitebit.com.
+A `404 Not Found` response indicates the endpoint is not enabled for the account.
+</Note>
+
+<Note>
+The sub-account feature must be enabled for the region.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.ConfirmSubAccountWithdrawalRequest{
+        ID: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    }
+client.SubAccount.ConfirmSubAccountWithdrawal(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**id:** `string` — External id of the withdrawal transaction to confirm.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.SubAccount.GetSubAccountKycURL(request) -> *sdk.GetSubAccountKycURLResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint generates a temporary KYC verification link for a [sub-account](/glossary#sub-account).
+
+<Note>
+The sub-account must meet all of the following conditions before a KYC URL can be generated:
+- The sub-account must be activated (have an associated user).
+- The sub-account must be active (not locked or blocked).
+- The sub-account must not have shared KYC enabled.
+</Note>
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetSubAccountKycURLRequest{
+        ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
+    }
+client.SubAccount.GetSubAccountKycURL(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**id:** `string` — Sub-account external ID. Must belong to the authenticated main account.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 ## Sub-Account API Keys
 <details><summary><code>client.SubAccountAPIKeys.CreateSubAccountAPIKey(request) -> *sdk.SubAccountAPIKey</code></summary>
 <dl>
@@ -6212,7 +4609,13 @@ client.SubAccount.GetSubAccountTransferHistory(
 <dl>
 <dd>
 
-The endpoint creates a new API key for a [sub-account](/glossary#sub-account).
+The endpoint creates a new API key for a [sub-account](/glossary#sub-account). Each sub-account supports up to 50 API keys, independent from the main account and from other sub-accounts.
+
+<Note>
+A `type: 2` key carries deposit and withdrawal permissions, but crypto deposits must also
+be enabled for the account. Deposits are disabled by default — to enable them, contact your
+assigned Account Manager or email institutional@whitebit.com.
+</Note>
 
 <Warning>
 Rate limit: 1000 requests/10 sec.
@@ -6480,6 +4883,10 @@ Rate limit: 1000 requests/10 sec.
 
 <Note>
 The API does not cache the response.
+</Note>
+
+<Note>
+Results are sorted by api-key id descending (newest key first). The response is a plain array with no `total`, `has_more`, or cursor — a returned count below `limit` marks the last page (an empty array means no further records).
 </Note>
 </dd>
 </dl>
@@ -6837,926 +5244,6 @@ client.SubAccountAPIKeys.DeleteSubAccountAPIKeyIPAddress(
 </dl>
 </details>
 
-## Mining Pool
-<details><summary><code>client.MiningPool.GetMiningRewards(request) -> *sdk.GetMiningRewardsResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint returns rewards received from mining.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetMiningRewardsRequest{}
-client.MiningPool.GetMiningRewards(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**account:** `*string` — Mining pool account
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**from:** `*int` — Date timestamp starting from which rewards are received
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**to:** `*int` — Date timestamp until which rewards are received
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**limit:** `*int` 
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` 
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.GetMiningHashrate(request) -> *sdk.GetMiningHashrateResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-The endpoint returns hashrate of mining pool account.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-
-<Note>
-The API does not cache the response.
-</Note>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetMiningHashrateRequest{
-        Account: "miner123",
-    }
-client.MiningPool.GetMiningHashrate(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**account:** `string` — Mining pool account
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**from:** `*int` — Unix timestamp of starting point
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**to:** `*int` — Unix timestamp of final point
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**interval:** `*sdk.GetMiningHashrateRequestInterval` — Timestamp interval
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.GetMiningPayoutDestination(request) -> *sdk.GetMiningPayoutDestinationResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Returns the current payout destination setting for a specific mining account belonging to the authenticated user.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetMiningPayoutDestinationRequest{
-        AccountName: "my_miner_01",
-    }
-client.MiningPool.GetMiningPayoutDestination(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**accountName:** `string` — Mining pool account name
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.SetMiningPayoutDestination(request) -> *sdk.SetMiningPayoutDestinationResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Updates the payout destination for a specific mining account belonging to the authenticated user. Can be set to main balance or an external BTC address.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.SetMiningPayoutDestinationRequest{
-        AccountName: "my_miner_01",
-        Destination: sdk.SetMiningPayoutDestinationRequestDestinationMainBalance,
-    }
-client.MiningPool.SetMiningPayoutDestination(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**accountName:** `string` — Mining pool account name
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**destination:** `*sdk.SetMiningPayoutDestinationRequestDestination` — Payout destination type
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**address:** `*string` — External BTC address. Required when destination is external_address. Supports all standard Bitcoin address formats.
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.GetMiningMinerInfo(request) -> *sdk.GetMiningMinerInfoResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Returns fee information and stratum connection details with worker counts for a specific mining account.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetMiningMinerInfoRequest{
-        Account: "my_miner_01",
-    }
-client.MiningPool.GetMiningMinerInfo(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**account:** `string` — Mining pool account name
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.GetMiningWorkerNames(request) -> *sdk.GetMiningWorkerNamesResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Returns a paginated list of online worker names for a specific mining account.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetMiningWorkerNamesRequest{
-        Account: "my_miner_01",
-    }
-client.MiningPool.GetMiningWorkerNames(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**account:** `string` — Mining pool account name
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**offset:** `*int` — Pagination offset
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**limit:** `*int` — Pagination limit
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.GetMiningWorkerHashrate(request) -> *sdk.GetMiningWorkerHashrateResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Returns hashrate performance history for a specific worker on a mining account.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetMiningWorkerHashrateRequest{
-        Account: "my_miner_01",
-        Worker: "worker_001",
-    }
-client.MiningPool.GetMiningWorkerHashrate(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**account:** `string` — Mining pool account name
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**worker:** `string` — Worker name
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**interval:** `*sdk.GetMiningWorkerHashrateRequestInterval` — Time frame granularity
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**from:** `*int` — Start timestamp in Unix seconds. Must be <= now
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**to:** `*int` — End timestamp in Unix seconds. Must be <= now
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.CreateMiningWatcherLink(request) -> *sdk.CreateMiningWatcherLinkResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Creates a new watcher link for one or more mining accounts, granting specific permissions with a configurable expiration.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.CreateMiningWatcherLinkRequest{
-        Accounts: []string{
-            "my_miner_01",
-            "my_miner_02",
-        },
-        Name: "monitoring_link",
-        Permissions: []sdk.CreateMiningWatcherLinkRequestPermissionsItem{
-            sdk.CreateMiningWatcherLinkRequestPermissionsItemDashboard,
-            sdk.CreateMiningWatcherLinkRequestPermissionsItemWorkers,
-        },
-        LiveUntil: sdk.CreateMiningWatcherLinkRequestLiveUntilOneH,
-    }
-client.MiningPool.CreateMiningWatcherLink(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**accounts:** `[]string` — Array of mining account names
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**name:** `string` — Link name (alphanumeric and underscores only)
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**permissions:** `[]*sdk.CreateMiningWatcherLinkRequestPermissionsItem` — Array of permissions
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**liveUntil:** `*sdk.CreateMiningWatcherLinkRequestLiveUntil` — Expiration period
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.ListMiningWatcherLinks(request) -> *sdk.ListMiningWatcherLinksResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Returns all active watcher links for a specific mining account.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.ListMiningWatcherLinksRequest{
-        Account: "my_miner_01",
-    }
-client.MiningPool.ListMiningWatcherLinks(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**account:** `string` — Mining pool account name
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.CreateMiningAccount(request) -> *sdk.CreateMiningAccountResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Creates a new mining account for the authenticated user. The account name must be unique within the user's accounts.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.CreateMiningAccountRequest{
-        Name: "my_miner_01",
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.MiningPool.CreateMiningAccount(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**name:** `string` — Mining pool account name. Must be unique. Alphanumeric characters and underscores allowed.
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**referralCode:** `*string` — Optional referral code for account creation
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
-<details><summary><code>client.MiningPool.GetMiningAccounts(request) -> *sdk.GetMiningAccountsResponse</code></summary>
-<dl>
-<dd>
-
-#### 📝 Description
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-Returns a list of mining accounts for the authenticated user. Supports filtering by account name.
-
-<Warning>
-Rate limit: 1000 requests/10 sec.
-</Warning>
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### 🔌 Usage
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-```go
-request := &sdk.GetMiningAccountsRequest{
-        Request: "{{request}}",
-        Nonce: "{{nonce}}",
-    }
-client.MiningPool.GetMiningAccounts(
-        context.TODO(),
-        request,
-    )
-}
-```
-</dd>
-</dl>
-</dd>
-</dl>
-
-#### ⚙️ Parameters
-
-<dl>
-<dd>
-
-<dl>
-<dd>
-
-**name:** `*string` — Optional filter to search for a specific mining account name (exact match)
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**request:** `string` — Request signature
-    
-</dd>
-</dl>
-
-<dl>
-<dd>
-
-**nonce:** `string` — Unique request identifier
-    
-</dd>
-</dl>
-</dd>
-</dl>
-
-
-</dd>
-</dl>
-</details>
-
 ## Credit Line
 <details><summary><code>client.CreditLine.GetCreditLineInfo(request) -> *sdk.CreditLine</code></summary>
 <dl>
@@ -7796,7 +5283,7 @@ The API does not cache the response.
 ```go
 request := &sdk.GetCreditLineInfoRequest{
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CreditLine.GetCreditLineInfo(
         context.TODO(),
@@ -7825,7 +5312,315 @@ client.CreditLine.GetCreditLineInfo(
 <dl>
 <dd>
 
-**nonce:** `string` — Unique request identifier
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## Travel Rule
+<details><summary><code>client.TravelRule.GetTravelRuleVasps(request) -> *sdk.GetTravelRuleVaspsResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Retrieves the list of Virtual Asset Service Providers (VASPs) that can be used when submitting travel rule data for deposits and withdrawals.
+
+Use the returned `vaspId` when submitting travel rule data if the destination/originating VASP is in this list. If the VASP is not in the list, use `vaspName` as a fallback.
+
+<Accordion title="Errors">
+**API disabled for region (422):**
+```json
+{
+  "code": 0,
+  "message": "Something went wrong",
+  "errors": {
+    "error": ["This endpoint is disabled for your region"]
+  }
+}
+```
+</Accordion>
+
+Beyond the errors above, this endpoint can return only the [common authentication errors](/api-reference/authentication).
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetTravelRuleVaspsRequest{
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.TravelRule.GetTravelRuleVasps(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.TravelRule.SubmitTravelRuleDepositVerification(request) -> *sdk.SubmitTravelRuleDepositVerificationResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Submits originator information for a deposit that is ready for the travel rule verification.
+
+**Wallet types:**
+- `hosted` - VASP-hosted wallet (exchange, custodian). Requires `vaspData` object.
+- `unhosted` - Self-custody wallet (hardware wallet, software wallet). No VASP required.
+
+**Party types:**
+- `individual` - Natural person. Requires `firstName` and `lastName`.
+- `entity` - Legal entity. Requires `fullName`.
+
+<Accordion title="Errors">
+**Validation failed (400):**
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "originator.firstName": ["The first name field is required for individual."],
+    "originator.address": ["The originator address field is required."]
+  }
+}
+```
+
+**Transaction not found (422):**
+```json
+{
+  "code": 0,
+  "message": "Something went wrong",
+  "errors": {
+    "uniqueId": ["Transaction not found"]
+  }
+}
+```
+
+**Transaction must be deposit (422):**
+```json
+{
+  "code": 0,
+  "message": "Something went wrong",
+  "errors": {
+    "uniqueId": ["Transaction must be a deposit"]
+  }
+}
+```
+
+**Transaction not ready for verification (422):**
+```json
+{
+  "code": 0,
+  "message": "Something went wrong",
+  "errors": {
+    "uniqueId": ["Transaction is not ready for verification"]
+  }
+}
+```
+
+**API disabled for region (422):**
+```json
+{
+  "code": 0,
+  "message": "Something went wrong",
+  "errors": {
+    "error": ["This endpoint is disabled for your region"]
+  }
+}
+```
+
+**Missing VASP for hosted wallet (400):**
+```json
+{
+  "code": 0,
+  "message": "Validation failed",
+  "errors": {
+    "vaspData": ["Either vaspId or vaspName is required for hosted wallets"]
+  }
+}
+```
+</Accordion>
+
+Beyond the errors above, this endpoint can return only the [common authentication errors](/api-reference/authentication).
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.TravelRuleDepositVerificationRequest{
+        UniqueID: "550e8400-e29b-41d4-a716-446655440000",
+        WalletType: sdk.TravelRuleDepositVerificationRequestWalletTypeHosted,
+        Originator: &sdk.TravelRuleOriginator{
+            Type: sdk.TravelRuleOriginatorTypeIndividual,
+            FirstName: sdk.String(
+                "Alice",
+            ),
+            LastName: sdk.String(
+                "Johnson",
+            ),
+            ResidenceCountry: "NLD",
+            WalletAddress: "0x9876543210fedcba9876543210fedcba98765432",
+            Address: &sdk.TravelRuleAddress{
+                Country: "NLD",
+                City: "Amsterdam",
+                AddressLine1: "Damrak 1",
+            },
+        },
+        VaspData: &sdk.TravelRuleVasp{
+            VaspID: sdk.String(
+                "vasp-002",
+            ),
+        },
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.TravelRule.SubmitTravelRuleDepositVerification(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**uniqueID:** `string` — Transaction external ID (from deposit/withdraw history)
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**walletType:** `*sdk.TravelRuleDepositVerificationRequestWalletType` 
+
+Wallet type:
+- `hosted` - VASP-hosted wallet (exchange, custodian). Requires `vaspData` object.
+- `unhosted` - Self-custody wallet (hardware wallet, software wallet).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**originator:** `*sdk.TravelRuleOriginator` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**vaspData:** `*sdk.TravelRuleVasp` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -7850,7 +5645,7 @@ client.CreditLine.GetCreditLineInfo(
 <dl>
 <dd>
 
-The endpoint returns a current [collateral balance](/glossary#balance-collateral).
+The endpoint returns the current [collateral balance](/glossary#balance-collateral) for one or all assets. The response maps each asset ticker to its collateral balance amount. Use the optional `ticker` parameter to filter results to a single asset.
 
 <Note>
 The API does not cache the response.
@@ -7892,8 +5687,8 @@ request := &sdk.CollateralAccountBalanceRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.CollateralAccountBalance(
@@ -7935,7 +5730,7 @@ If not specified, returns balances for all assets.
 <dl>
 <dd>
 
-**nonce:** `*string` — Unique request identifier
+**nonce:** `*int` — Unique request identifier
     
 </dd>
 </dl>
@@ -7959,7 +5754,7 @@ If not specified, returns balances for all assets.
 <dl>
 <dd>
 
-The endpoint retrieves collateral account balance summary with detailed breakdown per asset.
+The endpoint returns a detailed [collateral balance](/glossary#balance-collateral) summary with a per-asset breakdown. Each record includes the current balance, borrowed amount, and available balance with and without borrowing capacity. Use the optional `ticker` parameter to filter results to a single asset.
 
 <Note>
 The API does not cache the response.
@@ -8001,8 +5796,8 @@ request := &sdk.CollateralAccountBalanceSummaryRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.CollateralAccountBalanceSummary(
@@ -8044,7 +5839,7 @@ If not specified, returns summary for all assets.
 <dl>
 <dd>
 
-**nonce:** `*string` — Unique request identifier
+**nonce:** `*int` — Unique request identifier
     
 </dd>
 </dl>
@@ -8068,7 +5863,14 @@ If not specified, returns summary for all assets.
 <dl>
 <dd>
 
-The endpoint creates [limit order](/glossary#limit-order) using [collateral balance](/glossary#balance-collateral).
+The endpoint creates a [limit order](/glossary#limit-order) using [collateral balance](/glossary#balance-collateral). The order executes at the specified price or better. Use `buy` to open or increase a long position and `sell` to open or increase a short position. To close a position, place an opposite-side order matching the position amount.
+
+**Order validation rules** (per-market, from `GET /api/v4/public/markets`):
+- `amount` must have at most `stockPrec` decimal places
+- `price` must have at most `moneyPrec` decimal places
+- `amount` must be ≥ `minAmount`
+- `amount × price` must be ≥ `minTotal`
+- `amount × price` must be ≤ `maxTotal` (when `maxTotal` is not `"0"`)
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -8079,17 +5881,26 @@ For open long position use **buy**, for short **sell**. To close current positio
 </Note>
 
 <Note>
-  - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+  - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
 </Note>
 
 
 <Accordion title="Error Codes">
-  - `30` - default validation error code
+  - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
   - `31` - market validation failed
   - `32` - amount validation failed
   - `33` - price validation failed
-  - `36` - client_order_id validation failed
-  - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+  - `36` - clientOrderId validation failed
+  - `37` - `ioc=true` cannot be combined with `postOnly=true`
+  - `40` - `ioc=true` cannot be combined with `rpi=true`
+  - `43` - `rpi=true` is not allowed for the account
+  - `10` - insufficient balance to place the order
+  - `111` - resulting position would exceed the market maximum
+  - `112` - pending orders value would exceed the allowed maximum
+  - `113` - position side cannot be changed while open positions or orders exist
+  - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+  - `115` - order would open a position in the opposite direction (one-way mode)
+  - `116` - reduce-only validation failed (no position exists or order side matches position direction)
 </Accordion>
 </dd>
 </dl>
@@ -8129,8 +5940,11 @@ request := &sdk.CreateCollateralLimitOrderRequest{
             true,
         ),
         PositionSide: sdk.CreateCollateralLimitOrderRequestPositionSideLong.Ptr(),
+        ReduceOnly: sdk.Bool(
+            false,
+        ),
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CreateCollateralLimitOrder(
         context.TODO(),
@@ -8167,7 +5981,7 @@ client.CollateralTrading.CreateCollateralLimitOrder(
 <dl>
 <dd>
 
-**amount:** `string` — Amount of [stock](/glossary#stock) currency to buy or sell.
+**amount:** `string` — Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
     
 </dd>
 </dl>
@@ -8175,7 +5989,7 @@ client.CollateralTrading.CreateCollateralLimitOrder(
 <dl>
 <dd>
 
-**price:** `string` — Price in [money](/glossary#money) currency. Example: '9800'
+**price:** `string` — Limit order price in [money](/glossary#money) currency. Minimum price step is market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
     
 </dd>
 </dl>
@@ -8183,7 +5997,7 @@ client.CollateralTrading.CreateCollateralLimitOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Identifier should be unique and contain letters, dashes, numbers, dots or underscores.
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
     
 </dd>
 </dl>
@@ -8215,7 +6029,7 @@ When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto)
 <dl>
 <dd>
 
-**postOnly:** `*bool` — Orders are guaranteed to be the [maker](/glossary#maker) order when [executed](/glossary#finished-orders).
+**postOnly:** `*bool` — When `true`, guarantees the order executes as a [maker](/glossary#maker) order. The system rejects the order if it would immediately match as taker. Default: `false`.
     
 </dd>
 </dl>
@@ -8223,7 +6037,7 @@ When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto)
 <dl>
 <dd>
 
-**ioc:** `*bool` — An immediate or cancel order (IOC) is an order that attempts to execute all or part immediately and then cancels any unfilled portion.
+**ioc:** `*bool` — When `true`, the order executes all or part immediately and cancels any unfilled portion. Cannot be combined with `postOnly=true` or `rpi=true`.
     
 </dd>
 </dl>
@@ -8235,7 +6049,7 @@ When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto)
 
 Enables Retail Price Improvement (RPI) mode.
 
-RPI orders are post-only by design and cannot be used with `ioc=true`. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+RPI orders are post-only by design and cannot be used with `ioc=true`. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
     
 </dd>
 </dl>
@@ -8243,7 +6057,34 @@ RPI orders are post-only by design and cannot be used with `ioc=true`. The API r
 <dl>
 <dd>
 
-**positionSide:** `*sdk.CreateCollateralLimitOrderRequestPositionSide` — Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
+**positionSide:** `*sdk.CreateCollateralLimitOrderRequestPositionSide` 
+
+Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+- **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+- **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**reduceOnly:** `*bool` — When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**stp:** `*sdk.CreateCollateralLimitOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -8259,7 +6100,7 @@ RPI orders are post-only by design and cannot be used with `ioc=true`. The API r
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -8283,11 +6124,27 @@ RPI orders are post-only by design and cannot be used with `ioc=true`. The API r
 <dl>
 <dd>
 
-The endpoint creates multiple collateral limit orders.
+The endpoint creates multiple collateral [limit orders](/glossary#limit-order) in a single request. Each order in the `orders` array is validated and processed individually. The `stopOnFail` parameter controls whether processing stops at the first failure or continues through all orders. The response array contains a result or error object for each submitted order, in the same order as the request.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (per-order). Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+  - `31` - market validation failed
+  - `32` - amount validation failed
+  - `33` - price validation failed
+  - `36` - clientOrderId validation failed
+  - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+  - `10` - insufficient balance to place the order
+  - `111` - resulting position would exceed the market maximum
+  - `112` - pending orders value would exceed the allowed maximum
+  - `113` - position side cannot be changed while open positions or orders exist
+  - `114` - hedge mode position side does not match (per-order; sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+  - `115` - order would open a position in the opposite direction (one-way mode)
+  - `116` - reduce-only validation failed (no position exists or order side matches position direction). For bulk orders, this error appears per-order inside the response array.
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -8328,6 +6185,9 @@ request := &sdk.CreateCollateralBulkOrderRequest{
                     true,
                 ),
                 PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+                ReduceOnly: sdk.Bool(
+                    false,
+                ),
             },
             &sdk.CreateCollateralBulkOrderRequestOrdersItem{
                 Market: sdk.String(
@@ -8353,6 +6213,9 @@ request := &sdk.CreateCollateralBulkOrderRequest{
                     true,
                 ),
                 PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+                ReduceOnly: sdk.Bool(
+                    true,
+                ),
             },
             &sdk.CreateCollateralBulkOrderRequestOrdersItem{
                 Market: sdk.String(
@@ -8378,6 +6241,9 @@ request := &sdk.CreateCollateralBulkOrderRequest{
                     true,
                 ),
                 PositionSide: sdk.CreateCollateralBulkOrderRequestOrdersItemPositionSideLong.Ptr(),
+                ReduceOnly: sdk.Bool(
+                    false,
+                ),
             },
         },
         StopOnFail: sdk.Bool(
@@ -8386,8 +6252,8 @@ request := &sdk.CreateCollateralBulkOrderRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.CreateCollateralBulkOrder(
@@ -8439,7 +6305,7 @@ When false (default): All orders in the bulk request are processed regardless of
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -8463,11 +6329,25 @@ When false (default): All orders in the bulk request are processed regardless of
 <dl>
 <dd>
 
-The endpoint creates a collateral market order.
+The endpoint creates a [market order](/glossary#market-order) using [collateral balance](/glossary#balance-collateral). The order executes immediately at the best available market price. Optionally attach `stopLoss` and `takeProfit` prices to create an [OTO](/glossary#one-triggers-the-other-oto) order that activates after the market order fills.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+  - `31` - market validation failed
+  - `32` - amount validation failed
+  - `36` - clientOrderId validation failed
+  - `10` - insufficient balance to place the order
+  - `111` - resulting position would exceed the market maximum
+  - `112` - pending orders value would exceed the allowed maximum
+  - `113` - position side cannot be changed while open positions or orders exist
+  - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+  - `115` - order would open a position in the opposite direction (one-way mode)
+  - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -8489,8 +6369,11 @@ request := &sdk.CreateCollateralMarketOrderRequest{
         ClientOrderID: sdk.String(
             "order1987111",
         ),
+        ReduceOnly: sdk.Bool(
+            false,
+        ),
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CreateCollateralMarketOrder(
         context.TODO(),
@@ -8511,7 +6394,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-**market:** `string` 
+**market:** `string` — Available margin [market](/glossary#market). Example: BTC_USDT
     
 </dd>
 </dl>
@@ -8519,7 +6402,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-**side:** `*sdk.CreateCollateralMarketOrderRequestSide` 
+**side:** `*sdk.CreateCollateralMarketOrderRequestSide` — Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
     
 </dd>
 </dl>
@@ -8527,7 +6410,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-**amount:** `string` 
+**amount:** `string` — Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
     
 </dd>
 </dl>
@@ -8535,7 +6418,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` 
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
     
 </dd>
 </dl>
@@ -8544,6 +6427,10 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dd>
 
 **stopLoss:** `*string` 
+
+Stop loss price.
+
+When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
     
 </dd>
 </dl>
@@ -8552,6 +6439,10 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dd>
 
 **takeProfit:** `*string` 
+
+Take profit price.
+
+When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
     
 </dd>
 </dl>
@@ -8560,6 +6451,33 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dd>
 
 **positionSide:** `*sdk.CreateCollateralMarketOrderRequestPositionSide` 
+
+Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+- **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+- **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**reduceOnly:** `*bool` — When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**stp:** `*sdk.CreateCollateralMarketOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -8575,7 +6493,7 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -8599,11 +6517,26 @@ client.CollateralTrading.CreateCollateralMarketOrder(
 <dl>
 <dd>
 
-The endpoint creates a collateral stop-limit order.
+The endpoint creates a collateral [stop-limit order](/glossary#stop-limit-order) using [collateral balance](/glossary#balance-collateral). The order remains inactive until the market price reaches `activation_price`, then places a limit order at `price`. Optionally attach `stopLoss` and `takeProfit` prices to create an [OTO](/glossary#one-triggers-the-other-oto) order that activates after the stop-limit order fills.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+  - `31` - market validation failed
+  - `32` - amount validation failed
+  - `33` - price validation failed
+  - `36` - clientOrderId validation failed
+  - `10` - insufficient balance to place the order
+  - `111` - resulting position would exceed the market maximum
+  - `112` - pending orders value would exceed the allowed maximum
+  - `113` - position side cannot be changed while open positions or orders exist
+  - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+  - `115` - order would open a position in the opposite direction (one-way mode)
+  - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -8634,8 +6567,11 @@ request := &sdk.CreateCollateralStopLimitOrderRequest{
             "order1987111",
         ),
         PositionSide: sdk.CreateCollateralStopLimitOrderRequestPositionSideLong.Ptr(),
+        ReduceOnly: sdk.Bool(
+            false,
+        ),
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CreateCollateralStopLimitOrder(
         context.TODO(),
@@ -8656,7 +6592,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**market:** `string` 
+**market:** `string` — Available margin [market](/glossary#market). Example: BTC_USDT
     
 </dd>
 </dl>
@@ -8664,7 +6600,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**side:** `*sdk.CreateCollateralStopLimitOrderRequestSide` 
+**side:** `*sdk.CreateCollateralStopLimitOrderRequestSide` — Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
     
 </dd>
 </dl>
@@ -8672,7 +6608,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**amount:** `string` 
+**amount:** `string` — Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
     
 </dd>
 </dl>
@@ -8680,7 +6616,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**price:** `string` 
+**price:** `string` — Limit order price in [money](/glossary#money) currency. The order executes at the specified price or better after activation.
     
 </dd>
 </dl>
@@ -8688,7 +6624,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**activationPrice:** `string` 
+**activationPrice:** `string` — Trigger price in [money](/glossary#money) currency. The stop-limit order activates when the market price reaches the specified value.
     
 </dd>
 </dl>
@@ -8697,6 +6633,10 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dd>
 
 **stopLoss:** `*string` 
+
+Stop loss price.
+
+When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
     
 </dd>
 </dl>
@@ -8705,6 +6645,10 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dd>
 
 **takeProfit:** `*string` 
+
+Take profit price.
+
+When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
     
 </dd>
 </dl>
@@ -8712,7 +6656,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` 
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
     
 </dd>
 </dl>
@@ -8721,6 +6665,33 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dd>
 
 **positionSide:** `*sdk.CreateCollateralStopLimitOrderRequestPositionSide` 
+
+Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+- **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+- **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**reduceOnly:** `*bool` — When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**stp:** `*sdk.CreateCollateralStopLimitOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -8736,7 +6707,7 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -8760,11 +6731,25 @@ client.CollateralTrading.CreateCollateralStopLimitOrder(
 <dl>
 <dd>
 
-The endpoint creates a collateral trigger market order.
+The endpoint creates a collateral trigger [market order](/glossary#market-order) using [collateral balance](/glossary#balance-collateral). The order remains inactive until the market price reaches `activation_price`, then executes immediately at the best available market price. Optionally attach `stopLoss` and `takeProfit` prices to create an [OTO](/glossary#one-triggers-the-other-oto) order that activates after the trigger market order fills.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+  - `31` - market validation failed
+  - `32` - amount validation failed
+  - `36` - clientOrderId validation failed
+  - `10` - insufficient balance to place the order
+  - `111` - resulting position would exceed the market maximum
+  - `112` - pending orders value would exceed the allowed maximum
+  - `113` - position side cannot be changed while open positions or orders exist
+  - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+  - `115` - order would open a position in the opposite direction (one-way mode)
+  - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -8787,8 +6772,11 @@ request := &sdk.CreateCollateralTriggerMarketOrderRequest{
         ClientOrderID: sdk.String(
             "order1987111",
         ),
+        ReduceOnly: sdk.Bool(
+            false,
+        ),
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CreateCollateralTriggerMarketOrder(
         context.TODO(),
@@ -8809,7 +6797,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**market:** `string` 
+**market:** `string` — Available margin [market](/glossary#market). Example: BTC_USDT
     
 </dd>
 </dl>
@@ -8817,7 +6805,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**side:** `*sdk.CreateCollateralTriggerMarketOrderRequestSide` 
+**side:** `*sdk.CreateCollateralTriggerMarketOrderRequestSide` — Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
     
 </dd>
 </dl>
@@ -8825,7 +6813,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**amount:** `string` 
+**amount:** `string` — Amount of [stock](/glossary#stock) currency to buy or sell. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
     
 </dd>
 </dl>
@@ -8833,7 +6821,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**activationPrice:** `string` 
+**activationPrice:** `string` — Trigger price in [money](/glossary#money) currency. The trigger market order activates when the market price reaches the specified value.
     
 </dd>
 </dl>
@@ -8841,7 +6829,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` 
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
     
 </dd>
 </dl>
@@ -8850,6 +6838,10 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dd>
 
 **stopLoss:** `*string` 
+
+Stop loss price.
+
+When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a stop loss condition.
     
 </dd>
 </dl>
@@ -8858,6 +6850,10 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dd>
 
 **takeProfit:** `*string` 
+
+Take profit price.
+
+When provided, the system creates an [OTO](/glossary#one-triggers-the-other-oto) order with a take profit condition.
     
 </dd>
 </dl>
@@ -8866,6 +6862,33 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dd>
 
 **positionSide:** `*sdk.CreateCollateralTriggerMarketOrderRequestPositionSide` 
+
+Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side).
+
+- **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` whether the field is sent or omitted.
+- **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**reduceOnly:** `*bool` — When `true`, the order can only reduce or close an existing position — the order cannot increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. Cannot be combined with `stopLoss` or `takeProfit`. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**stp:** `*sdk.CreateCollateralTriggerMarketOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -8881,7 +6904,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -8905,7 +6928,7 @@ client.CollateralTrading.CreateCollateralTriggerMarketOrder(
 <dl>
 <dd>
 
-The endpoint retrieves collateral account summary.
+The endpoint returns a collateral account summary including total equity, used margin, free margin, unrealized profit and loss, and the current leverage level. The `marginFraction` field indicates the ratio of used margin to total equity.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
@@ -8928,8 +6951,8 @@ request := &sdk.CollateralAccountSummaryRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.CollateralAccountSummary(
@@ -8959,7 +6982,7 @@ client.CollateralTrading.CollateralAccountSummary(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -8983,11 +7006,15 @@ client.CollateralTrading.CollateralAccountSummary(
 <dl>
 <dd>
 
-The endpoint retrieves open positions.
+The endpoint returns all open [collateral](/glossary#balance-collateral) positions for the authenticated account. Each position includes entry price, unrealized PnL, margin allocation, liquidation price, and take-profit/stop-loss configuration. Use the optional `market` parameter to filter results to a single trading pair.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (returned when the optional `market` filter is malformed)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9009,8 +7036,8 @@ request := &sdk.GetOpenPositionsRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.GetOpenPositions(
@@ -9052,7 +7079,7 @@ If not specified, returns all open positions.
 <dl>
 <dd>
 
-**nonce:** `*string` — Unique request identifier
+**nonce:** `*int` — Unique request identifier
     
 </dd>
 </dl>
@@ -9076,11 +7103,17 @@ If not specified, returns all open positions.
 <dl>
 <dd>
 
-The endpoint closes a position.
+The endpoint closes an open [collateral](/glossary#balance-collateral) position at the current market price. The system places a market order in the opposite direction to fully close the specified position. Any attached take-profit or stop-loss orders are cancelled automatically.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (for example, a missing or malformed `positionId` or `market`)
+  - `104` - position not found. Returned whether the `positionId` does not exist, the position is already closed, or it is not owned by the account — these cases are not distinguished
+  - `10` - insufficient balance to fund the closing market order
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9100,7 +7133,7 @@ request := &sdk.ClosePositionRequest{
         PositionSide: sdk.ClosePositionRequestPositionSideLong.Ptr(),
         Market: "BTC_USDT",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.ClosePosition(
         context.TODO(),
@@ -9121,7 +7154,7 @@ client.CollateralTrading.ClosePosition(
 <dl>
 <dd>
 
-**positionID:** `int` 
+**positionID:** `int` — Unique identifier of the position to close. Obtain from the [open positions](/api-reference/collateral-trading/open-positions) endpoint.
     
 </dd>
 </dl>
@@ -9129,7 +7162,7 @@ client.CollateralTrading.ClosePosition(
 <dl>
 <dd>
 
-**positionSide:** `*sdk.ClosePositionRequestPositionSide` 
+**positionSide:** `*sdk.ClosePositionRequestPositionSide` — Defines the position direction when hedge mode is enabled. See [positionSide](/glossary#position-side)
     
 </dd>
 </dl>
@@ -9137,7 +7170,7 @@ client.CollateralTrading.ClosePosition(
 <dl>
 <dd>
 
-**market:** `string` 
+**market:** `string` — Market of the position to close. Example: BTC_USDT
     
 </dd>
 </dl>
@@ -9153,7 +7186,7 @@ client.CollateralTrading.ClosePosition(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -9177,10 +7210,22 @@ client.CollateralTrading.ClosePosition(
 <dl>
 <dd>
 
-The endpoint retrieves positions history.
+The endpoint returns the history of [collateral](/glossary#balance-collateral) position state changes for the authenticated account. Each record represents a position event (open, partial close, full close, or liquidation) and includes the order details that triggered the change. Use the optional `market` and `positionId` parameters to filter results.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
+</Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset` — or a date filter that violates `startDate` ≤ `endDate` ≤ `now + 1s`)
+</Accordion>
+
+<Note>
+**Date filter window:** `startDate` and `endDate` are optional and have no defaults. The endpoint enforces no maximum window and no lower-bound floor. The only ordering constraint is `startDate` ≤ `endDate` ≤ `now + 1s` — requests that violate the ordering are rejected with a validation error.
+</Note>
+
+<Warning>
+**Breaking change — April 29, 2026.** The `positionSide` field is no longer returned in the Position History response. Use `side` (same enum: `LONG`, `SHORT`, `BOTH`) plus `isHedge` (boolean) instead. Integrations reading `positionSide` from `/api/v4/collateral-account/positions/history` must migrate before consuming the new response.
 </Warning>
 </dd>
 </dl>
@@ -9206,8 +7251,8 @@ request := &sdk.GetPositionsHistoryRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.GetPositionsHistory(
@@ -9230,6 +7275,10 @@ client.CollateralTrading.GetPositionsHistory(
 <dd>
 
 **market:** `*string` 
+
+Filter by specific market. Example: BTC_USDT
+
+If not specified, returns position history for all markets.
     
 </dd>
 </dl>
@@ -9237,7 +7286,23 @@ client.CollateralTrading.GetPositionsHistory(
 <dl>
 <dd>
 
-**positionID:** `*int` 
+**positionID:** `*int` — Filter by specific position identifier. If not specified, returns history for all positions.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**startDate:** `*int` — Start of the query window as a Unix timestamp in seconds. Optional, no default. Must be ≤ `endDate`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**endDate:** `*int` — End of the query window as a Unix timestamp in seconds. Optional, no default. Must be ≥ `startDate` and ≤ `now + 1s`; violating values are rejected with a validation error.
     
 </dd>
 </dl>
@@ -9253,7 +7318,7 @@ client.CollateralTrading.GetPositionsHistory(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -9277,11 +7342,20 @@ client.CollateralTrading.GetPositionsHistory(
 <dl>
 <dd>
 
-The endpoint retrieves funding history.
+The endpoint returns the funding rate payment history for [collateral](/glossary#balance-collateral) positions. Each record includes the funding rate, settlement price, position amount, and the resulting funding payment. Use the optional `market` parameter to filter results to a single trading pair. The response supports pagination via `limit` and `offset` parameters. Results are ordered by funding time (`fundingTime`), newest first.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
+
+<Note>
+This endpoint supports pagination. Use `limit` (default: 100) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when `records.length < limit`. An empty `records` array means you have paged past the end; receiving exactly `limit` records does not guarantee that another page exists.
+</Note>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+  - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9309,8 +7383,8 @@ request := &sdk.GetFundingHistoryRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.GetFundingHistory(
@@ -9368,7 +7442,7 @@ If not specified, returns funding history for all markets.
 <dl>
 <dd>
 
-**nonce:** `*string` — Unique request identifier
+**nonce:** `*int` — Unique request identifier
     
 </dd>
 </dl>
@@ -9392,11 +7466,27 @@ If not specified, returns funding history for all markets.
 <dl>
 <dd>
 
-The endpoint changes account leverage.
+The endpoint changes the leverage level for the [collateral](/glossary#balance-collateral) trading account. Leverage determines the ratio of borrowed funds to collateral and directly affects margin requirements and liquidation thresholds. Accepted values: `1`, `2`, `3`, `5`, `10`, `20`, `50`, `100`.
+
+Each leverage level has a corresponding bracket defining the maximum position size for the tier. When a position exceeds the bracket limit, the system applies higher tiers with progressively lower leverage. Query market-specific brackets via `GET /api/v4/public/futures`.
 
 <Warning>
 Rate limit: 1000 requests/10 sec.
 </Warning>
+
+<Note>
+A market's `max_leverage` field (from `GET /api/v4/public/futures`) may be lower than `100`. Setting leverage above a market's maximum results in an error.
+</Note>
+
+<Warning>
+Changing leverage affects **all open positions** across margin and futures trading. Decreasing leverage increases margin requirements — if available funds are insufficient to support the new level, the request returns an error.
+</Warning>
+
+<Accordion title="Error Codes">
+  - `30` - invalid `leverage` value (out of range, non-integer, or wrong type). Setting leverage above a market's `max_leverage` also surfaces here as an out-of-range value
+  - `17` - the requested leverage is valid but available balance is insufficient to support it
+  - `113` - leverage cannot be changed while open positions or orders exist
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9414,7 +7504,7 @@ Rate limit: 1000 requests/10 sec.
 request := &sdk.ChangeCollateralAccountLeverageRequest{
         Leverage: 5,
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.ChangeCollateralAccountLeverage(
         context.TODO(),
@@ -9435,7 +7525,7 @@ client.CollateralTrading.ChangeCollateralAccountLeverage(
 <dl>
 <dd>
 
-**leverage:** `int` 
+**leverage:** `int` — Target leverage level. Accepted values: `1`, `2`, `3`, `5`, `10`, `20`, `50`, `100`. The effective maximum depends on the market's `max_leverage`.
     
 </dd>
 </dl>
@@ -9451,7 +7541,7 @@ client.CollateralTrading.ChangeCollateralAccountLeverage(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -9475,7 +7565,7 @@ client.CollateralTrading.ChangeCollateralAccountLeverage(
 <dl>
 <dd>
 
-The endpoint retrieves hedge mode status.
+The endpoint returns the current [hedge mode](/glossary#hedge-mode) status for the collateral trading account. When hedge mode is enabled (`true`), the account supports simultaneous long and short positions on the same market. When disabled (`false`), the account operates in one-way mode.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
@@ -9498,8 +7588,8 @@ request := &sdk.GetCollateralHedgeModeRequest{
         Request: sdk.String(
             "{{request}}",
         ),
-        Nonce: sdk.String(
-            "{{nonce}}",
+        Nonce: sdk.Int(
+            1594297865000,
         ),
     }
 client.CollateralTrading.GetCollateralHedgeMode(
@@ -9529,7 +7619,7 @@ client.CollateralTrading.GetCollateralHedgeMode(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -9553,11 +7643,20 @@ client.CollateralTrading.GetCollateralHedgeMode(
 <dl>
 <dd>
 
-The endpoint updates hedge mode.
+The endpoint enables or disables [hedge mode](/glossary#hedge-mode) for the collateral trading account. When hedge mode is enabled (`true`), the account supports simultaneous long and short positions on the same market. When disabled (`false`), the account operates in one-way mode.
 
 <Warning>
 Rate limit: 1000 requests/10 sec.
 </Warning>
+
+<Warning>
+Switching between one-way mode and hedge mode requires **no open positions**. Close all futures positions before toggling the mode. If the switch does not take effect immediately after closing positions, wait approximately 15 seconds and retry.
+</Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (for example, a missing or non-boolean `hedgeMode` value)
+  - `113` - hedge mode cannot be changed while open positions or orders exist
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9575,7 +7674,7 @@ Rate limit: 1000 requests/10 sec.
 request := &sdk.UpdateHedgeModeRequest{
         HedgeMode: true,
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.UpdateHedgeMode(
         context.TODO(),
@@ -9596,7 +7695,7 @@ client.CollateralTrading.UpdateHedgeMode(
 <dl>
 <dd>
 
-**hedgeMode:** `bool` 
+**hedgeMode:** `bool` — Set to `true` to enable hedge mode (simultaneous long and short positions) or `false` to use one-way mode.
     
 </dd>
 </dl>
@@ -9612,7 +7711,85 @@ client.CollateralTrading.UpdateHedgeMode(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CollateralTrading.GetCollateralAccountAdlQuantile(request) -> []*sdk.GetCollateralAccountAdlQuantileResponseItem</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns the [Auto-Deleveraging (ADL)](/glossary#auto-deleveraging-adl) quantile for each perpetual market in which the authenticated account holds an open position. Each entry exposes the deleveraging-priority value for the long and short sides of the position, where `0` indicates the lowest deleveraging priority and `4` indicates the highest. The endpoint returns an empty array when the account has no perpetual positions.
+
+<Warning>
+Rate limit: 12000 requests/10 sec.
+</Warning>
+
+<Note>
+Only perpetual markets (markets with the `_PERP` suffix) are returned. Spot and margin markets are not included.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetCollateralAccountAdlQuantileRequest{
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CollateralTrading.GetCollateralAccountAdlQuantile(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**request:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -9636,11 +7813,16 @@ client.CollateralTrading.UpdateHedgeMode(
 <dl>
 <dd>
 
-The endpoint retrieves active conditional orders.
+The endpoint returns active (unexecuted) conditional orders for the authenticated account. Conditional orders include [OCO](/glossary#one-cancels-the-other-oco) and [OTO](/glossary#one-triggers-the-other-oto) types. The response uses polymorphic structure — each record contains a `type` field (`oco` or `oto`) that determines the record shape. Use the optional `market` parameter to filter results.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+  - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9686,6 +7868,10 @@ client.CollateralTrading.GetConditionalOrders(
 <dd>
 
 **market:** `*string` 
+
+Filter by specific market. Example: BTC_USDT
+
+If not specified, returns conditional orders for all markets.
     
 </dd>
 </dl>
@@ -9693,7 +7879,7 @@ client.CollateralTrading.GetConditionalOrders(
 <dl>
 <dd>
 
-**offset:** `*int` 
+**offset:** `*int` — Number of records to skip for pagination.
     
 </dd>
 </dl>
@@ -9701,7 +7887,7 @@ client.CollateralTrading.GetConditionalOrders(
 <dl>
 <dd>
 
-**limit:** `*int` 
+**limit:** `*int` — Maximum number of records to return per page.
     
 </dd>
 </dl>
@@ -9717,7 +7903,7 @@ client.CollateralTrading.GetConditionalOrders(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -9741,11 +7927,20 @@ client.CollateralTrading.GetConditionalOrders(
 <dl>
 <dd>
 
-The endpoint retrieves active OCO orders.
+The endpoint returns active (unexecuted) [OCO](/glossary#one-cancels-the-other-oco) orders for the authenticated account. Each OCO order contains a `stop_loss` and `take_profit` leg. When one leg executes, the system cancels the other automatically. Use the optional `market` parameter to filter results.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
+
+<Note>
+This endpoint supports pagination. Use `limit` (default: 50) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` OCO orders are returned. An empty array means you have paged past the end; receiving exactly `limit` orders does not guarantee that another page exists.
+</Note>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (invalid pagination — `limit` outside 1–100 or negative `offset`)
+  - `31` - market validation failed (the `market` filter is unknown or not available for collateral trading)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9791,6 +7986,10 @@ client.CollateralTrading.GetOcoOrders(
 <dd>
 
 **market:** `*string` 
+
+Filter by specific market. Example: BTC_USDT
+
+If not specified, returns OCO orders for all markets.
     
 </dd>
 </dl>
@@ -9798,7 +7997,7 @@ client.CollateralTrading.GetOcoOrders(
 <dl>
 <dd>
 
-**offset:** `*int` 
+**offset:** `*int` — Number of records to skip for pagination.
     
 </dd>
 </dl>
@@ -9806,7 +8005,7 @@ client.CollateralTrading.GetOcoOrders(
 <dl>
 <dd>
 
-**limit:** `*int` 
+**limit:** `*int` — Maximum number of records to return per page.
     
 </dd>
 </dl>
@@ -9822,7 +8021,7 @@ client.CollateralTrading.GetOcoOrders(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -9846,11 +8045,26 @@ client.CollateralTrading.GetOcoOrders(
 <dl>
 <dd>
 
-The endpoint creates a collateral OCO order.
+The endpoint creates a collateral [OCO](/glossary#one-cancels-the-other-oco) (one-cancels-the-other) order using [collateral balance](/glossary#balance-collateral). An OCO order combines a limit order (take-profit leg) and a stop-limit order (stop-loss leg) into a single conditional group. When one leg executes, the system cancels the other automatically.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code. Also returned when `reduceOnly=true` is combined with `stopLoss` or `takeProfit`
+  - `31` - market validation failed
+  - `32` - amount validation failed
+  - `33` - price validation failed
+  - `36` - clientOrderId validation failed
+  - `10` - insufficient balance to place the order
+  - `111` - resulting position would exceed the market maximum
+  - `112` - pending orders value would exceed the allowed maximum
+  - `113` - position side cannot be changed while open positions or orders exist
+  - `114` - hedge mode position side does not match (sent `BOTH` or omitted `positionSide` in hedge mode, or sent `LONG`/`SHORT` in one-way mode)
+  - `115` - order would open a position in the opposite direction (one-way mode)
+  - `116` - reduce-only validation failed (no position exists or order side matches position direction)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -9875,8 +8089,12 @@ request := &sdk.CreateCollateralOcoOrderRequest{
         ClientOrderID: sdk.String(
             "order1987111",
         ),
+        ReduceOnly: sdk.Bool(
+            false,
+        ),
+        PositionSide: sdk.CreateCollateralOcoOrderRequestPositionSideLong.Ptr(),
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CreateCollateralOcoOrder(
         context.TODO(),
@@ -9897,7 +8115,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**market:** `string` 
+**market:** `string` — Available margin [market](/glossary#market). Example: BTC_USDT
     
 </dd>
 </dl>
@@ -9905,7 +8123,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**side:** `*sdk.CreateCollateralOcoOrderRequestSide` 
+**side:** `*sdk.CreateCollateralOcoOrderRequestSide` — Order direction. Use `buy` to open or increase a long position and `sell` to open or increase a short position.
     
 </dd>
 </dl>
@@ -9913,7 +8131,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**amount:** `string` 
+**amount:** `string` — Amount of [stock](/glossary#stock) currency for both legs of the OCO order. Minimum and step values are market-dependent — query the [market info](/api-reference/market-data/market-info) endpoint for constraints.
     
 </dd>
 </dl>
@@ -9921,7 +8139,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**price:** `string` 
+**price:** `string` — Limit order price in [money](/glossary#money) currency for the take-profit leg.
     
 </dd>
 </dl>
@@ -9929,7 +8147,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**activationPrice:** `string` 
+**activationPrice:** `string` — Trigger price in [money](/glossary#money) currency for the stop-loss leg. The stop-limit order activates when the market price reaches the specified value.
     
 </dd>
 </dl>
@@ -9937,7 +8155,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**stopLimitPrice:** `string` 
+**stopLimitPrice:** `string` — Execution price in [money](/glossary#money) currency for the stop-loss leg. After activation, the stop-loss leg places a limit order at the specified price.
     
 </dd>
 </dl>
@@ -9945,7 +8163,42 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` 
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**reduceOnly:** `*bool` — When `true`, both legs of the OCO order can only reduce or close an existing position — neither leg can increase the position or open a new one. If the order amount exceeds the current position size, the system reduces the order to match — the response returns the adjusted amount. The API returns error code `116` if no open position exists or the order side matches the position direction. See [reduce-only](/glossary#reduce-only).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**positionSide:** `*sdk.CreateCollateralOcoOrderRequestPositionSide` 
+
+Position direction. Optional at the request layer but functionally required when hedge mode is enabled. See [positionSide](/glossary#position-side). Both legs of the OCO inherit the value.
+
+- **One-way mode** (default account mode): the field is ignored. Orders always use `BOTH`, and the response returns `positionSide: "BOTH"` on each leg whether the field is sent or omitted.
+- **Hedge mode**: the field MUST be `LONG` or `SHORT`. Sending `BOTH`, omitting the field, or sending a value that does not match the account's mode causes the trade service to reject the order with error code `114` (`Hedge mode position side does not match`).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**stp:** `*sdk.CreateCollateralOcoOrderRequestStp` 
+
+Self-trade prevention mode. The value applies to both legs of the OCO order. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -9961,7 +8214,7 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -9985,11 +8238,29 @@ client.CollateralTrading.CreateCollateralOcoOrder(
 <dl>
 <dd>
 
-The endpoint cancels a conditional order.
+The endpoint cancels an active conditional order ([OCO](/glossary#one-cancels-the-other-oco) or [OTO](/glossary#one-triggers-the-other-oto)) on the specified market. Both legs of the conditional order are cancelled. Use the [query unexecuted conditional orders](/api-reference/collateral-trading/query-unexecuted-conditional-orders) endpoint to obtain the conditional order `id` before cancellation.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code
+  - `31` - market validation failed
+  - `2` - conditional order not found. Returned whether the `id` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+</Accordion>
+
+<Accordion title="Errors">
+```json
+{
+  "code": 2,
+  "message": "Inner validation failed",
+  "errors": {
+    "id": ["Unexecuted order was not found."]
+  }
+}
+```
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -10008,7 +8279,7 @@ request := &sdk.CancelConditionalOrderRequest{
         Market: "BTC_USDT",
         ID: 117703764514,
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CancelConditionalOrder(
         context.TODO(),
@@ -10029,7 +8300,7 @@ client.CollateralTrading.CancelConditionalOrder(
 <dl>
 <dd>
 
-**market:** `string` 
+**market:** `string` — Market of the conditional order to cancel. Example: BTC_USDT
     
 </dd>
 </dl>
@@ -10037,7 +8308,7 @@ client.CollateralTrading.CancelConditionalOrder(
 <dl>
 <dd>
 
-**id:** `int` 
+**id:** `int` — Conditional order identifier. Obtain from the [query unexecuted conditional orders](/api-reference/collateral-trading/query-unexecuted-conditional-orders) endpoint.
     
 </dd>
 </dl>
@@ -10053,7 +8324,7 @@ client.CollateralTrading.CancelConditionalOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -10082,6 +8353,24 @@ The endpoint cancels an OCO order.
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code
+  - `31` - market validation failed
+  - `2` - OCO order not found. Returned whether the `orderId` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+</Accordion>
+
+<Accordion title="Errors">
+```json
+{
+  "code": 2,
+  "message": "Inner validation failed",
+  "errors": {
+    "orderId": ["Unexecuted order was not found."]
+  }
+}
+```
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -10100,7 +8389,7 @@ request := &sdk.CancelOcoOrderRequest{
         Market: "BTC_USDT",
         OrderID: 117703764514,
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CancelOcoOrder(
         context.TODO(),
@@ -10145,7 +8434,7 @@ client.CollateralTrading.CancelOcoOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -10174,6 +8463,24 @@ The endpoint cancels an OTO order.
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code
+  - `31` - market validation failed
+  - `2` - OTO order not found. Returned whether the `otoId` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+</Accordion>
+
+<Accordion title="Errors">
+```json
+{
+  "code": 2,
+  "message": "Inner validation failed",
+  "errors": {
+    "otoId": ["Unexecuted order was not found."]
+  }
+}
+```
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -10192,7 +8499,7 @@ request := &sdk.CancelOtoOrderRequest{
         Market: "BTC_USDT",
         OtoID: 117703764514,
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.CollateralTrading.CancelOtoOrder(
         context.TODO(),
@@ -10237,7 +8544,7 @@ client.CollateralTrading.CancelOtoOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -10262,9 +8569,9 @@ client.CollateralTrading.CancelOtoOrder(
 <dl>
 <dd>
 
-Returns maker and taker fees for a specific market.
+Returns the account's default spot and futures maker and taker fees, plus any custom per-market overrides.
 
-The `maker` and `taker` fields represent spot trading fees. The `futures_maker` and `futures_taker` fields represent futures trading fees.
+The `maker` and `taker` fields represent default spot trading fees. The `futures_maker` and `futures_taker` fields represent default futures trading fees. The `custom_fee` object lists per-market overrides, keyed by market name.
 
 The system calculates the effective futures fee as the lower value between the user-specific custom fee and the market-specific fee.
 
@@ -10286,7 +8593,9 @@ Example: If the custom futures taker fee equals `0.026` and the market fee equal
 
 ```go
 request := &sdk.GetMarketFeeRequest{
-        Market: "BTC_USDT",
+        Market: sdk.String(
+            "BTC_USDT",
+        ),
     }
 client.MarketFee.GetMarketFee(
         context.TODO(),
@@ -10307,15 +8616,7 @@ client.MarketFee.GetMarketFee(
 <dl>
 <dd>
 
-**market:** `string` 
-
-Market to query.
-
-If the request includes the `market` parameter, the system returns fees for the specified market only.
-
-When fee values are identical across markets, the response contains identical values regardless of the specified market.
-
-Example: BTC_USDT
+**market:** `*string` — Optional. Currently ignored by the API — all market fees are returned regardless of the value provided. Retained for backward compatibility. Example: BTC_USDT
     
 </dd>
 </dl>
@@ -10340,7 +8641,7 @@ Example: BTC_USDT
 <dl>
 <dd>
 
-The endpoint retrieves the [trade balance](/glossary#balance-spotbalance-trade) by currency [ticker](/glossary#ticker) or all balances.
+The endpoint retrieves the [trade balance](/glossary#balance-spotbalance-trade) by currency [ticker](/glossary#ticker) or all balances. When the `ticker` parameter is provided, the response contains a single currency entry. When omitted, the response contains all currencies with non-zero balances. Each entry includes the `available` balance (funds ready to trade) and the `freeze` balance (funds locked in open orders).
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
@@ -10427,7 +8728,7 @@ client.SpotTrading.TradeAccountBalance(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -10451,7 +8752,14 @@ client.SpotTrading.TradeAccountBalance(
 <dl>
 <dd>
 
-The endpoint creates [limit trading order](/glossary#limit-order).
+The endpoint creates a [limit trading order](/glossary#limit-order). The order remains on the order book until filled, cancelled, or expired. Minimum and maximum values for `amount` and `price` are market-dependent — query `GET /api/v4/public/markets` for per-market constraints.
+
+**Order validation rules** (per-market, from `GET /api/v4/public/markets`):
+- `amount` must have at most `stockPrec` decimal places
+- `price` must have at most `moneyPrec` decimal places
+- `amount` must be ≥ `minAmount`
+- `amount × price` must be ≥ `minTotal`
+- `amount × price` must be ≤ `maxTotal` (when `maxTotal` is not `"0"`)
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -10459,7 +8767,10 @@ Rate limit: 10000 requests/10 sec.
 
 <Note>
   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
-  - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+  - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+  - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
+  - `retail=true` and `rpi=true` cannot be combined. The API returns error code `41` when both flags are set.
+  - `retail=true` has no effect on a `postOnly=true` order. Post-only orders are makers and cannot be retail takers.
 </Note>
 
 <Accordion title="Error Codes">
@@ -10467,8 +8778,12 @@ Rate limit: 10000 requests/10 sec.
   - `31` - market validation failed
   - `32` - amount validation failed
   - `33` - price validation failed
-  - `36` - client_order_id validation failed
-  - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+  - `36` - clientOrderId validation failed
+  - `37` - `ioc=true` cannot be combined with `postOnly=true`
+  - `40` - `ioc=true` cannot be combined with `rpi=true`
+  - `41` - `retail=true` cannot be combined with `rpi=true`
+  - `42` - `retail=true` is not allowed for the account
+  - `43` - `rpi=true` is not allowed for the account
 </Accordion>
 
 <Accordion title="Errors">
@@ -10553,7 +8868,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": ["ClientOrderId field should be a string."]
+    "clientOrderId": ["ClientOrderId field should be a string."]
   }
 }
 ```
@@ -10563,7 +8878,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": [
+    "clientOrderId": [
       "ClientOrderId field should contain only latin letters, numbers and dashes."
     ]
   }
@@ -10575,7 +8890,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": [
+    "clientOrderId": [
       "This client order id is already used by the current account."
     ]
   }
@@ -10643,6 +8958,26 @@ Rate limit: 10000 requests/10 sec.
   }
 }
 ```
+
+```json
+{
+  "code": 41,
+  "message": "Validation failed",
+  "errors": {
+    "retail": ["api.tradeErrors.flagsCantBeCombined.rpiRetail"]
+  }
+}
+```
+
+```json
+{
+  "code": 42,
+  "message": "Validation failed",
+  "errors": {
+    "retail": ["api.validation.retail.not_allowed"]
+  }
+}
+```
 </Accordion>
 </dd>
 </dl>
@@ -10664,7 +8999,7 @@ request := &sdk.LimitOrderRequest{
         Amount: "0.001",
         Price: "9800",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CreateLimitOrder(
         context.TODO(),
@@ -10685,7 +9020,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**market:** `string` — Available [market](/glossary#market). Example: BTC_USDT
+**market:** `string` — Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.
     
 </dd>
 </dl>
@@ -10693,7 +9028,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**side:** `*sdk.LimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
+**side:** `*sdk.LimitOrderRequestSide` — Order side. Allowed values: `buy`, `sell`.
     
 </dd>
 </dl>
@@ -10701,7 +9036,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**amount:** `string` — Amount of [stock](/glossary#stock) currency to buy or sell. Example: '0.001' or 0.001
+**amount:** `string` — Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`. Precision: `stockPrec`.
     
 </dd>
 </dl>
@@ -10709,7 +9044,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**price:** `string` — Price in money currency. Example: '9800' or 9800
+**price:** `string` — Limit price per unit in quote (money) currency. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
     
 </dd>
 </dl>
@@ -10717,7 +9052,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Identifier should be unique and contain letters, dashes, numbers, dots or underscores. The identifier must be unique.
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
     
 </dd>
 </dl>
@@ -10725,7 +9060,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**postOnly:** `*bool` — [Orders](/glossary#orders) are guaranteed to be the [maker](/glossary#maker) order when [executed](/glossary#finished-orders). Variables: 'true' / 'false' Example: 'false'.
+**postOnly:** `*bool` — Post-only flag. When `true`, the order executes only as a [maker](/glossary#maker) order and the system rejects the order if it would match immediately. Default: `false`.
     
 </dd>
 </dl>
@@ -10735,10 +9070,10 @@ client.SpotTrading.CreateLimitOrder(
 
 **ioc:** `*bool` 
 
-Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion.
+Immediate-or-cancel (IOC) flag. When `true`, the matching engine executes all or part of the order immediately and cancels any unfilled portion. Default: `false`.
 
 IOC does not support `rpi=true` because RPI uses post-only behavior by design.
-The API returns error code `37` when a request sets both `ioc=true` and `rpi=true`.
+The API returns error code `40` when a request sets both `ioc=true` and `rpi=true`.
 
 Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
     
@@ -10748,7 +9083,7 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 <dl>
 <dd>
 
-**bboRole:** `*int` — When the [BBO](/glossary#bbo) option is activated for Limit orders, the system selects the best market prices for execution. Variables: 1 - Queue Method / 2 - Counterparty Method. Use method 2 with ioc flag. Example: 2.
+**bboRole:** `*int` — Best Bid/Offer ([BBO](/glossary#bbo)) execution method. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method. Use method `2` with the `ioc` flag.
     
 </dd>
 </dl>
@@ -10756,7 +9091,13 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 <dl>
 <dd>
 
-**stp:** `*sdk.LimitOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
+**stp:** `*sdk.LimitOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -10766,14 +9107,32 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 
 **rpi:** `*bool` 
 
-Enables Retail Price Improvement (RPI) mode.
+Enables Retail Price Improvement (RPI) mode. Default: `false`.
 
 RPI orders use post-only behavior by design. An RPI order does not support `ioc=true`.
-The API returns error code `37` when a request sets both `rpi=true` and `ioc=true`.
+The API returns error code `40` when a request sets both `rpi=true` and `ioc=true`.
 RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
-RPI executions may apply custom fees or rebates, especially when trading via sub-accounts. Use Query Market Fee / Query All Market Fees to verify effective fees.
+RPI executions may apply custom fees or rebates, especially when trading via sub-accounts. Use Query Market Fees to verify effective fees.
 
 Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**retail:** `*bool` 
+
+Retail-source taker flag. When `true`, the order is eligible to match against orders submitted by RPI makers and may receive price improvement at execution. Default: `false`.
+
+The Retail flag must be enabled on the account before a private-API request can set `retail=true`. Contact the account manager to enable the Retail flag.
+
+The Retail flag cannot be combined with `rpi`. The API returns error code `41` when a request sets both `retail=true` and `rpi=true`.
+
+The flag has no effect on a `postOnly=true` order. Post-only orders are [makers](/glossary#maker); only takers carry the retail designation.
+
+Refer to [Retail flag](/glossary#retail-flag) and [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
     
 </dd>
 </dl>
@@ -10789,7 +9148,7 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -10813,7 +9172,7 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 <dl>
 <dd>
 
-The endpoint creates bulk [limit trading orders](/glossary#limit-order).
+The endpoint creates bulk [limit trading orders](/glossary#limit-order). Each order in the batch follows the same validation rules as a single limit order. The `stopOnFail` parameter controls whether processing stops at the first failure or continues through all orders. The response contains a result-or-error pair for each submitted order.
 
 <Warning>
   Limit: From 1 to 20 orders per request.
@@ -10821,7 +9180,10 @@ The endpoint creates bulk [limit trading orders](/glossary#limit-order).
 
 <Note>
   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
-  - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `37` when both `rpi=true` and `ioc=true` are used.
+  - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+  - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
+  - `retail=true` and `rpi=true` cannot be combined. The API returns error code `41` when both flags are set on an item.
+  - `retail=true` has no effect on a `postOnly=true` item. Post-only orders are makers and cannot be retail takers.
 </Note>
 
 
@@ -10830,8 +9192,12 @@ The endpoint creates bulk [limit trading orders](/glossary#limit-order).
   - `31` - market validation failed
   - `32` - amount validation failed
   - `33` - price validation failed
-  - `36` - client_order_id validation failed
-  - `37` - `ioc=true` cannot be used with `postOnly=true` or `rpi=true`
+  - `36` - clientOrderId validation failed
+  - `37` - `ioc=true` cannot be combined with `postOnly=true`
+  - `40` - `ioc=true` cannot be combined with `rpi=true`
+  - `41` - `retail=true` cannot be combined with `rpi=true`
+  - `42` - `retail=true` is not allowed for the account
+  - `43` - `rpi=true` is not allowed for the account
 </Accordion>
 
 <Accordion title="Errors">
@@ -10889,6 +9255,26 @@ Individual order errors (in multiply response):
   }
 }
 ```
+
+```json
+{
+  "code": 41,
+  "message": "Validation failed",
+  "errors": {
+    "retail": ["api.tradeErrors.flagsCantBeCombined.rpiRetail"]
+  }
+}
+```
+
+```json
+{
+  "code": 42,
+  "message": "Validation failed",
+  "errors": {
+    "retail": ["api.validation.retail.not_allowed"]
+  }
+}
+```
 </Accordion>
 </dd>
 </dl>
@@ -10929,6 +9315,9 @@ request := &sdk.CreateBulkLimitOrderRequest{
                 Rpi: sdk.Bool(
                     true,
                 ),
+                Retail: sdk.Bool(
+                    false,
+                ),
             },
             &sdk.BulkOrderItem{
                 Side: sdk.BulkOrderItemSideSell.Ptr(),
@@ -10951,6 +9340,9 @@ request := &sdk.CreateBulkLimitOrderRequest{
                     "",
                 ),
                 Rpi: sdk.Bool(
+                    false,
+                ),
+                Retail: sdk.Bool(
                     true,
                 ),
             },
@@ -10975,7 +9367,10 @@ request := &sdk.CreateBulkLimitOrderRequest{
                     "",
                 ),
                 Rpi: sdk.Bool(
-                    true,
+                    false,
+                ),
+                Retail: sdk.Bool(
+                    false,
                 ),
             },
         },
@@ -11029,7 +9424,7 @@ When false (default): All orders in the bulk request are processed regardless of
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -11053,7 +9448,7 @@ When false (default): All orders in the bulk request are processed regardless of
 <dl>
 <dd>
 
-The endpoint creates [market trading order](/glossary#market-order).
+The endpoint creates a [market trading order](/glossary#market-order). The matching engine executes the order immediately at the best available price. For buy orders, `amount` represents the total in quote (money) currency to spend. For sell orders, `amount` represents the quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, and `maxTotal`.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -11063,7 +9458,7 @@ Rate limit: 10000 requests/10 sec.
 - `30` - default validation error code
 - `31` - market validation failed
 - `32` - amount validation failed
-- `36` - client_order_id validation failed
+- `36` - clientOrderId validation failed
 </Accordion>
 
 <Accordion title="Errors">
@@ -11147,7 +9542,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": ["ClientOrderId field should be a string."]
+    "clientOrderId": ["ClientOrderId field should be a string."]
   }
 }
 ```
@@ -11157,7 +9552,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": [
+    "clientOrderId": [
       "ClientOrderId field should contain only latin letters, numbers and dashes."
     ]
   }
@@ -11183,7 +9578,7 @@ request := &sdk.MarketOrderRequest{
         Side: sdk.MarketOrderRequestSideBuy,
         Amount: "100",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CreateMarketOrder(
         context.TODO(),
@@ -11204,7 +9599,61 @@ client.SpotTrading.CreateMarketOrder(
 <dl>
 <dd>
 
-**request:** `*sdk.MarketOrderRequest` 
+**market:** `string` — Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**side:** `*sdk.MarketOrderRequestSide` — Order side. Allowed values: `buy`, `sell`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**amount:** `string` — For buy orders: total in quote (money) currency to spend. For sell orders: quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**stp:** `*sdk.MarketOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -11228,7 +9677,7 @@ client.SpotTrading.CreateMarketOrder(
 <dl>
 <dd>
 
-The endpoint creates buy [stock](/glossary#stock) market trading [order](/glossary#orders).
+The endpoint creates a [stock](/glossary#stock) market trading [order](/glossary#orders). Unlike `POST /api/v4/order/market`, the `amount` parameter always represents the quantity in the base (stock) currency for both buy and sell sides. The matching engine executes the order immediately at the best available price. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, and `maxTotal`.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -11238,7 +9687,7 @@ Rate limit: 10000 requests/10 sec.
 - `30` - default validation error code
 - `31` - market validation failed
 - `32` - amount validation failed
-- `36` - client_order_id validation failed
+- `36` - clientOrderId validation failed
 </Accordion>
 
 <Accordion title="Errors">
@@ -11322,7 +9771,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": ["ClientOrderId field should be a string."]
+    "clientOrderId": ["ClientOrderId field should be a string."]
   }
 }
 ```
@@ -11341,12 +9790,12 @@ Rate limit: 10000 requests/10 sec.
 <dd>
 
 ```go
-request := &sdk.MarketOrderRequest{
+request := &sdk.StockMarketOrderRequest{
         Market: "BTC_USDT",
-        Side: sdk.MarketOrderRequestSideBuy,
-        Amount: "100",
+        Side: sdk.StockMarketOrderRequestSideBuy,
+        Amount: "0.001",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CreateStockMarketOrder(
         context.TODO(),
@@ -11367,7 +9816,61 @@ client.SpotTrading.CreateStockMarketOrder(
 <dl>
 <dd>
 
-**request:** `*sdk.MarketOrderRequest` 
+**market:** `string` — Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**side:** `*sdk.StockMarketOrderRequestSide` — Order side. Allowed values: `buy`, `sell`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**amount:** `string` — Order quantity in base (stock) currency for both buy and sell sides. To place a market order specifying the quote (money) currency amount instead, use `POST /api/v4/order/market`. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**stp:** `*sdk.StockMarketOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -11391,7 +9894,7 @@ client.SpotTrading.CreateStockMarketOrder(
 <dl>
 <dd>
 
-The endpoint creates [stop-limit trading order](/glossary#stop-limit-order).
+The endpoint creates a [stop-limit trading order](/glossary#stop-limit-order). The order remains inactive until the market price reaches the `activation_price`, at which point the system places a limit order at the specified `price`. For buy orders, activation triggers when the market price rises to or above `activation_price`. For sell orders, activation triggers when the market price falls to or below `activation_price`. Minimum and maximum values for `amount`, `price`, and `activation_price` are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`, `stockPrec` (amount precision), and `moneyPrec` (price precision).
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -11402,7 +9905,7 @@ Rate limit: 10000 requests/10 sec.
 - `31` - market validation failed
 - `32` - amount validation failed
 - `33` - price validation failed
-- `36` - client_order_id validation failed
+- `36` - clientOrderId validation failed
 </Accordion>
 
 <Accordion title="Errors">
@@ -11508,7 +10011,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": ["ClientOrderId field should be a string."]
+    "clientOrderId": ["ClientOrderId field should be a string."]
   }
 }
 ```
@@ -11518,7 +10021,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": [
+    "clientOrderId": [
       "ClientOrderId field should contain only latin letters, numbers and dashes."
     ]
   }
@@ -11546,7 +10049,7 @@ request := &sdk.StopLimitOrderRequest{
         Price: "9800",
         ActivationPrice: "10000",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CreateStopLimitOrder(
         context.TODO(),
@@ -11567,7 +10070,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**market:** `string` — Available [market](/glossary#market). Example: BTC_USDT
+**market:** `string` — Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.
     
 </dd>
 </dl>
@@ -11575,7 +10078,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**side:** `*sdk.StopLimitOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
+**side:** `*sdk.StopLimitOrderRequestSide` — Order side. Allowed values: `buy`, `sell`.
     
 </dd>
 </dl>
@@ -11583,7 +10086,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**amount:** `string` — Amount of [stock](/glossary#stock) currency to buy or sell. Example: '0.001' or 0.001
+**amount:** `string` — Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`. Precision: `stockPrec`.
     
 </dd>
 </dl>
@@ -11591,7 +10094,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**price:** `string` — Price in [money](/glossary#money) currency. Example: '9800' or 9800
+**price:** `string` — Limit price per unit in quote (money) currency applied after the stop triggers. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
     
 </dd>
 </dl>
@@ -11599,7 +10102,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**activationPrice:** `string` — Activation price in [money](/glossary#money) currency. Example: '10000' or 10000
+**activationPrice:** `string` — Trigger price in quote (money) currency. For buy orders, the stop triggers when the market price rises to or above the specified price. For sell orders, the stop triggers when the market price falls to or below the specified price. Precision: `moneyPrec`.
     
 </dd>
 </dl>
@@ -11607,7 +10110,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Identifier should be unique and contain letters, dashes, numbers, dots or underscores. The identifier must be unique.
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
     
 </dd>
 </dl>
@@ -11615,7 +10118,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**bboRole:** `*int` — When the [BBO](/glossary#bbo) option is activated for Limit orders, the system selects the best market prices for execution. Variables: 1 - Queue Method / 2 - Counterparty Method.
+**bboRole:** `*int` — Best Bid/Offer ([BBO](/glossary#bbo)) execution method. The system selects the best market price for execution after the stop triggers. `1` = Queue method, `2` = Counterparty method.
     
 </dd>
 </dl>
@@ -11623,7 +10126,13 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**stp:** `*sdk.StopLimitOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
+**stp:** `*sdk.StopLimitOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -11639,7 +10148,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -11663,7 +10172,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-The endpoint creates [stop-market trading order](/glossary#stop-market-order).
+The endpoint creates a [stop-market trading order](/glossary#stop-market-order). The order remains inactive until the market price reaches the `activation_price`, at which point the system executes a market order immediately at the best available price. For buy orders, `amount` represents the total in quote currency and activation triggers when the market price rises to or above `activation_price`. For sell orders, `amount` represents the quantity in base currency and activation triggers when the market price falls to or below `activation_price`. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, and `maxTotal`.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -11673,7 +10182,7 @@ Rate limit: 10000 requests/10 sec.
 - `30` - default validation error code
 - `31` - market validation failed
 - `32` - amount validation failed
-- `36` - client_order_id validation failed
+- `36` - clientOrderId validation failed
 </Accordion>
 
 <Accordion title="Errors">
@@ -11758,7 +10267,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": ["ClientOrderId field should be a string."]
+    "clientOrderId": ["ClientOrderId field should be a string."]
   }
 }
 ```
@@ -11768,7 +10277,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": [
+    "clientOrderId": [
       "ClientOrderId field should contain only latin letters, numbers and dashes."
     ]
   }
@@ -11780,7 +10289,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 36,
   "message": "Validation failed",
   "errors": {
-    "client_order_id": [
+    "clientOrderId": [
       "This client order id is already used by the current account."
     ]
   }
@@ -11817,7 +10326,7 @@ request := &sdk.StopMarketOrderRequest{
         Amount: "0.01",
         ActivationPrice: "10000",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CreateStopMarketOrder(
         context.TODO(),
@@ -11838,7 +10347,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**market:** `string` — Available [market](/glossary#market). Example: BTC_USDT
+**market:** `string` — Trading pair. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Query `GET /api/v4/public/markets` for available markets.
     
 </dd>
 </dl>
@@ -11846,7 +10355,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**side:** `*sdk.StopMarketOrderRequestSide` — Order type. Variables: 'buy' / 'sell' Example: 'buy'
+**side:** `*sdk.StopMarketOrderRequestSide` — Order side. Allowed values: `buy`, `sell`.
     
 </dd>
 </dl>
@@ -11854,7 +10363,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**amount:** `string` — Amount of [money](/glossary#money) currency to buy or amount in [stock](/glossary#stock) currency to sell. Example: '0.01' or 0.01 for buy and '0.0001' for sell.
+**amount:** `string` — For buy orders: total in quote (money) currency to spend. For sell orders: quantity in base (stock) currency to sell. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`.
     
 </dd>
 </dl>
@@ -11862,7 +10371,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**activationPrice:** `string` — Activation price in [money](/glossary#money) currency. Example: '10000' or 10000
+**activationPrice:** `string` — Trigger price in quote (money) currency. For buy orders, the stop triggers when the market price rises to or above the specified price. For sell orders, the stop triggers when the market price falls to or below the specified price. Precision: `moneyPrec`.
     
 </dd>
 </dl>
@@ -11870,7 +10379,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Identifier should be unique and contain letters, dashes, numbers, dots or underscores. The identifier must be unique.
+**clientOrderID:** `*string` — Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
     
 </dd>
 </dl>
@@ -11878,7 +10387,13 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**stp:** `*sdk.StopMarketOrderRequestStp` — Self trade prevention mode. Variables: 'no' / 'cancel_both' / 'cancel_new' / 'cancel_old'. Example: 'no'.
+**stp:** `*sdk.StopMarketOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
     
 </dd>
 </dl>
@@ -11894,7 +10409,7 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -11918,15 +10433,15 @@ client.SpotTrading.CreateStopMarketOrder(
 <dl>
 <dd>
 
-Cancel existing [order](/glossary#orders).
+The endpoint cancels an existing [order](/glossary#orders). Provide either `orderId` or `clientOrderId` to identify the target order. The response returns the final state of the cancelled order.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
 
 <Note>
-- Modification by client_order_id takes priority over order_id.
-- The request supports working only with order_id or only with client_order_id.
+- Cancellation by clientOrderId takes priority over orderId.
+- The request supports working only with orderId or only with clientOrderId.
 - Do not pass both values at the same time.
 </Note>
 
@@ -11942,7 +10457,7 @@ Rate limit: 10000 requests/10 sec.
   "message": "Validation failed",
   "errors": {
     "market": ["Market field is required."],
-    "order_id": ["OrderId field is required."]
+    "orderId": ["OrderId field is required."]
   }
 }
 ```
@@ -11972,7 +10487,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 30,
   "message": "Validation failed",
   "errors": {
-    "order_id": ["OrderId field should be an integer."]
+    "orderId": ["OrderId field should be an integer."]
   }
 }
 ```
@@ -11995,7 +10510,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 2,
   "message": "Inner validation failed",
   "errors": {
-    "order_id": ["Unexecuted order was not found."]
+    "orderId": ["Unexecuted order was not found."]
   }
 }
 ```
@@ -12017,7 +10532,7 @@ Rate limit: 10000 requests/10 sec.
 request := &sdk.CancelOrderRequest{
         Market: "BTC_USDT",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CancelOrder(
         context.TODO(),
@@ -12046,7 +10561,7 @@ client.SpotTrading.CancelOrder(
 <dl>
 <dd>
 
-**orderID:** `*int` — Order Id. Example: 4180284841. Required if client_order_id is not set.
+**orderID:** `*int` — Order Id. Example: 4180284841. Required if clientOrderId is not set.
     
 </dd>
 </dl>
@@ -12054,7 +10569,7 @@ client.SpotTrading.CancelOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Custom client order id. Example: 'customId11'. Required if order_id is not set.
+**clientOrderID:** `*string` — Custom client order id. Example: 'customId11'. Required if orderId is not set.
     
 </dd>
 </dl>
@@ -12070,7 +10585,229 @@ client.SpotTrading.CancelOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.SpotTrading.CancelBulkOrders(request) -> sdk.BulkCancelOrderResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint cancels up to 100 [orders](/glossary#orders) in a single request. Each item identifies a target order by `market` plus exactly one of `orderId` or `clientOrderId`. The response is an array whose items match the input order one-to-one — `response[i]` corresponds to `request.orders[i]`.
+
+<Warning>
+Rate limit: 10000 requests/10 sec.
+</Warning>
+
+<Warning>
+Limit: From 1 to 100 orders per request.
+</Warning>
+
+<Note>
+- Provide exactly one of `orderId` or `clientOrderId` per item. Sending both, or neither, returns a per-item validation error.
+- The endpoint always processes every item independently. There is no `stopOnFail`-style switch.
+- When the caller is not authenticated, the API returns the standard authorization error and skips per-item validation.
+</Note>
+
+<Accordion title="Error Codes">
+- `30` — validation failure (per-item)
+- `404` — order not found (per-item)
+- `500` — trade service unavailable (per-item)
+</Accordion>
+
+<Accordion title="Errors">
+**Per-item errors (returned inside the response array):**
+
+Element is not a valid object:
+```json
+{
+  "result": null,
+  "error": {
+    "code": 30,
+    "message": "Validation failed",
+    "errors": { "request": ["Invalid order format"] }
+  }
+}
+```
+
+`market` field is missing:
+```json
+{
+  "result": null,
+  "error": {
+    "code": 30,
+    "message": "Validation failed",
+    "errors": { "market": ["validation.required"] }
+  }
+}
+```
+
+Specified market does not exist:
+```json
+{
+  "result": null,
+  "error": {
+    "code": 30,
+    "message": "Validation failed",
+    "errors": { "market": ["validation.market_not_exist"] }
+  }
+}
+```
+
+Neither `orderId` nor `clientOrderId` provided:
+```json
+{
+  "result": null,
+  "error": {
+    "code": 30,
+    "message": "Validation failed",
+    "errors": { "request": ["validation.required"] }
+  }
+}
+```
+
+Both `orderId` and `clientOrderId` provided:
+```json
+{
+  "result": null,
+  "error": {
+    "code": 30,
+    "message": "Validation failed",
+    "errors": { "request": ["api.validation.order.chooseOneId"] }
+  }
+}
+```
+
+Order not found (returned for both `orderId` and `clientOrderId` lookups):
+```json
+{
+  "result": null,
+  "error": {
+    "code": 404,
+    "message": "Order not found",
+    "errors": {
+      "orderId": ["Order does not exist or already cancelled"]
+    }
+  }
+}
+```
+
+Trade service unavailable (returned when the trade service is unreachable or returns an unparseable response):
+```json
+{
+  "result": null,
+  "error": {
+    "code": 500,
+    "message": "Service temporary unavailable",
+    "errors": { "error": ["Service temporary unavailable"] }
+  }
+}
+```
+
+**Request-level errors (HTTP 422, returned as a standard error envelope, not as an array):**
+
+`orders` field is missing or is not an array:
+```json
+{
+  "code": 30,
+  "message": "Validation failed",
+  "errors": { "orders": ["validation.required"] }
+}
+```
+
+`orders` contains more than 100 elements:
+```json
+{
+  "code": 30,
+  "message": "Validation failed",
+  "errors": { "orders": ["validation.between"] }
+}
+```
+</Accordion>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CancelBulkOrdersRequest{
+        Orders: []*sdk.BulkCancelOrderItem{
+            &sdk.BulkCancelOrderItem{
+                Market: "BTC_USDT",
+                OrderID: sdk.Int(
+                    4326248250,
+                ),
+            },
+            &sdk.BulkCancelOrderItem{
+                Market: "ETH_USDT",
+                ClientOrderID: sdk.String(
+                    "my-client-id",
+                ),
+            },
+        },
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.SpotTrading.CancelBulkOrders(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**orders:** `[]*sdk.BulkCancelOrderItem` — Array of orders to cancel. From 1 to 100 items per request.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -12094,7 +10831,7 @@ client.SpotTrading.CancelOrder(
 <dl>
 <dd>
 
-Cancels all orders that meet the conditions [order](/glossary#orders).
+The endpoint cancels all open [orders](/glossary#orders) that match the specified filters. Use the `market` parameter to target a single trading pair, or omit the parameter to cancel across all markets. The `type` parameter filters by order type (`spot`, `margin`, `futures`). When omitted, the endpoint targets all order types.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -12190,7 +10927,7 @@ client.SpotTrading.CancelAllOrders(
 <dl>
 <dd>
 
-**type_:** `[]*sdk.CancelAllOrdersRequestTypeItem` — Order types value. Example: 'spot', 'margin', 'futures'
+**type_:** `[]*sdk.CancelAllOrdersRequestTypeItem` — Order types to target. Valid values: "spot" — standard spot orders. "margin" — marginal orders placed on spot markets. Note: the "margin" value is not the same as the collateral account balance; "collateral" in other endpoints refers to the funding account, whereas "margin" here refers specifically to the order type. "futures" — marginal orders placed on futures markets (e.g., BTC_PERP). If omitted, the API targets all order types.
     
 </dd>
 </dl>
@@ -12206,7 +10943,7 @@ client.SpotTrading.CancelAllOrders(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -12230,14 +10967,18 @@ client.SpotTrading.CancelAllOrders(
 <dl>
 <dd>
 
-The endpoint retrieves [active orders](/glossary#active-orders) (orders not yet executed).
+The endpoint retrieves [active orders](/glossary#active-orders) (orders not yet executed). The response includes limit, stop-limit, and stop-market orders that remain open on the order book. Use the `market` parameter to filter by trading pair, or omit the parameter to retrieve orders across all markets. The endpoint supports pagination with `limit` and `offset` parameters.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
 
 <Note>
-Search across all markets is available only if client_order_id and order_id are not provided.
+Search across all markets is available only if clientOrderId and orderId are not provided.
+</Note>
+
+<Note>
+This endpoint supports pagination. Use `limit` (default: 50, max: 100) and `offset` (default: 0, max: 4294967295) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` orders are returned. An empty array means you have paged past the end; receiving exactly `limit` orders does not guarantee that another page exists.
 </Note>
 
 <Accordion title="Errors">
@@ -12257,7 +10998,7 @@ Search across all markets is available only if client_order_id and order_id are 
   "message": "Validation failed",
   "errors": {
     "limit": ["The limit may not be greater than 100."],
-    "offset": ["The offset may not be greater than 10000."]
+    "offset": ["The offset may not be greater than 4294967295."]
   }
 }
 ```
@@ -12296,7 +11037,7 @@ client.SpotTrading.GetActiveOrders(
 <dl>
 <dd>
 
-**market:** `*string` — Available [market](/glossary#market). Example: BTC_USDT
+**market:** `*string` — Trading pair to filter by. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Omit to retrieve orders across all markets.
     
 </dd>
 </dl>
@@ -12304,7 +11045,7 @@ client.SpotTrading.GetActiveOrders(
 <dl>
 <dd>
 
-**orderID:** `*int` — Available order_id. Example: 3134995325
+**orderID:** `*int` — Filter by a specific order identifier. Returns only the matching active order.
     
 </dd>
 </dl>
@@ -12312,7 +11053,7 @@ client.SpotTrading.GetActiveOrders(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Available client_order_id. Example: customId11
+**clientOrderID:** `*string` — Filter by custom client order identifier. Returns only the matching active order.
     
 </dd>
 </dl>
@@ -12320,7 +11061,7 @@ client.SpotTrading.GetActiveOrders(
 <dl>
 <dd>
 
-**offset:** `*int` — Starting line index (OFFSET). Default: 0, Min: 0
+**offset:** `*int` — Number of records to skip. Default: `0`. Maximum: `4294967295`.
     
 </dd>
 </dl>
@@ -12328,7 +11069,7 @@ client.SpotTrading.GetActiveOrders(
 <dl>
 <dd>
 
-**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return. Default: 50, Min: 1, Max: 100
+**limit:** `*int` — Maximum number of records to return. Default: `50`. Minimum: `1`. Maximum: `100`.
     
 </dd>
 </dl>
@@ -12344,7 +11085,7 @@ client.SpotTrading.GetActiveOrders(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -12356,7 +11097,7 @@ client.SpotTrading.GetActiveOrders(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.GetExecutedOrderHistory(request) -> []*sdk.GetExecutedOrderHistoryResponseItem</code></summary>
+<details><summary><code>client.SpotTrading.GetExecutedOrderHistory(request) -> *sdk.GetExecutedOrderHistoryResponse</code></summary>
 <dl>
 <dd>
 
@@ -12368,14 +11109,26 @@ client.SpotTrading.GetActiveOrders(
 <dl>
 <dd>
 
-The endpoint retrieves all deals for all markets. Can be filtered by single market if needed.
+The endpoint retrieves executed order history for all trading types — spot, margin, and futures — across all markets. Can be filtered by a single market if needed. Results are ordered by trade time, newest first.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
 
+<Warning>
+Requests with `limit` values above 100 return large payloads. Use high limits only when necessary and ensure the client application can handle large response sizes.
+</Warning>
+
 <Note>
-The endpoint can retrieve data not older than 6 months from current month. For older data, use the Report on the History page.
+The endpoint can retrieve data not older than 6 months from the current month. For older data, use the Report on the History page.
+</Note>
+
+<Note>
+This endpoint supports pagination. Use `limit` (default: 50, max: 500) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` records are returned (sum the records across all markets when no `market` filter is set). An empty response means you have paged past the end; receiving exactly `limit` records does not guarantee that another page exists.
+</Note>
+
+<Note>
+For B2B accounts, canceled orders are not recorded in the history. To obtain canceled-order data, contact support or the assigned account manager.
 </Note>
 
 <Accordion title="Errors">
@@ -12399,6 +11152,17 @@ The endpoint can retrieve data not older than 6 months from current month. For o
   }
 }
 ```
+
+```json
+{
+  "code": 30,
+  "message": "Validation failed",
+  "errors": {
+    "orderHistory": ["OrderHistory was not found."]
+  }
+}
+```
+Returned when `clientOrderId` is supplied but no order matches it on the calling account.
 </Accordion>
 </dd>
 </dl>
@@ -12442,7 +11206,7 @@ client.SpotTrading.GetExecutedOrderHistory(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Filter by custom order identifier
+**clientOrderID:** `*string` — Look up by custom client order identifier. When supplied, the endpoint switches to single-order lookup mode and returns the matching order's deal history. Returns `422` with `"OrderHistory was not found."` if no order matches on the calling account.
     
 </dd>
 </dl>
@@ -12474,7 +11238,7 @@ client.SpotTrading.GetExecutedOrderHistory(
 <dl>
 <dd>
 
-**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return. Default: 50, Min: 1, Max: 100
+**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return. Default: 50, Min: 1, Max: 500
     
 </dd>
 </dl>
@@ -12490,7 +11254,7 @@ client.SpotTrading.GetExecutedOrderHistory(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -12514,11 +11278,27 @@ client.SpotTrading.GetExecutedOrderHistory(
 <dl>
 <dd>
 
-The endpoint retrieves deals for a specific order.
+The endpoint retrieves individual trade fills (deals) for a specific order. Each deal represents a partial or full execution of the order against a counterparty. The response includes pagination and returns deal details such as price, amount, fee, and execution role (maker or taker).
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
+
+<Note>
+This endpoint supports pagination. Use `limit` (default: 50) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when `records.length < limit`. An empty `records` array means you have paged past the end; receiving exactly `limit` records does not guarantee that another page exists.
+</Note>
+
+<Note>
+An unknown or not-owned `orderId` is **not** an error. The endpoint always returns HTTP 200 with the paged-list envelope; a non-matching `orderId` simply filters down to an empty `records` array.
+</Note>
+
+<Note>
+The endpoint can retrieve data not older than 6 months from the current month. For older data, use the Report on the History page. An order older than this window returns an empty `records` array even when the order was filled.
+</Note>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (for example, a missing or malformed `orderId`, or invalid pagination)
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -12536,7 +11316,7 @@ Rate limit: 12000 requests/10 sec.
 request := &sdk.GetOrderDealsRequest{
         OrderID: 3134995325,
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.GetOrderDeals(
         context.TODO(),
@@ -12557,7 +11337,7 @@ client.SpotTrading.GetOrderDeals(
 <dl>
 <dd>
 
-**orderID:** `int` 
+**orderID:** `int` — Identifier of the order to retrieve deals for.
     
 </dd>
 </dl>
@@ -12565,7 +11345,7 @@ client.SpotTrading.GetOrderDeals(
 <dl>
 <dd>
 
-**offset:** `*int` 
+**offset:** `*int` — Number of records to skip. Default: `0`.
     
 </dd>
 </dl>
@@ -12573,7 +11353,7 @@ client.SpotTrading.GetOrderDeals(
 <dl>
 <dd>
 
-**limit:** `*int` 
+**limit:** `*int` — Maximum number of records to return. Default: `50`.
     
 </dd>
 </dl>
@@ -12589,7 +11369,7 @@ client.SpotTrading.GetOrderDeals(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -12613,11 +11393,40 @@ client.SpotTrading.GetOrderDeals(
 <dl>
 <dd>
 
-The endpoint retrieves order history.
+The endpoint retrieves the history of executed and cancelled orders. The response groups orders by market name. Use the `market` parameter to filter by a single trading pair, or omit the parameter to retrieve orders across all markets. The endpoint supports pagination with `limit` (default 50, max 500) and `offset` parameters. Results are ordered by time, newest first.
 
 <Warning>
 Rate limit: 12000 requests/10 sec.
 </Warning>
+
+<Warning>
+Requests with `limit` values above 100 return large payloads. Use high limits only when necessary and ensure the client application can handle large response sizes.
+</Warning>
+
+<Note>
+This endpoint supports pagination. Use `limit` (default: 50, max: 500) and `offset` (default: 0) to page through results. The response does not include a `total` field — detect the last page when fewer than `limit` records are returned (sum the records across all markets when no `market` filter is set). An empty response means you have paged past the end; receiving exactly `limit` records does not guarantee that another page exists.
+</Note>
+
+<Note>
+**Date filter window:** the maximum span between `startDate` and `endDate` is **31 days**, and the earliest reachable date is **6 months ago (00:00 UTC)**. Requests that exceed the 31-day window or fall below the 6-month floor are rejected with a validation error. `endDate` values greater than the current time are silently clamped to `now`.
+</Note>
+
+<Note>
+For B2B accounts, canceled orders are not recorded in the history. To obtain canceled-order data, contact support or the assigned account manager.
+</Note>
+
+<Accordion title="Errors">
+```json
+{
+  "code": 30,
+  "message": "Validation failed",
+  "errors": {
+    "orderHistory": ["OrderHistory was not found."]
+  }
+}
+```
+Returned when `clientOrderId` is supplied but no order matches it on the calling account.
+</Accordion>
 </dd>
 </dl>
 </dd>
@@ -12652,7 +11461,7 @@ client.SpotTrading.GetOrderHistory(
 <dl>
 <dd>
 
-**market:** `*string` 
+**market:** `*string` — Trading pair to filter by. Format: `BASE_QUOTE` (e.g., `BTC_USDT`). Omit to retrieve orders across all markets.
     
 </dd>
 </dl>
@@ -12660,7 +11469,7 @@ client.SpotTrading.GetOrderHistory(
 <dl>
 <dd>
 
-**offset:** `*int` 
+**clientOrderID:** `*string` — Look up a specific order by the custom client identifier. When supplied, the endpoint switches to single-order lookup mode and the `startDate`, `endDate`, and `status` filters are ignored. Returns `422` with `"OrderHistory was not found."` if no order matches. Ignored when `orderId` is also provided.
     
 </dd>
 </dl>
@@ -12668,7 +11477,47 @@ client.SpotTrading.GetOrderHistory(
 <dl>
 <dd>
 
-**limit:** `*int` 
+**orderID:** `*int` — Look up a specific order by the exchange-assigned identifier. When supplied, the endpoint switches to single-order lookup mode and the `startDate`, `endDate`, and `status` filters are ignored. Returns an empty result on no match (no `422`). Takes precedence over `clientOrderId` when both are supplied.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**status:** `*sdk.GetOrderHistoryRequestStatus` — Filter list-mode results by order status. Ignored when `orderId` or `clientOrderId` is supplied.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**startDate:** `*int` — Start of the query window as a Unix timestamp in seconds. Default: `now - 1 month`. The earliest reachable date is 6 months ago (00:00 UTC) — requests with an older `startDate` are rejected with a validation error.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**endDate:** `*int` — End of the query window as a Unix timestamp in seconds. Default: `now`. Values greater than the current time are silently clamped to `now`. The maximum span between `startDate` and `endDate` is 31 days.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Number of records to skip. Default: `0`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Maximum number of records to return. Default: `50`. Minimum: `1`. Maximum: `500`.
     
 </dd>
 </dl>
@@ -12684,7 +11533,136 @@ client.SpotTrading.GetOrderHistory(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.SpotTrading.GetDelistingOrderHistory(request) -> []*sdk.GetDelistingOrderHistoryResponseItem</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns the authenticated account's delisting-related order history from the order-history index. The response combines two categories of orders, each identified by the `delistingKind` field: reverse close orders that the platform generates when a market is delisted (`delistingKind` = `reverse`, `clientOrderId` prefixed with `delisting-`), and active orders canceled at the moment of delisting (`delistingKind` = `canceled`). The endpoint returns a flat array sorted by `finishAt` descending, then `id` descending.
+
+Set the `status` parameter to narrow the response: `filled` returns only reverse close orders that reached the `filled` outcome, and `delisting` returns only orders canceled during delisting. Omit `status` to return both categories merged in a single array.
+
+<Note>
+The endpoint supports pagination via `limit` (default: 500, max: 500) and `offset` (default: 0); the sum of `offset` and `limit` must not exceed 10000. A response that returns fewer than `limit` records indicates the last page.
+</Note>
+
+<Note>
+**Date filter window:** the date range filters orders by the `finishAt` timestamp. The maximum span between `startDate` and `endDate` is **31 days**. `endDate` values greater than the current time are clamped to `now`.
+</Note>
+
+<Warning>
+Rate limit: 10000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetDelistingOrderHistoryRequest{}
+client.SpotTrading.GetDelistingOrderHistory(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**market:** `*string` — Trading pair to filter by. Format: `BASE_QUOTE` (e.g., `BTC_USDT`), matching the pattern `^[A-Z0-9]+_[A-Z0-9]+$`. Omit to retrieve delisting orders across all markets.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**status:** `*sdk.GetDelistingOrderHistoryRequestStatus` — Category filter — distinct from the response `status` field. `filled` returns only reverse close orders (`clientOrderId` prefixed with `delisting-`), which carry `delistingKind` = `reverse` and response `status` = `filled`. `delisting` returns only orders canceled at delisting, which carry `delistingKind` = `canceled` and response `status` = `canceled`. Omit to return both categories merged.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**startDate:** `*int` — Start of the query window as a Unix timestamp in seconds. Default: `now - 30 days`. Must not be later than `endDate`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**endDate:** `*int` — End of the query window as a Unix timestamp in seconds. Default: `now`. Values greater than the current time are clamped to `now`. The maximum span between `startDate` and `endDate` is 31 days.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Number of records to skip. Default: `0`. The sum of `offset` and `limit` must not exceed 10000.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Maximum number of records to return. Default: `500`. Minimum: `1`. Maximum: `500`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `*string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -12720,9 +11698,20 @@ Rate limit: 10000 requests/10 sec.
 
 <Note>
 - Use total parameter instead of amount for modify buy stop market order.
-- Modification by client_order_id takes priority.
-- The request supports working only with order_id or only with client_order_id.
+- Modification by clientOrderId takes priority.
+- The request supports working only with orderId or only with clientOrderId.
 - Do not pass both values at the same time.
+</Note>
+
+<Note>
+**WebSocket impact:** Each call to the endpoint cancels the original order and
+creates a replacement with a **new `orderId`**. Clients subscribed to the
+`ordersPending_update` WebSocket channel will receive:
+- `event_id=3` (cancel) for the old order
+- `event_id=1` (new) for the replacement
+
+Update any `orderId` references after a successful modify response.
+Use `clientOrderId` for stable order tracking across modifications.
 </Note>
 
 <Accordion title="Error Codes">
@@ -12747,7 +11736,7 @@ Rate limit: 10000 requests/10 sec.
   "code": 2,
   "message": "Inner validation failed",
   "errors": {
-    "order_id": ["Unexecuted order was not found."]
+    "orderId": ["Unexecuted order was not found."]
   }
 }
 ```
@@ -12779,7 +11768,7 @@ Rate limit: 10000 requests/10 sec.
 request := &sdk.ModifyOrderRequest{
         Market: "BTC_USDT",
         Request: "{{request}}",
-        Nonce: "{{nonce}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.ModifyOrder(
         context.TODO(),
@@ -12800,7 +11789,7 @@ client.SpotTrading.ModifyOrder(
 <dl>
 <dd>
 
-**orderID:** `*int` — Active order id. Required if client_order_id is not set.
+**orderID:** `*int` — Active order id. Required if clientOrderId is not set.
     
 </dd>
 </dl>
@@ -12808,7 +11797,7 @@ client.SpotTrading.ModifyOrder(
 <dl>
 <dd>
 
-**clientOrderID:** `*string` — Identifier should be unique and contain letters, dashes, numbers, dots or underscores. Required if order_id is not set.
+**clientOrderID:** `*string` — Identifier should be unique and contain letters, dashes, numbers, dots or underscores. Required if orderId is not set.
     
 </dd>
 </dl>
@@ -12864,7 +11853,7 @@ client.SpotTrading.ModifyOrder(
 <dl>
 <dd>
 
-**nonce:** `string` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -12888,7 +11877,7 @@ client.SpotTrading.ModifyOrder(
 <dl>
 <dd>
 
-The endpoint creates, updates, deletes [kill-switch timer](/glossary#kill-switch-timer).
+The endpoint creates, updates, or deletes a [kill-switch timer](/glossary#kill-switch-timer). The kill-switch acts as a safety mechanism for automated trading systems — the timer automatically cancels all open orders for the specified market if the client fails to reset the timer before expiration. Set `timeout` to a value between `5` and `600` (seconds) to create or update a timer. Set `timeout` to `null` to delete an existing timer.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -12989,7 +11978,7 @@ client.SpotTrading.SetKillSwitch(
 <dl>
 <dd>
 
-**types:** `[]*sdk.SetKillSwitchRequestTypesItem` — Order types value. Example: 'spot', 'margin', 'futures' or null
+**types:** `[]*sdk.SetKillSwitchRequestTypesItem` — Order types to target. Valid values: "spot" — standard spot orders. "margin" — marginal orders placed on spot markets. Note: the "margin" value is not the same as the collateral account balance; "collateral" in other endpoints refers to the funding account, whereas "margin" here refers specifically to the order type. "futures" — marginal orders placed on futures markets (e.g., BTC_PERP). If omitted, the API targets all order types.
     
 </dd>
 </dl>
@@ -13005,7 +11994,7 @@ client.SpotTrading.SetKillSwitch(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>
@@ -13029,7 +12018,7 @@ client.SpotTrading.SetKillSwitch(
 <dl>
 <dd>
 
-The endpoint retrieves the status of [kill-switch timer](/glossary#kill-switch-timer).
+The endpoint retrieves the status of active [kill-switch timers](/glossary#kill-switch-timer). The response returns an array of timer objects for the specified market, or for all markets if the `market` parameter is omitted. Each timer object includes the start time, scheduled cancellation time, and targeted order types.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
@@ -13101,7 +12090,7 @@ client.SpotTrading.GetKillSwitchStatus(
 <dl>
 <dd>
 
-**nonce:** `*string` 
+**nonce:** `*int` 
     
 </dd>
 </dl>

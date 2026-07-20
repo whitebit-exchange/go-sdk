@@ -7,7 +7,7 @@ import (
 	core "github.com/whitebit-exchange/go-sdk/core"
 )
 
-// Invalid token
+// Validation failed
 type BadRequestError struct {
 	*core.APIError
 	Body interface{}
@@ -29,6 +29,30 @@ func (b *BadRequestError) MarshalJSON() ([]byte, error) {
 
 func (b *BadRequestError) Unwrap() error {
 	return b.APIError
+}
+
+// The account does not have the Express Withdraw permission. WhiteBIT grants the permission through the B2B partner approval process — request access at https://institutional.whitebit.com/.
+type ForbiddenError struct {
+	*core.APIError
+	Body interface{}
+}
+
+func (f *ForbiddenError) UnmarshalJSON(data []byte) error {
+	var body interface{}
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	f.StatusCode = 403
+	f.Body = body
+	return nil
+}
+
+func (f *ForbiddenError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(f.Body)
+}
+
+func (f *ForbiddenError) Unwrap() error {
+	return f.APIError
 }
 
 // Server configuration issues
@@ -55,14 +79,14 @@ func (i *InternalServerError) Unwrap() error {
 	return i.APIError
 }
 
-// Loans not available - contact support
+// Not Found — the sub-account withdrawal endpoints are not enabled for the account
 type NotFoundError struct {
 	*core.APIError
-	Body *NotFoundErrorBody
+	Body interface{}
 }
 
 func (n *NotFoundError) UnmarshalJSON(data []byte) error {
-	var body *NotFoundErrorBody
+	var body interface{}
 	if err := json.Unmarshal(data, &body); err != nil {
 		return err
 	}
@@ -77,6 +101,32 @@ func (n *NotFoundError) MarshalJSON() ([]byte, error) {
 
 func (n *NotFoundError) Unwrap() error {
 	return n.APIError
+}
+
+// Two-Factor Authentication (2FA) is required for this action but is not enabled on
+// the account. Enable 2FA in account security settings, then retry. The HTTP 412
+// status distinguishes this precondition failure from the business-rule codes at 422.
+type PreconditionFailedError struct {
+	*core.APIError
+	Body *ErrorInner
+}
+
+func (p *PreconditionFailedError) UnmarshalJSON(data []byte) error {
+	var body *ErrorInner
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	p.StatusCode = 412
+	p.Body = body
+	return nil
+}
+
+func (p *PreconditionFailedError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.Body)
+}
+
+func (p *PreconditionFailedError) Unwrap() error {
+	return p.APIError
 }
 
 // Service temporary unavailable
@@ -103,7 +153,7 @@ func (s *ServiceUnavailableError) Unwrap() error {
 	return s.APIError
 }
 
-// Not authorized
+// Invalid API key, signature, or nonce
 type UnauthorizedError struct {
 	*core.APIError
 	Body interface{}
@@ -127,7 +177,7 @@ func (u *UnauthorizedError) Unwrap() error {
 	return u.APIError
 }
 
-// Validation errors
+// Validation error. Returned when the `market` path parameter is unknown or not enabled for trading.
 type UnprocessableEntityError struct {
 	*core.APIError
 	Body interface{}

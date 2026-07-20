@@ -78,7 +78,7 @@ func TestJwtIssueJwtTokenWithWireMock(
 		NonceWindow: sdk.Bool(
 			false,
 		),
-		Nonce: "{{nonce}}",
+		Nonce: 1594297865000,
 	}
 	_, invocationErr := client.Jwt.IssueJwtToken(
 		context.TODO(),
@@ -105,7 +105,7 @@ func TestJwtGetWebSocketTokenWithWireMock(
 	)
 	request := &sdk.GetWebSocketTokenRequest{
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Jwt.GetWebSocketToken(
 		context.TODO(),

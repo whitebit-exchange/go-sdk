@@ -75,7 +75,7 @@ func TestFeesGetFeesWithWireMock(
 	)
 	request := &sdk.GetFeesRequest{
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Fees.GetFees(
 		context.TODO(),

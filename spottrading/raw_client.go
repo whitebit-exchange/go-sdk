@@ -207,6 +207,7 @@ func (r *RawClient) CreateMarketOrder(
 		r.options.ToHeader(),
 		options.ToHeader(),
 	)
+	headers.Add("Content-Type", "application/json")
 	var response *sdk.OrderResponse
 	raw, err := r.caller.Call(
 		ctx,
@@ -235,7 +236,7 @@ func (r *RawClient) CreateMarketOrder(
 
 func (r *RawClient) CreateStockMarketOrder(
 	ctx context.Context,
-	request *sdk.MarketOrderRequest,
+	request *sdk.StockMarketOrderRequest,
 	opts ...option.RequestOption,
 ) (*core.Response[*sdk.OrderResponse], error) {
 	options := core.NewRequestOptions(opts...)
@@ -257,6 +258,7 @@ func (r *RawClient) CreateStockMarketOrder(
 		r.options.ToHeader(),
 		options.ToHeader(),
 	)
+	headers.Add("Content-Type", "application/json")
 	var response *sdk.OrderResponse
 	raw, err := r.caller.Call(
 		ctx,
@@ -436,6 +438,57 @@ func (r *RawClient) CancelOrder(
 	}, nil
 }
 
+func (r *RawClient) CancelBulkOrders(
+	ctx context.Context,
+	request *sdk.CancelBulkOrdersRequest,
+	opts ...option.RequestOption,
+) (*core.Response[sdk.BulkCancelOrderResponse], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/order/cancel/bulk"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response sdk.BulkCancelOrderResponse
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[sdk.BulkCancelOrderResponse]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}
+
 func (r *RawClient) CancelAllOrders(
 	ctx context.Context,
 	request *sdk.CancelAllOrdersRequest,
@@ -540,7 +593,7 @@ func (r *RawClient) GetExecutedOrderHistory(
 	ctx context.Context,
 	request *sdk.GetExecutedOrderHistoryRequest,
 	opts ...option.RequestOption,
-) (*core.Response[[]*sdk.GetExecutedOrderHistoryResponseItem], error) {
+) (*core.Response[*sdk.GetExecutedOrderHistoryResponse], error) {
 	options := core.NewRequestOptions(opts...)
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
@@ -561,7 +614,7 @@ func (r *RawClient) GetExecutedOrderHistory(
 		options.ToHeader(),
 	)
 	headers.Add("Content-Type", "application/json")
-	var response []*sdk.GetExecutedOrderHistoryResponseItem
+	var response *sdk.GetExecutedOrderHistoryResponse
 	raw, err := r.caller.Call(
 		ctx,
 		&internal.CallParams{
@@ -580,7 +633,7 @@ func (r *RawClient) GetExecutedOrderHistory(
 	if err != nil {
 		return nil, err
 	}
-	return &core.Response[[]*sdk.GetExecutedOrderHistoryResponseItem]{
+	return &core.Response[*sdk.GetExecutedOrderHistoryResponse]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
 		Body:       response,
@@ -683,6 +736,57 @@ func (r *RawClient) GetOrderHistory(
 		return nil, err
 	}
 	return &core.Response[map[string][]*sdk.GetOrderHistoryResponseValueItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}
+
+func (r *RawClient) GetDelistingOrderHistory(
+	ctx context.Context,
+	request *sdk.GetDelistingOrderHistoryRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.GetDelistingOrderHistoryResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/trade-account/order/history/query"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.GetDelistingOrderHistoryResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.GetDelistingOrderHistoryResponseItem]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
 		Body:       response,

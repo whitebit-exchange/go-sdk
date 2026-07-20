@@ -103,7 +103,7 @@ func TestSpotTradingCreateLimitOrderWithWireMock(
 		Amount:  "0.001",
 		Price:   "9800",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.CreateLimitOrder(
 		context.TODO(),
@@ -153,6 +153,9 @@ func TestSpotTradingCreateBulkLimitOrderWithWireMock(
 				Rpi: sdk.Bool(
 					true,
 				),
+				Retail: sdk.Bool(
+					false,
+				),
 			},
 			&sdk.BulkOrderItem{
 				Side: sdk.BulkOrderItemSideSell.Ptr(),
@@ -175,6 +178,9 @@ func TestSpotTradingCreateBulkLimitOrderWithWireMock(
 					"",
 				),
 				Rpi: sdk.Bool(
+					false,
+				),
+				Retail: sdk.Bool(
 					true,
 				),
 			},
@@ -199,7 +205,10 @@ func TestSpotTradingCreateBulkLimitOrderWithWireMock(
 					"",
 				),
 				Rpi: sdk.Bool(
-					true,
+					false,
+				),
+				Retail: sdk.Bool(
+					false,
 				),
 			},
 		},
@@ -232,7 +241,7 @@ func TestSpotTradingCreateMarketOrderWithWireMock(
 		Side:    sdk.MarketOrderRequestSideBuy,
 		Amount:  "100",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.CreateMarketOrder(
 		context.TODO(),
@@ -257,12 +266,12 @@ func TestSpotTradingCreateStockMarketOrderWithWireMock(
 	client := client.NewClient(
 		option.WithBaseURL(WireMockBaseURL),
 	)
-	request := &sdk.MarketOrderRequest{
+	request := &sdk.StockMarketOrderRequest{
 		Market:  "BTC_USDT",
-		Side:    sdk.MarketOrderRequestSideBuy,
-		Amount:  "100",
+		Side:    sdk.StockMarketOrderRequestSideBuy,
+		Amount:  "0.001",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.CreateStockMarketOrder(
 		context.TODO(),
@@ -294,7 +303,7 @@ func TestSpotTradingCreateStopLimitOrderWithWireMock(
 		Price:           "9800",
 		ActivationPrice: "10000",
 		Request:         "{{request}}",
-		Nonce:           "{{nonce}}",
+		Nonce:           1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.CreateStopLimitOrder(
 		context.TODO(),
@@ -325,7 +334,7 @@ func TestSpotTradingCreateStopMarketOrderWithWireMock(
 		Amount:          "0.01",
 		ActivationPrice: "10000",
 		Request:         "{{request}}",
-		Nonce:           "{{nonce}}",
+		Nonce:           1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.CreateStopMarketOrder(
 		context.TODO(),
@@ -353,7 +362,7 @@ func TestSpotTradingCancelOrderWithWireMock(
 	request := &sdk.CancelOrderRequest{
 		Market:  "BTC_USDT",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.CancelOrder(
 		context.TODO(),
@@ -365,6 +374,47 @@ func TestSpotTradingCancelOrderWithWireMock(
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "TestSpotTradingCancelOrderWithWireMock", "POST", "/api/v4/order/cancel", nil, 1)
+}
+
+func TestSpotTradingCancelBulkOrdersWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CancelBulkOrdersRequest{
+		Orders: []*sdk.BulkCancelOrderItem{
+			&sdk.BulkCancelOrderItem{
+				Market: "BTC_USDT",
+				OrderID: sdk.Int(
+					4326248250,
+				),
+			},
+			&sdk.BulkCancelOrderItem{
+				Market: "ETH_USDT",
+				ClientOrderID: sdk.String(
+					"my-client-id",
+				),
+			},
+		},
+		Request: "{{request}}",
+		Nonce:   1594297865000,
+	}
+	_, invocationErr := client.SpotTrading.CancelBulkOrders(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingCancelBulkOrdersWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingCancelBulkOrdersWithWireMock", "POST", "/api/v4/order/cancel/bulk", nil, 1)
 }
 
 func TestSpotTradingCancelAllOrdersWithWireMock(
@@ -462,7 +512,7 @@ func TestSpotTradingGetOrderDealsWithWireMock(
 	request := &sdk.GetOrderDealsRequest{
 		OrderID: 3134995325,
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.GetOrderDeals(
 		context.TODO(),
@@ -500,6 +550,30 @@ func TestSpotTradingGetOrderHistoryWithWireMock(
 	VerifyRequestCount(t, "TestSpotTradingGetOrderHistoryWithWireMock", "POST", "/api/v4/trade-account/order/history", nil, 1)
 }
 
+func TestSpotTradingGetDelistingOrderHistoryWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetDelistingOrderHistoryRequest{}
+	_, invocationErr := client.SpotTrading.GetDelistingOrderHistory(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSpotTradingGetDelistingOrderHistoryWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSpotTradingGetDelistingOrderHistoryWithWireMock", "POST", "/api/v4/trade-account/order/history/query", nil, 1)
+}
+
 func TestSpotTradingModifyOrderWithWireMock(
 	t *testing.T,
 ) {
@@ -514,7 +588,7 @@ func TestSpotTradingModifyOrderWithWireMock(
 	request := &sdk.ModifyOrderRequest{
 		Market:  "BTC_USDT",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.ModifyOrder(
 		context.TODO(),

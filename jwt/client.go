@@ -57,6 +57,22 @@ func (c *Client) IssueJwtToken(
 // The V4 endpoint can be used to retrieve the WebSocket token for user.
 // The token is required to authorize WebSocket connections for private API access.
 //
+// <Accordion title="Errors">
+// ```json
+//
+//	{
+//	  "code": 30,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "user": ["user not found"]
+//	  }
+//	}
+//
+// ```
+// </Accordion>
+//
+// Beyond the error above, this endpoint can return only the [common authentication errors](/api-reference/authentication).
+//
 // <Warning>
 // Rate limit: 10 requests/60 sec.
 // </Warning>

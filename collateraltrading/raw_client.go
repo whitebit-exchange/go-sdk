@@ -457,7 +457,7 @@ func (r *RawClient) GetOpenPositions(
 		),
 		"https://whitebit.com",
 	)
-	endpointURL := baseURL + "/api/v4/collateral-account/positions"
+	endpointURL := baseURL + "/api/v4/collateral-account/positions/open"
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
 		options.ToHeader(),
@@ -791,6 +791,57 @@ func (r *RawClient) UpdateHedgeMode(
 	}, nil
 }
 
+func (r *RawClient) GetCollateralAccountAdlQuantile(
+	ctx context.Context,
+	request *sdk.GetCollateralAccountAdlQuantileRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.GetCollateralAccountAdlQuantileResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/adl-quantile"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.GetCollateralAccountAdlQuantileResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.GetCollateralAccountAdlQuantileResponseItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}
+
 func (r *RawClient) GetConditionalOrders(
 	ctx context.Context,
 	request *sdk.GetConditionalOrdersRequest,
@@ -810,7 +861,7 @@ func (r *RawClient) GetConditionalOrders(
 		),
 		"https://whitebit.com",
 	)
-	endpointURL := baseURL + "/api/v4/orders/conditional"
+	endpointURL := baseURL + "/api/v4/conditional-orders"
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
 		options.ToHeader(),
@@ -861,7 +912,7 @@ func (r *RawClient) GetOcoOrders(
 		),
 		"https://whitebit.com",
 	)
-	endpointURL := baseURL + "/api/v4/orders/oco"
+	endpointURL := baseURL + "/api/v4/oco-orders"
 	headers := internal.MergeHeaders(
 		r.options.ToHeader(),
 		options.ToHeader(),

@@ -32,9 +32,9 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
-// Returns maker and taker fees for a specific market.
+// Returns the account's default spot and futures maker and taker fees, plus any custom per-market overrides.
 //
-// The `maker` and `taker` fields represent spot trading fees. The `futures_maker` and `futures_taker` fields represent futures trading fees.
+// The `maker` and `taker` fields represent default spot trading fees. The `futures_maker` and `futures_taker` fields represent default futures trading fees. The `custom_fee` object lists per-market overrides, keyed by market name.
 //
 // The system calculates the effective futures fee as the lower value between the user-specific custom fee and the market-specific fee.
 //

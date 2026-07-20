@@ -74,14 +74,12 @@ func TestWithdrawCreateWithdrawWithWireMock(
 		option.WithBaseURL(WireMockBaseURL),
 	)
 	request := &sdk.CreateWithdrawRequest{
-		Ticker:  "ETH",
-		Amount:  "0.9",
-		Address: "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
-		UniqueID: sdk.String(
-			"24529041",
-		),
-		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Ticker:   "ETH",
+		Amount:   "0.9",
+		Address:  "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
+		UniqueID: "24529041",
+		Request:  "{{request}}",
+		Nonce:    1594297865000,
 	}
 	_, invocationErr := client.Withdraw.CreateWithdraw(
 		context.TODO(),
@@ -107,14 +105,12 @@ func TestWithdrawCreateWithdrawPayWithWireMock(
 		option.WithBaseURL(WireMockBaseURL),
 	)
 	request := &sdk.WithdrawRequest{
-		Ticker:  "ETH",
-		Amount:  "0.9",
-		Address: "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
-		UniqueID: sdk.String(
-			"24529041",
-		),
-		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Ticker:   "ETH",
+		Amount:   "0.9",
+		Address:  "0x0964A6B8F794A4B8d61b62652dB27ddC9844FB4c",
+		UniqueID: "24529041",
+		Request:  "{{request}}",
+		Nonce:    1594297865000,
 	}
 	_, invocationErr := client.Withdraw.CreateWithdrawPay(
 		context.TODO(),
@@ -126,4 +122,34 @@ func TestWithdrawCreateWithdrawPayWithWireMock(
 
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "TestWithdrawCreateWithdrawPayWithWireMock", "POST", "/api/v4/main-account/withdraw-pay", nil, 1)
+}
+
+func TestWithdrawCreateExpressWithdrawTokenWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.CreateExpressWithdrawTokenRequest{
+		Ticker:     "USDT",
+		Amount:     "25.50",
+		ExternalID: "order-100294",
+		Request:    "{{request}}",
+		Nonce:      1594297865000,
+	}
+	_, invocationErr := client.Withdraw.CreateExpressWithdrawToken(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestWithdrawCreateExpressWithdrawTokenWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestWithdrawCreateExpressWithdrawTokenWithWireMock", "POST", "/api/v4/main-account/express-withdraw/token", nil, 1)
 }

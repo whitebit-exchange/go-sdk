@@ -36,7 +36,7 @@ type GetDepositWithdrawHistoryRequest struct {
 	Addresses []string `json:"addresses,omitempty" url:"-"`
 	// Can be used for filtering transactions by specific unique id
 	UniqueID *string `json:"unique_id,omitempty" url:"-"`
-	// LIMIT is a special clause used to limit records a particular query can return.
+	// LIMIT is a special clause used to limit records a particular query can return. Default: 50, Min: 1, Max: 500
 	Limit *int `json:"limit,omitempty" url:"-"`
 	// Use the OFFSET clause to return entries starting from a particular line.
 	Offset *int `json:"offset,omitempty" url:"-"`
@@ -47,7 +47,7 @@ type GetDepositWithdrawHistoryRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -132,7 +132,7 @@ func (g *GetDepositWithdrawHistoryRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetDepositWithdrawHistoryRequest) SetNonce(nonce string) {
+func (g *GetDepositWithdrawHistoryRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getDepositWithdrawHistoryRequestFieldNonce)
 }
@@ -170,7 +170,7 @@ type GetMainBalanceRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -199,7 +199,7 @@ func (g *GetMainBalanceRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetMainBalanceRequest) SetNonce(nonce string) {
+func (g *GetMainBalanceRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getMainBalanceRequestFieldNonce)
 }
@@ -247,7 +247,7 @@ var (
 type TransactionHistory struct {
 	// Deposit/Withdraw address
 	Address *string `json:"address,omitempty" url:"address,omitempty"`
-	// Unique Id of deposit/withdraw
+	// Unique Id of deposit/withdraw. Unique per user.
 	UniqueID *string `json:"unique_id,omitempty" url:"unique_id,omitempty"`
 	// Timestamp of deposit/withdraw
 	CreatedAt *int `json:"createdAt,omitempty" url:"createdAt,omitempty"`
@@ -269,9 +269,9 @@ type TransactionHistory struct {
 	Status *int `json:"status,omitempty" url:"status,omitempty"`
 	// Network if currency is multinetwork
 	Network *string `json:"network,omitempty" url:"network,omitempty"`
-	// Deposit/Withdraw transaction hash
+	// Deposit/Withdraw transaction hash. A single hash can map to multiple records (e.g. several outputs to a WhiteBIT address in one on-chain transaction); use `transaction_id` to distinguish them.
 	TransactionHash *string `json:"transactionHash,omitempty" url:"transactionHash,omitempty"`
-	// Transaction ID
+	// Transaction UUID. Unique across the whole system and never reused.
 	TransactionID *string `json:"transaction_id,omitempty" url:"transaction_id,omitempty"`
 	// Additional details for the transaction
 	Details map[string]interface{} `json:"details,omitempty" url:"details,omitempty"`

@@ -57,6 +57,53 @@ func (b *BlockSubAccountRequest) MarshalJSON() ([]byte, error) {
 }
 
 var (
+	confirmSubAccountWithdrawalRequestFieldID = big.NewInt(1 << 0)
+)
+
+type ConfirmSubAccountWithdrawalRequest struct {
+	// External id of the withdrawal transaction to confirm.
+	ID string `json:"id" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (c *ConfirmSubAccountWithdrawalRequest) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConfirmSubAccountWithdrawalRequest) SetID(id string) {
+	c.ID = id
+	c.require(confirmSubAccountWithdrawalRequestFieldID)
+}
+
+func (c *ConfirmSubAccountWithdrawalRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConfirmSubAccountWithdrawalRequest
+	var body unmarshaler
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	*c = ConfirmSubAccountWithdrawalRequest(body)
+	return nil
+}
+
+func (c *ConfirmSubAccountWithdrawalRequest) MarshalJSON() ([]byte, error) {
+	type embed ConfirmSubAccountWithdrawalRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+var (
 	createSubAccountRequestFieldAlias       = big.NewInt(1 << 0)
 	createSubAccountRequestFieldEmail       = big.NewInt(1 << 1)
 	createSubAccountRequestFieldShareKyc    = big.NewInt(1 << 2)
@@ -303,6 +350,53 @@ func (g *GetSubAccountBalancesRequest) MarshalJSON() ([]byte, error) {
 }
 
 var (
+	getSubAccountKycURLRequestFieldID = big.NewInt(1 << 0)
+)
+
+type GetSubAccountKycURLRequest struct {
+	// Sub-account external ID. Must belong to the authenticated main account.
+	ID string `json:"id" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (g *GetSubAccountKycURLRequest) require(field *big.Int) {
+	if g.explicitFields == nil {
+		g.explicitFields = big.NewInt(0)
+	}
+	g.explicitFields.Or(g.explicitFields, field)
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetSubAccountKycURLRequest) SetID(id string) {
+	g.ID = id
+	g.require(getSubAccountKycURLRequestFieldID)
+}
+
+func (g *GetSubAccountKycURLRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler GetSubAccountKycURLRequest
+	var body unmarshaler
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	*g = GetSubAccountKycURLRequest(body)
+	return nil
+}
+
+func (g *GetSubAccountKycURLRequest) MarshalJSON() ([]byte, error) {
+	type embed GetSubAccountKycURLRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+var (
 	getSubAccountTransferHistoryRequestFieldID        = big.NewInt(1 << 0)
 	getSubAccountTransferHistoryRequestFieldDirection = big.NewInt(1 << 1)
 	getSubAccountTransferHistoryRequestFieldLimit     = big.NewInt(1 << 2)
@@ -433,6 +527,73 @@ func (l *ListSubAccountsRequest) UnmarshalJSON(data []byte) error {
 
 func (l *ListSubAccountsRequest) MarshalJSON() ([]byte, error) {
 	type embed ListSubAccountsRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*l),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, l.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+var (
+	listUnconfirmedSubAccountWithdrawalsRequestFieldLimit        = big.NewInt(1 << 0)
+	listUnconfirmedSubAccountWithdrawalsRequestFieldOffset       = big.NewInt(1 << 1)
+	listUnconfirmedSubAccountWithdrawalsRequestFieldSubAccountID = big.NewInt(1 << 2)
+)
+
+type ListUnconfirmedSubAccountWithdrawalsRequest struct {
+	// Number of records to return.
+	Limit *int `json:"limit,omitempty" url:"-"`
+	// Number of records to skip.
+	Offset *int `json:"offset,omitempty" url:"-"`
+	// Filter by specific sub-account external ID. If omitted, returns withdrawals from all sub-accounts.
+	SubAccountID *string `json:"subAccountId,omitempty" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsRequest) require(field *big.Int) {
+	if l.explicitFields == nil {
+		l.explicitFields = big.NewInt(0)
+	}
+	l.explicitFields.Or(l.explicitFields, field)
+}
+
+// SetLimit sets the Limit field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsRequest) SetLimit(limit *int) {
+	l.Limit = limit
+	l.require(listUnconfirmedSubAccountWithdrawalsRequestFieldLimit)
+}
+
+// SetOffset sets the Offset field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsRequest) SetOffset(offset *int) {
+	l.Offset = offset
+	l.require(listUnconfirmedSubAccountWithdrawalsRequestFieldOffset)
+}
+
+// SetSubAccountID sets the SubAccountID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsRequest) SetSubAccountID(subAccountID *string) {
+	l.SubAccountID = subAccountID
+	l.require(listUnconfirmedSubAccountWithdrawalsRequestFieldSubAccountID)
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler ListUnconfirmedSubAccountWithdrawalsRequest
+	var body unmarshaler
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	*l = ListUnconfirmedSubAccountWithdrawalsRequest(body)
+	return nil
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsRequest) MarshalJSON() ([]byte, error) {
+	type embed ListUnconfirmedSubAccountWithdrawalsRequest
 	var marshaler = struct {
 		embed
 	}{
@@ -921,7 +1082,7 @@ var (
 )
 
 type SubAccountTransfer struct {
-	// Transaction identifier. Same value as id. Correlate with the transfer endpoint response using the transactionId field.
+	// Transaction identifier. Same value as id. Correlate with the transfer endpoint response using the transaction_id field.
 	TransactionID *string `json:"transaction_id,omitempty" url:"transaction_id,omitempty"`
 	// Transfer identifier
 	ID *string `json:"id,omitempty" url:"id,omitempty"`
@@ -1377,6 +1538,102 @@ func (g *GetSubAccountBalancesResponseValueItem) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
+var (
+	getSubAccountKycURLResponseFieldURL       = big.NewInt(1 << 0)
+	getSubAccountKycURLResponseFieldExpiresIn = big.NewInt(1 << 1)
+)
+
+type GetSubAccountKycURLResponse struct {
+	// Temporary KYC verification URL
+	URL string `json:"url" url:"url"`
+	// Time in seconds until the link expires
+	ExpiresIn int `json:"expiresIn" url:"expiresIn"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (g *GetSubAccountKycURLResponse) GetURL() string {
+	if g == nil {
+		return ""
+	}
+	return g.URL
+}
+
+func (g *GetSubAccountKycURLResponse) GetExpiresIn() int {
+	if g == nil {
+		return 0
+	}
+	return g.ExpiresIn
+}
+
+func (g *GetSubAccountKycURLResponse) GetExtraProperties() map[string]interface{} {
+	return g.extraProperties
+}
+
+func (g *GetSubAccountKycURLResponse) require(field *big.Int) {
+	if g.explicitFields == nil {
+		g.explicitFields = big.NewInt(0)
+	}
+	g.explicitFields.Or(g.explicitFields, field)
+}
+
+// SetURL sets the URL field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetSubAccountKycURLResponse) SetURL(url string) {
+	g.URL = url
+	g.require(getSubAccountKycURLResponseFieldURL)
+}
+
+// SetExpiresIn sets the ExpiresIn field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetSubAccountKycURLResponse) SetExpiresIn(expiresIn int) {
+	g.ExpiresIn = expiresIn
+	g.require(getSubAccountKycURLResponseFieldExpiresIn)
+}
+
+func (g *GetSubAccountKycURLResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler GetSubAccountKycURLResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*g = GetSubAccountKycURLResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *g)
+	if err != nil {
+		return err
+	}
+	g.extraProperties = extraProperties
+	g.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (g *GetSubAccountKycURLResponse) MarshalJSON() ([]byte, error) {
+	type embed GetSubAccountKycURLResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (g *GetSubAccountKycURLResponse) String() string {
+	if len(g.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(g); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", g)
+}
+
 // Transfer direction (optional)
 type GetSubAccountTransferHistoryRequestDirection string
 
@@ -1620,6 +1877,266 @@ func (l *ListSubAccountsResponse) String() string {
 	return fmt.Sprintf("%#v", l)
 }
 
+var (
+	listUnconfirmedSubAccountWithdrawalsResponseFieldData   = big.NewInt(1 << 0)
+	listUnconfirmedSubAccountWithdrawalsResponseFieldLimit  = big.NewInt(1 << 1)
+	listUnconfirmedSubAccountWithdrawalsResponseFieldOffset = big.NewInt(1 << 2)
+)
+
+type ListUnconfirmedSubAccountWithdrawalsResponse struct {
+	// List of unconfirmed withdrawal transactions.
+	Data []*ListUnconfirmedSubAccountWithdrawalsResponseDataItem `json:"data,omitempty" url:"data,omitempty"`
+	// Applied limit value.
+	Limit *int `json:"limit,omitempty" url:"limit,omitempty"`
+	// Applied offset value.
+	Offset *int `json:"offset,omitempty" url:"offset,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) GetData() []*ListUnconfirmedSubAccountWithdrawalsResponseDataItem {
+	if l == nil {
+		return nil
+	}
+	return l.Data
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) GetLimit() *int {
+	if l == nil {
+		return nil
+	}
+	return l.Limit
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) GetOffset() *int {
+	if l == nil {
+		return nil
+	}
+	return l.Offset
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) GetExtraProperties() map[string]interface{} {
+	return l.extraProperties
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) require(field *big.Int) {
+	if l.explicitFields == nil {
+		l.explicitFields = big.NewInt(0)
+	}
+	l.explicitFields.Or(l.explicitFields, field)
+}
+
+// SetData sets the Data field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) SetData(data []*ListUnconfirmedSubAccountWithdrawalsResponseDataItem) {
+	l.Data = data
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseFieldData)
+}
+
+// SetLimit sets the Limit field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) SetLimit(limit *int) {
+	l.Limit = limit
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseFieldLimit)
+}
+
+// SetOffset sets the Offset field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) SetOffset(offset *int) {
+	l.Offset = offset
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseFieldOffset)
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler ListUnconfirmedSubAccountWithdrawalsResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*l = ListUnconfirmedSubAccountWithdrawalsResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *l)
+	if err != nil {
+		return err
+	}
+	l.extraProperties = extraProperties
+	l.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) MarshalJSON() ([]byte, error) {
+	type embed ListUnconfirmedSubAccountWithdrawalsResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*l),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, l.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponse) String() string {
+	if len(l.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(l.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(l); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", l)
+}
+
+var (
+	listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldID           = big.NewInt(1 << 0)
+	listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldSubAccountID = big.NewInt(1 << 1)
+	listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldCurrency     = big.NewInt(1 << 2)
+	listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldAmount       = big.NewInt(1 << 3)
+	listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldCreatedAt    = big.NewInt(1 << 4)
+)
+
+type ListUnconfirmedSubAccountWithdrawalsResponseDataItem struct {
+	// Transaction external ID (UUID).
+	ID *string `json:"id,omitempty" url:"id,omitempty"`
+	// Sub-account external ID.
+	SubAccountID *string `json:"subAccountId,omitempty" url:"subAccountId,omitempty"`
+	// Currency ticker.
+	Currency *string `json:"currency,omitempty" url:"currency,omitempty"`
+	// Withdrawal amount (trailing zeros trimmed).
+	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
+	// Unix timestamp of transaction creation.
+	CreatedAt *int `json:"createdAt,omitempty" url:"createdAt,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) GetID() *string {
+	if l == nil {
+		return nil
+	}
+	return l.ID
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) GetSubAccountID() *string {
+	if l == nil {
+		return nil
+	}
+	return l.SubAccountID
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) GetCurrency() *string {
+	if l == nil {
+		return nil
+	}
+	return l.Currency
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) GetAmount() *string {
+	if l == nil {
+		return nil
+	}
+	return l.Amount
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) GetCreatedAt() *int {
+	if l == nil {
+		return nil
+	}
+	return l.CreatedAt
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) GetExtraProperties() map[string]interface{} {
+	return l.extraProperties
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) require(field *big.Int) {
+	if l.explicitFields == nil {
+		l.explicitFields = big.NewInt(0)
+	}
+	l.explicitFields.Or(l.explicitFields, field)
+}
+
+// SetID sets the ID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) SetID(id *string) {
+	l.ID = id
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldID)
+}
+
+// SetSubAccountID sets the SubAccountID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) SetSubAccountID(subAccountID *string) {
+	l.SubAccountID = subAccountID
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldSubAccountID)
+}
+
+// SetCurrency sets the Currency field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) SetCurrency(currency *string) {
+	l.Currency = currency
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldCurrency)
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) SetAmount(amount *string) {
+	l.Amount = amount
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldAmount)
+}
+
+// SetCreatedAt sets the CreatedAt field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) SetCreatedAt(createdAt *int) {
+	l.CreatedAt = createdAt
+	l.require(listUnconfirmedSubAccountWithdrawalsResponseDataItemFieldCreatedAt)
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) UnmarshalJSON(data []byte) error {
+	type unmarshaler ListUnconfirmedSubAccountWithdrawalsResponseDataItem
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*l = ListUnconfirmedSubAccountWithdrawalsResponseDataItem(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *l)
+	if err != nil {
+		return err
+	}
+	l.extraProperties = extraProperties
+	l.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) MarshalJSON() ([]byte, error) {
+	type embed ListUnconfirmedSubAccountWithdrawalsResponseDataItem
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*l),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, l.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (l *ListUnconfirmedSubAccountWithdrawalsResponseDataItem) String() string {
+	if len(l.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(l.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(l); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", l)
+}
+
 // Transfer direction
 type SubAccountTransferRequestDirection string
 
@@ -1648,7 +2165,7 @@ var (
 )
 
 type SubAccountTransferResponse struct {
-	// External identifier of the transaction. Correlate transfer history responses using the transactionId value.
+	// External identifier of the transaction. Correlate transfer history responses using the `transaction_id` value.
 	TransactionID *string `json:"transaction_id,omitempty" url:"transaction_id,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted

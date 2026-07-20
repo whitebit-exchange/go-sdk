@@ -50,9 +50,9 @@ type GetAPIV4PublicFundingHistoryMarketRequest struct {
 	StartDate *int `json:"-" url:"startDate,omitempty"`
 	// End timestamp in seconds
 	EndDate *int `json:"-" url:"endDate,omitempty"`
-	// Number of records to return. Default: 100, Maximum: 1000
+	// Number of records to return. Default: 100, Maximum: 100
 	Limit *int `json:"-" url:"limit,omitempty"`
-	// Number of records to skip
+	// Number of records to skip. Maximum: 1000000
 	Offset *int `json:"-" url:"offset,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -112,7 +112,7 @@ type GetAPIV4PublicOrderbookMarketRequest struct {
 	Market string `json:"-" url:"-"`
 	// Orders depth quantity: 0 - 100. Not defined or 0 will return 100 entries.
 	Limit *int `json:"-" url:"limit,omitempty"`
-	// Optional parameter that controls the aggregation level. Level 0 – default, no aggregation. Levels 1–5 provide increasing aggregation of the order book.
+	// Aggregation level for price grouping. Level 0 applies no aggregation. Levels 1–5 provide increasing aggregation of the order book.
 	Level *int `json:"-" url:"level,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -155,7 +155,7 @@ var (
 type GetAPIV4PublicTradesMarketRequest struct {
 	// Market pair name
 	Market string `json:"-" url:"-"`
-	// Can be buy or sell
+	// Filter by trade side. Omit to return both buy and sell trades.
 	Type *GetAPIV4PublicTradesMarketRequestType `json:"-" url:"type,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -216,9 +216,9 @@ type Asset struct {
 	MinWithdraw *string `json:"min_withdraw,omitempty" url:"min_withdraw,omitempty"`
 	// Maximum withdrawal amount for the asset
 	MaxWithdraw *string `json:"max_withdraw,omitempty" url:"max_withdraw,omitempty"`
-	// Maker fee in percentage
+	// Maker fee expressed as a direct percentage value (e.g., "0.1" means 0.1%). Note: GET /api/v4/public/markets expresses the same fee as a decimal ratio (e.g., "0.001" = 0.1%) — the formats differ between endpoints.
 	MakerFee *string `json:"maker_fee,omitempty" url:"maker_fee,omitempty"`
-	// Taker fee in percentage
+	// Taker fee expressed as a direct percentage value (e.g., "0.1" means 0.1%). Note: GET /api/v4/public/markets expresses the same fee as a decimal ratio (e.g., "0.001" = 0.1%) — the formats differ between endpoints.
 	TakerFee *string `json:"taker_fee,omitempty" url:"taker_fee,omitempty"`
 	// Min deposit amount
 	MinDeposit *string `json:"min_deposit,omitempty" url:"min_deposit,omitempty"`
@@ -234,9 +234,9 @@ type Asset struct {
 	Networks *AssetNetworks `json:"networks,omitempty" url:"networks,omitempty"`
 	// Currency limits by each network
 	Limits *AssetLimits `json:"limits,omitempty" url:"limits,omitempty"`
-	// Deposit confirmations count mapped by network
+	// Required blockchain confirmations for deposits, mapped by network name (e.g., {"BTC": 2, "ERC20": 20}). Absent for fiat currencies, demo assets, and internal exchange tokens (e.g., UAH, EUR, DBTC, DUSDT). Individual network keys may also be absent if a network was historically supported but is currently disabled.
 	Confirmations map[string]int `json:"confirmations,omitempty" url:"confirmations,omitempty"`
-	// Fiat currency providers
+	// Payment provider identifiers for fiat assets (e.g., VISAMASTER, ADVCASH, GEOPAY). Use these identifiers as the network parameter value when making fiat deposits or withdrawals via the API — equivalent to network codes such as ERC20 or TRC20 for crypto assets.
 	Providers *AssetProviders `json:"providers,omitempty" url:"providers,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -922,11 +922,11 @@ var (
 )
 
 type AssetNetworks struct {
-	// Networks available for depositing
+	// Networks available for depositing. Absent when deposits are disabled for the asset (can_deposit: false). Examples of assets where the field may be absent: AMB, AVA, A, KZT.
 	Deposits []string `json:"deposits,omitempty" url:"deposits,omitempty"`
-	// Networks available for withdrawing
+	// Networks available for withdrawing. Absent when withdrawals are disabled for the asset (can_withdraw: false). Examples: AVA, A (Vaulta).
 	Withdraws []string `json:"withdraws,omitempty" url:"withdraws,omitempty"`
-	// Default network for depositing / withdrawing if available
+	// Default network used when no specific network is selected by the user. Absent when multiple networks exist but no explicit default priority has been configured (e.g., AGRS, ANKR, APE, POL).
 	Default *string `json:"default,omitempty" url:"default,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -1028,7 +1028,7 @@ func (a *AssetNetworks) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
-// Fiat currency providers
+// Payment provider identifiers for fiat assets (e.g., VISAMASTER, ADVCASH, GEOPAY). Use these identifiers as the network parameter value when making fiat deposits or withdrawals via the API — equivalent to network codes such as ERC20 or TRC20 for crypto assets.
 var (
 	assetProvidersFieldDeposits  = big.NewInt(1 << 0)
 	assetProvidersFieldWithdraws = big.NewInt(1 << 1)
@@ -1123,6 +1123,471 @@ func (a *AssetProviders) String() string {
 	return fmt.Sprintf("%#v", a)
 }
 
+// Fee amounts and transfer limits for a crypto asset
+var (
+	feeDetailsFieldMaxAmount = big.NewInt(1 << 0)
+	feeDetailsFieldMinAmount = big.NewInt(1 << 1)
+	feeDetailsFieldFixed     = big.NewInt(1 << 2)
+	feeDetailsFieldFlex      = big.NewInt(1 << 3)
+)
+
+type FeeDetails struct {
+	// Maximum transaction amount for the operation and network. May be absent independently from other limit fields; absence typically indicates no upper limit applies.
+	MaxAmount *string `json:"max_amount,omitempty" url:"max_amount,omitempty"`
+	// Minimum transaction amount for the operation and network. May be absent independently from other limit fields.
+	MinAmount *string `json:"min_amount,omitempty" url:"min_amount,omitempty"`
+	// Fixed fee amount per transaction. `null` if no fixed fee applies.
+	Fixed *string `json:"fixed,omitempty" url:"fixed,omitempty"`
+	// Percentage-based (flexible) fee. `null` if no flexible fee applies.
+	Flex *FeeDetailsFlex `json:"flex,omitempty" url:"flex,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FeeDetails) GetMaxAmount() *string {
+	if f == nil {
+		return nil
+	}
+	return f.MaxAmount
+}
+
+func (f *FeeDetails) GetMinAmount() *string {
+	if f == nil {
+		return nil
+	}
+	return f.MinAmount
+}
+
+func (f *FeeDetails) GetFixed() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Fixed
+}
+
+func (f *FeeDetails) GetFlex() *FeeDetailsFlex {
+	if f == nil {
+		return nil
+	}
+	return f.Flex
+}
+
+func (f *FeeDetails) GetExtraProperties() map[string]interface{} {
+	return f.extraProperties
+}
+
+func (f *FeeDetails) require(field *big.Int) {
+	if f.explicitFields == nil {
+		f.explicitFields = big.NewInt(0)
+	}
+	f.explicitFields.Or(f.explicitFields, field)
+}
+
+// SetMaxAmount sets the MaxAmount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeDetails) SetMaxAmount(maxAmount *string) {
+	f.MaxAmount = maxAmount
+	f.require(feeDetailsFieldMaxAmount)
+}
+
+// SetMinAmount sets the MinAmount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeDetails) SetMinAmount(minAmount *string) {
+	f.MinAmount = minAmount
+	f.require(feeDetailsFieldMinAmount)
+}
+
+// SetFixed sets the Fixed field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeDetails) SetFixed(fixed *string) {
+	f.Fixed = fixed
+	f.require(feeDetailsFieldFixed)
+}
+
+// SetFlex sets the Flex field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeDetails) SetFlex(flex *FeeDetailsFlex) {
+	f.Flex = flex
+	f.require(feeDetailsFieldFlex)
+}
+
+func (f *FeeDetails) UnmarshalJSON(data []byte) error {
+	type unmarshaler FeeDetails
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FeeDetails(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FeeDetails) MarshalJSON() ([]byte, error) {
+	type embed FeeDetails
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FeeDetails) String() string {
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+// Percentage-based (flexible) fee. `null` if no flexible fee applies.
+var (
+	feeDetailsFlexFieldPercent = big.NewInt(1 << 0)
+	feeDetailsFlexFieldMinFee  = big.NewInt(1 << 1)
+	feeDetailsFlexFieldMaxFee  = big.NewInt(1 << 2)
+)
+
+type FeeDetailsFlex struct {
+	// Fee percentage (e.g., `"1.5"` means 1.5%)
+	Percent *string `json:"percent,omitempty" url:"percent,omitempty"`
+	// Minimum fee amount regardless of percentage calculation
+	MinFee *string `json:"min_fee,omitempty" url:"min_fee,omitempty"`
+	// Maximum fee amount regardless of percentage calculation
+	MaxFee *string `json:"max_fee,omitempty" url:"max_fee,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FeeDetailsFlex) GetPercent() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Percent
+}
+
+func (f *FeeDetailsFlex) GetMinFee() *string {
+	if f == nil {
+		return nil
+	}
+	return f.MinFee
+}
+
+func (f *FeeDetailsFlex) GetMaxFee() *string {
+	if f == nil {
+		return nil
+	}
+	return f.MaxFee
+}
+
+func (f *FeeDetailsFlex) GetExtraProperties() map[string]interface{} {
+	return f.extraProperties
+}
+
+func (f *FeeDetailsFlex) require(field *big.Int) {
+	if f.explicitFields == nil {
+		f.explicitFields = big.NewInt(0)
+	}
+	f.explicitFields.Or(f.explicitFields, field)
+}
+
+// SetPercent sets the Percent field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeDetailsFlex) SetPercent(percent *string) {
+	f.Percent = percent
+	f.require(feeDetailsFlexFieldPercent)
+}
+
+// SetMinFee sets the MinFee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeDetailsFlex) SetMinFee(minFee *string) {
+	f.MinFee = minFee
+	f.require(feeDetailsFlexFieldMinFee)
+}
+
+// SetMaxFee sets the MaxFee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeDetailsFlex) SetMaxFee(maxFee *string) {
+	f.MaxFee = maxFee
+	f.require(feeDetailsFlexFieldMaxFee)
+}
+
+func (f *FeeDetailsFlex) UnmarshalJSON(data []byte) error {
+	type unmarshaler FeeDetailsFlex
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FeeDetailsFlex(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FeeDetailsFlex) MarshalJSON() ([]byte, error) {
+	type embed FeeDetailsFlex
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FeeDetailsFlex) String() string {
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
+// Fee and limit details for a single asset. For crypto assets, `withdraw` and `deposit` are flat fee objects. For fiat assets with providers, they are objects keyed by provider ID.
+var (
+	feeInfoFieldTicker           = big.NewInt(1 << 0)
+	feeInfoFieldName             = big.NewInt(1 << 1)
+	feeInfoFieldProviders        = big.NewInt(1 << 2)
+	feeInfoFieldDeposit          = big.NewInt(1 << 3)
+	feeInfoFieldWithdraw         = big.NewInt(1 << 4)
+	feeInfoFieldIsDepositable    = big.NewInt(1 << 5)
+	feeInfoFieldIsWithdrawal     = big.NewInt(1 << 6)
+	feeInfoFieldIsAPIWithdrawal  = big.NewInt(1 << 7)
+	feeInfoFieldIsAPIDepositable = big.NewInt(1 << 8)
+)
+
+type FeeInfo struct {
+	// Asset ticker symbol
+	Ticker *string `json:"ticker,omitempty" url:"ticker,omitempty"`
+	// Human-readable asset name
+	Name *string `json:"name,omitempty" url:"name,omitempty"`
+	// Payment provider identifiers used as the network parameter value for fiat deposits and withdrawals via the API. See GET /api/v4/public/assets providers field for context.
+	Providers []string `json:"providers,omitempty" url:"providers,omitempty"`
+	// Deposit fee details. This shape applies to crypto assets: `max_amount` (maximum transaction amount, `"0"` means no upper limit), `min_amount` (minimum transaction amount), `fixed` (fixed fee per transaction, `null` if none), `flex` (percentage-based fee — `percent`, `min_fee`, `max_fee` — or `null` if none).
+	//
+	// For fiat assets with providers, this field is instead an object keyed by provider ID (e.g. `EUR_SEPA_BCB`), where each value has `ticker`, `name`, `is_depositable`, `is_api_depositable`, `max_amount`, `min_amount`, `fixed`, and `flex` — the API returns a different shape than `FeeDetails` in that case.
+	Deposit *FeeDetails `json:"deposit,omitempty" url:"deposit,omitempty"`
+	// Withdrawal fee details. This shape applies to crypto assets: `max_amount` (maximum transaction amount, `"0"` means no upper limit), `min_amount` (minimum transaction amount), `fixed` (fixed fee per transaction, `null` if none), `flex` (percentage-based fee — `percent`, `min_fee`, `max_fee` — or `null` if none).
+	//
+	// For fiat assets with providers, this field is instead an object keyed by provider ID (e.g. `EUR_SEPA_BCB`), where each value has `ticker`, `name`, `is_withdrawal`, `is_api_withdrawal`, `max_amount`, `min_amount`, `fixed`, and `flex` — the API returns a different shape than `FeeDetails` in that case.
+	Withdraw *FeeDetails `json:"withdraw,omitempty" url:"withdraw,omitempty"`
+	// Indicates whether deposits are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false.
+	IsDepositable *bool `json:"is_depositable,omitempty" url:"is_depositable,omitempty"`
+	// Indicates whether withdrawals are enabled for the currency. May be absent from the response; absence should be treated as equivalent to false.
+	IsWithdrawal *bool `json:"is_withdrawal,omitempty" url:"is_withdrawal,omitempty"`
+	// Whether API withdrawals are enabled
+	IsAPIWithdrawal *bool `json:"is_api_withdrawal,omitempty" url:"is_api_withdrawal,omitempty"`
+	// Whether API deposits are enabled
+	IsAPIDepositable *bool `json:"is_api_depositable,omitempty" url:"is_api_depositable,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (f *FeeInfo) GetTicker() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Ticker
+}
+
+func (f *FeeInfo) GetName() *string {
+	if f == nil {
+		return nil
+	}
+	return f.Name
+}
+
+func (f *FeeInfo) GetProviders() []string {
+	if f == nil {
+		return nil
+	}
+	return f.Providers
+}
+
+func (f *FeeInfo) GetDeposit() *FeeDetails {
+	if f == nil {
+		return nil
+	}
+	return f.Deposit
+}
+
+func (f *FeeInfo) GetWithdraw() *FeeDetails {
+	if f == nil {
+		return nil
+	}
+	return f.Withdraw
+}
+
+func (f *FeeInfo) GetIsDepositable() *bool {
+	if f == nil {
+		return nil
+	}
+	return f.IsDepositable
+}
+
+func (f *FeeInfo) GetIsWithdrawal() *bool {
+	if f == nil {
+		return nil
+	}
+	return f.IsWithdrawal
+}
+
+func (f *FeeInfo) GetIsAPIWithdrawal() *bool {
+	if f == nil {
+		return nil
+	}
+	return f.IsAPIWithdrawal
+}
+
+func (f *FeeInfo) GetIsAPIDepositable() *bool {
+	if f == nil {
+		return nil
+	}
+	return f.IsAPIDepositable
+}
+
+func (f *FeeInfo) GetExtraProperties() map[string]interface{} {
+	return f.extraProperties
+}
+
+func (f *FeeInfo) require(field *big.Int) {
+	if f.explicitFields == nil {
+		f.explicitFields = big.NewInt(0)
+	}
+	f.explicitFields.Or(f.explicitFields, field)
+}
+
+// SetTicker sets the Ticker field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetTicker(ticker *string) {
+	f.Ticker = ticker
+	f.require(feeInfoFieldTicker)
+}
+
+// SetName sets the Name field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetName(name *string) {
+	f.Name = name
+	f.require(feeInfoFieldName)
+}
+
+// SetProviders sets the Providers field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetProviders(providers []string) {
+	f.Providers = providers
+	f.require(feeInfoFieldProviders)
+}
+
+// SetDeposit sets the Deposit field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetDeposit(deposit *FeeDetails) {
+	f.Deposit = deposit
+	f.require(feeInfoFieldDeposit)
+}
+
+// SetWithdraw sets the Withdraw field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetWithdraw(withdraw *FeeDetails) {
+	f.Withdraw = withdraw
+	f.require(feeInfoFieldWithdraw)
+}
+
+// SetIsDepositable sets the IsDepositable field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetIsDepositable(isDepositable *bool) {
+	f.IsDepositable = isDepositable
+	f.require(feeInfoFieldIsDepositable)
+}
+
+// SetIsWithdrawal sets the IsWithdrawal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetIsWithdrawal(isWithdrawal *bool) {
+	f.IsWithdrawal = isWithdrawal
+	f.require(feeInfoFieldIsWithdrawal)
+}
+
+// SetIsAPIWithdrawal sets the IsAPIWithdrawal field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetIsAPIWithdrawal(isAPIWithdrawal *bool) {
+	f.IsAPIWithdrawal = isAPIWithdrawal
+	f.require(feeInfoFieldIsAPIWithdrawal)
+}
+
+// SetIsAPIDepositable sets the IsAPIDepositable field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (f *FeeInfo) SetIsAPIDepositable(isAPIDepositable *bool) {
+	f.IsAPIDepositable = isAPIDepositable
+	f.require(feeInfoFieldIsAPIDepositable)
+}
+
+func (f *FeeInfo) UnmarshalJSON(data []byte) error {
+	type unmarshaler FeeInfo
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = FeeInfo(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *f)
+	if err != nil {
+		return err
+	}
+	f.extraProperties = extraProperties
+	f.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (f *FeeInfo) MarshalJSON() ([]byte, error) {
+	type embed FeeInfo
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*f),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, f.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (f *FeeInfo) String() string {
+	if len(f.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(f.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(f); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", f)
+}
+
 var (
 	futuresMarketFieldTickerID                 = big.NewInt(1 << 0)
 	futuresMarketFieldStockCurrency            = big.NewInt(1 << 1)
@@ -1167,9 +1632,9 @@ type FuturesMarket struct {
 	High *string `json:"high,omitempty" url:"high,omitempty"`
 	// Rolling 24-hours lowest transaction price
 	Low *string `json:"low,omitempty" url:"low,omitempty"`
-	// What product is this? Futures, Perpetual, Options?
-	ProductType *string `json:"product_type,omitempty" url:"product_type,omitempty"`
-	// The open interest in the last 24 hours in contracts
+	// Derivative product type for the market.
+	ProductType *FuturesMarketProductType `json:"product_type,omitempty" url:"product_type,omitempty"`
+	// Current open interest in contracts (point-in-time snapshot, not a 24-hour delta or volume).
 	OpenInterest *string `json:"open_interest,omitempty" url:"open_interest,omitempty"`
 	// Underlying index price
 	IndexPrice *string `json:"index_price,omitempty" url:"index_price,omitempty"`
@@ -1177,13 +1642,13 @@ type FuturesMarket struct {
 	IndexName *string `json:"index_name,omitempty" url:"index_name,omitempty"`
 	// Underlying currency for index
 	IndexCurrency *string `json:"index_currency,omitempty" url:"index_currency,omitempty"`
-	// The current funding rate, which may fluctuate due to market conditions
+	// Predicted funding rate for the next settlement interval. Fluctuates in real time until settlement occurs. See GET /api/v4/public/funding-history/{market} for historical funding rate records.
 	FundingRate *string `json:"funding_rate,omitempty" url:"funding_rate,omitempty"`
-	// Timestamp of the next funding rate change
+	// Unix timestamp in milliseconds of the next funding settlement. 13-digit value (millisecond precision).
 	NextFundingRateTimestamp *string `json:"next_funding_rate_timestamp,omitempty" url:"next_funding_rate_timestamp,omitempty"`
-	// Brackets
+	// Leverage brackets defining position size limits. Object keys are leverage multipliers (e.g., "1", "2", "5", "10", "20", "50", "100"). Values are the maximum allowed open position size in USDT equivalent at the corresponding leverage level.
 	Brackets map[string]int `json:"brackets,omitempty" url:"brackets,omitempty"`
-	// Max Leverage
+	// Maximum leverage multiplier allowed for the market.
 	MaxLeverage *int `json:"max_leverage,omitempty" url:"max_leverage,omitempty"`
 	// Funding interval in minutes
 	FundingIntervalMinutes *int `json:"funding_interval_minutes,omitempty" url:"funding_interval_minutes,omitempty"`
@@ -1265,7 +1730,7 @@ func (f *FuturesMarket) GetLow() *string {
 	return f.Low
 }
 
-func (f *FuturesMarket) GetProductType() *string {
+func (f *FuturesMarket) GetProductType() *FuturesMarketProductType {
 	if f == nil {
 		return nil
 	}
@@ -1418,7 +1883,7 @@ func (f *FuturesMarket) SetLow(low *string) {
 
 // SetProductType sets the ProductType field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (f *FuturesMarket) SetProductType(productType *string) {
+func (f *FuturesMarket) SetProductType(productType *FuturesMarketProductType) {
 	f.ProductType = productType
 	f.require(futuresMarketFieldProductType)
 }
@@ -1523,6 +1988,32 @@ func (f *FuturesMarket) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", f)
+}
+
+// Derivative product type for the market.
+type FuturesMarketProductType string
+
+const (
+	FuturesMarketProductTypePerpetual FuturesMarketProductType = "Perpetual"
+	FuturesMarketProductTypeFutures   FuturesMarketProductType = "Futures"
+	FuturesMarketProductTypeOptions   FuturesMarketProductType = "Options"
+)
+
+func NewFuturesMarketProductTypeFromString(s string) (FuturesMarketProductType, error) {
+	switch s {
+	case "Perpetual":
+		return FuturesMarketProductTypePerpetual, nil
+	case "Futures":
+		return FuturesMarketProductTypeFutures, nil
+	case "Options":
+		return FuturesMarketProductTypeOptions, nil
+	}
+	var t FuturesMarketProductType
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (f FuturesMarketProductType) Ptr() *FuturesMarketProductType {
+	return &f
 }
 
 var (
@@ -1758,15 +2249,15 @@ var (
 )
 
 type GetAPIV4PublicFundingHistoryMarketResponseItem struct {
-	// Timestamp when the funding executed
+	// Unix timestamp in seconds when the funding settlement executed.
 	FundingTime string `json:"fundingTime" url:"fundingTime"`
-	// Funding rate value
+	// Funding rate applied at the settlement interval. Each record represents a historical settlement event.
 	FundingRate string `json:"fundingRate" url:"fundingRate"`
-	// Market name
+	// Futures market pair name (e.g., `BTC_PERP`).
 	Market string `json:"market" url:"market"`
-	// Price at which the funding settled
+	// Mark price in the quote currency at the time of funding settlement.
 	SettlementPrice string `json:"settlementPrice" url:"settlementPrice"`
-	// Timestamp of the funding rate calculation
+	// Unix timestamp in seconds when the funding rate was calculated. The rate is computed before the actual settlement.
 	RateCalculatedTime string `json:"rateCalculatedTime" url:"rateCalculatedTime"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2007,20 +2498,21 @@ func (g *GetAPIV4PublicFuturesResponse) String() string {
 }
 
 var (
-	getAPIV4PublicMarketsResponseItemFieldName          = big.NewInt(1 << 0)
-	getAPIV4PublicMarketsResponseItemFieldStock         = big.NewInt(1 << 1)
-	getAPIV4PublicMarketsResponseItemFieldMoney         = big.NewInt(1 << 2)
-	getAPIV4PublicMarketsResponseItemFieldStockPrec     = big.NewInt(1 << 3)
-	getAPIV4PublicMarketsResponseItemFieldMoneyPrec     = big.NewInt(1 << 4)
-	getAPIV4PublicMarketsResponseItemFieldFeePrec       = big.NewInt(1 << 5)
-	getAPIV4PublicMarketsResponseItemFieldMakerFee      = big.NewInt(1 << 6)
-	getAPIV4PublicMarketsResponseItemFieldTakerFee      = big.NewInt(1 << 7)
-	getAPIV4PublicMarketsResponseItemFieldMinAmount     = big.NewInt(1 << 8)
-	getAPIV4PublicMarketsResponseItemFieldMinTotal      = big.NewInt(1 << 9)
-	getAPIV4PublicMarketsResponseItemFieldMaxTotal      = big.NewInt(1 << 10)
-	getAPIV4PublicMarketsResponseItemFieldTradesEnabled = big.NewInt(1 << 11)
-	getAPIV4PublicMarketsResponseItemFieldIsCollateral  = big.NewInt(1 << 12)
-	getAPIV4PublicMarketsResponseItemFieldType          = big.NewInt(1 << 13)
+	getAPIV4PublicMarketsResponseItemFieldName            = big.NewInt(1 << 0)
+	getAPIV4PublicMarketsResponseItemFieldStock           = big.NewInt(1 << 1)
+	getAPIV4PublicMarketsResponseItemFieldMoney           = big.NewInt(1 << 2)
+	getAPIV4PublicMarketsResponseItemFieldStockPrec       = big.NewInt(1 << 3)
+	getAPIV4PublicMarketsResponseItemFieldMoneyPrec       = big.NewInt(1 << 4)
+	getAPIV4PublicMarketsResponseItemFieldFeePrec         = big.NewInt(1 << 5)
+	getAPIV4PublicMarketsResponseItemFieldMakerFee        = big.NewInt(1 << 6)
+	getAPIV4PublicMarketsResponseItemFieldTakerFee        = big.NewInt(1 << 7)
+	getAPIV4PublicMarketsResponseItemFieldMinAmount       = big.NewInt(1 << 8)
+	getAPIV4PublicMarketsResponseItemFieldMinTotal        = big.NewInt(1 << 9)
+	getAPIV4PublicMarketsResponseItemFieldMaxTotal        = big.NewInt(1 << 10)
+	getAPIV4PublicMarketsResponseItemFieldTradesEnabled   = big.NewInt(1 << 11)
+	getAPIV4PublicMarketsResponseItemFieldIsCollateral    = big.NewInt(1 << 12)
+	getAPIV4PublicMarketsResponseItemFieldType            = big.NewInt(1 << 13)
+	getAPIV4PublicMarketsResponseItemFieldIsTradFiFutures = big.NewInt(1 << 14)
 )
 
 type GetAPIV4PublicMarketsResponseItem struct {
@@ -2030,28 +2522,30 @@ type GetAPIV4PublicMarketsResponseItem struct {
 	Stock string `json:"stock" url:"stock"`
 	// Ticker of money currency
 	Money string `json:"money" url:"money"`
-	// Stock currency precision
+	// Maximum number of decimal places for the base (stock) currency quantity. Represented as a stringified integer.
 	StockPrec string `json:"stockPrec" url:"stockPrec"`
-	// Precision of money currency
+	// Maximum number of decimal places for the quote (money) currency amount. Represented as a stringified integer.
 	MoneyPrec string `json:"moneyPrec" url:"moneyPrec"`
-	// Fee precision
+	// Maximum number of decimal places used when calculating fees. Represented as a stringified integer.
 	FeePrec string `json:"feePrec" url:"feePrec"`
-	// Default maker fee ratio
+	// Default maker fee as a decimal ratio (e.g., `"0.001"` = 0.1%). Multiply by 100 to convert to a percentage.
 	MakerFee string `json:"makerFee" url:"makerFee"`
-	// Default taker fee ratio
+	// Default taker fee as a decimal ratio (e.g., `"0.001"` = 0.1%). Multiply by 100 to convert to a percentage.
 	TakerFee string `json:"takerFee" url:"takerFee"`
-	// Minimal amount of stock to trade
+	// Minimum order quantity in the base (stock) currency.
 	MinAmount string `json:"minAmount" url:"minAmount"`
-	// Minimal amount of money to trade
+	// Minimum order total in the quote (money) currency.
 	MinTotal string `json:"minTotal" url:"minTotal"`
-	// Maximum total (amount * price) of money to trade
-	MaxTotal *string `json:"maxTotal,omitempty" url:"maxTotal,omitempty"`
+	// Maximum order total (quantity × price) in the quote (money) currency. `"0"` indicates no upper limit.
+	MaxTotal string `json:"maxTotal" url:"maxTotal"`
 	// Indicates whether trading is enabled
 	TradesEnabled bool `json:"tradesEnabled" url:"tradesEnabled"`
 	// Indicates whether margin trading is enabled
-	IsCollateral *bool `json:"isCollateral,omitempty" url:"isCollateral,omitempty"`
-	// Market type. Possible values: spot, futures
+	IsCollateral bool `json:"isCollateral" url:"isCollateral"`
+	// Market type. Possible values: spot, futures, tradfiFutures
 	Type GetAPIV4PublicMarketsResponseItemType `json:"type" url:"type"`
+	// Indicates whether the market is a traditional-finance (TradFi) futures market. Always paired with `type: tradfiFutures`. TradFi futures markets are region-gated and are omitted from the response entirely where not available.
+	IsTradFiFutures bool `json:"isTradFiFutures" url:"isTradFiFutures"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2130,9 +2624,9 @@ func (g *GetAPIV4PublicMarketsResponseItem) GetMinTotal() string {
 	return g.MinTotal
 }
 
-func (g *GetAPIV4PublicMarketsResponseItem) GetMaxTotal() *string {
+func (g *GetAPIV4PublicMarketsResponseItem) GetMaxTotal() string {
 	if g == nil {
-		return nil
+		return ""
 	}
 	return g.MaxTotal
 }
@@ -2144,9 +2638,9 @@ func (g *GetAPIV4PublicMarketsResponseItem) GetTradesEnabled() bool {
 	return g.TradesEnabled
 }
 
-func (g *GetAPIV4PublicMarketsResponseItem) GetIsCollateral() *bool {
+func (g *GetAPIV4PublicMarketsResponseItem) GetIsCollateral() bool {
 	if g == nil {
-		return nil
+		return false
 	}
 	return g.IsCollateral
 }
@@ -2156,6 +2650,13 @@ func (g *GetAPIV4PublicMarketsResponseItem) GetType() GetAPIV4PublicMarketsRespo
 		return ""
 	}
 	return g.Type
+}
+
+func (g *GetAPIV4PublicMarketsResponseItem) GetIsTradFiFutures() bool {
+	if g == nil {
+		return false
+	}
+	return g.IsTradFiFutures
 }
 
 func (g *GetAPIV4PublicMarketsResponseItem) GetExtraProperties() map[string]interface{} {
@@ -2241,7 +2742,7 @@ func (g *GetAPIV4PublicMarketsResponseItem) SetMinTotal(minTotal string) {
 
 // SetMaxTotal sets the MaxTotal field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMarketsResponseItem) SetMaxTotal(maxTotal *string) {
+func (g *GetAPIV4PublicMarketsResponseItem) SetMaxTotal(maxTotal string) {
 	g.MaxTotal = maxTotal
 	g.require(getAPIV4PublicMarketsResponseItemFieldMaxTotal)
 }
@@ -2255,7 +2756,7 @@ func (g *GetAPIV4PublicMarketsResponseItem) SetTradesEnabled(tradesEnabled bool)
 
 // SetIsCollateral sets the IsCollateral field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMarketsResponseItem) SetIsCollateral(isCollateral *bool) {
+func (g *GetAPIV4PublicMarketsResponseItem) SetIsCollateral(isCollateral bool) {
 	g.IsCollateral = isCollateral
 	g.require(getAPIV4PublicMarketsResponseItemFieldIsCollateral)
 }
@@ -2265,6 +2766,13 @@ func (g *GetAPIV4PublicMarketsResponseItem) SetIsCollateral(isCollateral *bool) 
 func (g *GetAPIV4PublicMarketsResponseItem) SetType(type_ GetAPIV4PublicMarketsResponseItemType) {
 	g.Type = type_
 	g.require(getAPIV4PublicMarketsResponseItemFieldType)
+}
+
+// SetIsTradFiFutures sets the IsTradFiFutures field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetAPIV4PublicMarketsResponseItem) SetIsTradFiFutures(isTradFiFutures bool) {
+	g.IsTradFiFutures = isTradFiFutures
+	g.require(getAPIV4PublicMarketsResponseItemFieldIsTradFiFutures)
 }
 
 func (g *GetAPIV4PublicMarketsResponseItem) UnmarshalJSON(data []byte) error {
@@ -2306,12 +2814,13 @@ func (g *GetAPIV4PublicMarketsResponseItem) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
-// Market type. Possible values: spot, futures
+// Market type. Possible values: spot, futures, tradfiFutures
 type GetAPIV4PublicMarketsResponseItemType string
 
 const (
-	GetAPIV4PublicMarketsResponseItemTypeSpot    GetAPIV4PublicMarketsResponseItemType = "spot"
-	GetAPIV4PublicMarketsResponseItemTypeFutures GetAPIV4PublicMarketsResponseItemType = "futures"
+	GetAPIV4PublicMarketsResponseItemTypeSpot          GetAPIV4PublicMarketsResponseItemType = "spot"
+	GetAPIV4PublicMarketsResponseItemTypeFutures       GetAPIV4PublicMarketsResponseItemType = "futures"
+	GetAPIV4PublicMarketsResponseItemTypeTradfiFutures GetAPIV4PublicMarketsResponseItemType = "tradfiFutures"
 )
 
 func NewGetAPIV4PublicMarketsResponseItemTypeFromString(s string) (GetAPIV4PublicMarketsResponseItemType, error) {
@@ -2320,6 +2829,8 @@ func NewGetAPIV4PublicMarketsResponseItemTypeFromString(s string) (GetAPIV4Publi
 		return GetAPIV4PublicMarketsResponseItemTypeSpot, nil
 	case "futures":
 		return GetAPIV4PublicMarketsResponseItemTypeFutures, nil
+	case "tradfiFutures":
+		return GetAPIV4PublicMarketsResponseItemTypeTradfiFutures, nil
 	}
 	var t GetAPIV4PublicMarketsResponseItemType
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
@@ -2330,467 +2841,11 @@ func (g GetAPIV4PublicMarketsResponseItemType) Ptr() *GetAPIV4PublicMarketsRespo
 }
 
 var (
-	getAPIV4PublicMiningPoolResponseFieldData = big.NewInt(1 << 0)
-)
-
-type GetAPIV4PublicMiningPoolResponse struct {
-	Data *GetAPIV4PublicMiningPoolResponseData `json:"data,omitempty" url:"data,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetAPIV4PublicMiningPoolResponse) GetData() *GetAPIV4PublicMiningPoolResponseData {
-	if g == nil {
-		return nil
-	}
-	return g.Data
-}
-
-func (g *GetAPIV4PublicMiningPoolResponse) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetAPIV4PublicMiningPoolResponse) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetData sets the Data field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponse) SetData(data *GetAPIV4PublicMiningPoolResponseData) {
-	g.Data = data
-	g.require(getAPIV4PublicMiningPoolResponseFieldData)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetAPIV4PublicMiningPoolResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetAPIV4PublicMiningPoolResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetAPIV4PublicMiningPoolResponse) MarshalJSON() ([]byte, error) {
-	type embed GetAPIV4PublicMiningPoolResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponse) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getAPIV4PublicMiningPoolResponseDataFieldConnectionLinks   = big.NewInt(1 << 0)
-	getAPIV4PublicMiningPoolResponseDataFieldLocation          = big.NewInt(1 << 1)
-	getAPIV4PublicMiningPoolResponseDataFieldAssets            = big.NewInt(1 << 2)
-	getAPIV4PublicMiningPoolResponseDataFieldRewardSchemes     = big.NewInt(1 << 3)
-	getAPIV4PublicMiningPoolResponseDataFieldWorkers           = big.NewInt(1 << 4)
-	getAPIV4PublicMiningPoolResponseDataFieldCurrentHashRate   = big.NewInt(1 << 5)
-	getAPIV4PublicMiningPoolResponseDataFieldLast7DaysHashRate = big.NewInt(1 << 6)
-	getAPIV4PublicMiningPoolResponseDataFieldBlocks            = big.NewInt(1 << 7)
-)
-
-type GetAPIV4PublicMiningPoolResponseData struct {
-	ConnectionLinks   []string                                                     `json:"connection_links,omitempty" url:"connection_links,omitempty"`
-	Location          *string                                                      `json:"location,omitempty" url:"location,omitempty"`
-	Assets            []string                                                     `json:"assets,omitempty" url:"assets,omitempty"`
-	RewardSchemes     []string                                                     `json:"reward_schemes,omitempty" url:"reward_schemes,omitempty"`
-	Workers           *int                                                         `json:"workers,omitempty" url:"workers,omitempty"`
-	CurrentHashRate   *string                                                      `json:"current_hash_rate,omitempty" url:"current_hash_rate,omitempty"`
-	Last7DaysHashRate []*GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem `json:"last7days_hash_rate,omitempty" url:"last7days_hash_rate,omitempty"`
-	Blocks            []*GetAPIV4PublicMiningPoolResponseDataBlocksItem            `json:"blocks,omitempty" url:"blocks,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetConnectionLinks() []string {
-	if g == nil {
-		return nil
-	}
-	return g.ConnectionLinks
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetLocation() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Location
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetAssets() []string {
-	if g == nil {
-		return nil
-	}
-	return g.Assets
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetRewardSchemes() []string {
-	if g == nil {
-		return nil
-	}
-	return g.RewardSchemes
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetWorkers() *int {
-	if g == nil {
-		return nil
-	}
-	return g.Workers
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetCurrentHashRate() *string {
-	if g == nil {
-		return nil
-	}
-	return g.CurrentHashRate
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetLast7DaysHashRate() []*GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem {
-	if g == nil {
-		return nil
-	}
-	return g.Last7DaysHashRate
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetBlocks() []*GetAPIV4PublicMiningPoolResponseDataBlocksItem {
-	if g == nil {
-		return nil
-	}
-	return g.Blocks
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetConnectionLinks sets the ConnectionLinks field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetConnectionLinks(connectionLinks []string) {
-	g.ConnectionLinks = connectionLinks
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldConnectionLinks)
-}
-
-// SetLocation sets the Location field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetLocation(location *string) {
-	g.Location = location
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldLocation)
-}
-
-// SetAssets sets the Assets field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetAssets(assets []string) {
-	g.Assets = assets
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldAssets)
-}
-
-// SetRewardSchemes sets the RewardSchemes field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetRewardSchemes(rewardSchemes []string) {
-	g.RewardSchemes = rewardSchemes
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldRewardSchemes)
-}
-
-// SetWorkers sets the Workers field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetWorkers(workers *int) {
-	g.Workers = workers
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldWorkers)
-}
-
-// SetCurrentHashRate sets the CurrentHashRate field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetCurrentHashRate(currentHashRate *string) {
-	g.CurrentHashRate = currentHashRate
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldCurrentHashRate)
-}
-
-// SetLast7DaysHashRate sets the Last7DaysHashRate field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetLast7DaysHashRate(last7DaysHashRate []*GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) {
-	g.Last7DaysHashRate = last7DaysHashRate
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldLast7DaysHashRate)
-}
-
-// SetBlocks sets the Blocks field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseData) SetBlocks(blocks []*GetAPIV4PublicMiningPoolResponseDataBlocksItem) {
-	g.Blocks = blocks
-	g.require(getAPIV4PublicMiningPoolResponseDataFieldBlocks)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetAPIV4PublicMiningPoolResponseData
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetAPIV4PublicMiningPoolResponseData(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) MarshalJSON() ([]byte, error) {
-	type embed GetAPIV4PublicMiningPoolResponseData
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseData) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getAPIV4PublicMiningPoolResponseDataBlocksItemFieldBlockFoundAt = big.NewInt(1 << 0)
-	getAPIV4PublicMiningPoolResponseDataBlocksItemFieldBlockHeight  = big.NewInt(1 << 1)
-)
-
-type GetAPIV4PublicMiningPoolResponseDataBlocksItem struct {
-	BlockFoundAt *int `json:"block_found_at,omitempty" url:"block_found_at,omitempty"`
-	BlockHeight  *int `json:"block_height,omitempty" url:"block_height,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) GetBlockFoundAt() *int {
-	if g == nil {
-		return nil
-	}
-	return g.BlockFoundAt
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) GetBlockHeight() *int {
-	if g == nil {
-		return nil
-	}
-	return g.BlockHeight
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetBlockFoundAt sets the BlockFoundAt field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) SetBlockFoundAt(blockFoundAt *int) {
-	g.BlockFoundAt = blockFoundAt
-	g.require(getAPIV4PublicMiningPoolResponseDataBlocksItemFieldBlockFoundAt)
-}
-
-// SetBlockHeight sets the BlockHeight field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) SetBlockHeight(blockHeight *int) {
-	g.BlockHeight = blockHeight
-	g.require(getAPIV4PublicMiningPoolResponseDataBlocksItemFieldBlockHeight)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetAPIV4PublicMiningPoolResponseDataBlocksItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetAPIV4PublicMiningPoolResponseDataBlocksItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) MarshalJSON() ([]byte, error) {
-	type embed GetAPIV4PublicMiningPoolResponseDataBlocksItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataBlocksItem) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItemFieldTimestamp = big.NewInt(1 << 0)
-	getAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItemFieldHashrate  = big.NewInt(1 << 1)
-)
-
-type GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem struct {
-	Timestamp *int    `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	Hashrate  *string `json:"hashrate,omitempty" url:"hashrate,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) GetTimestamp() *int {
-	if g == nil {
-		return nil
-	}
-	return g.Timestamp
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) GetHashrate() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Hashrate
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) SetTimestamp(timestamp *int) {
-	g.Timestamp = timestamp
-	g.require(getAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItemFieldTimestamp)
-}
-
-// SetHashrate sets the Hashrate field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) SetHashrate(hashrate *string) {
-	g.Hashrate = hashrate
-	g.require(getAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItemFieldHashrate)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) MarshalJSON() ([]byte, error) {
-	type embed GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetAPIV4PublicMiningPoolResponseDataLast7DaysHashRateItem) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-var (
 	getAPIV4PublicPlatformStatusResponseFieldStatus = big.NewInt(1 << 0)
 )
 
 type GetAPIV4PublicPlatformStatusResponse struct {
-	// system operational or system maintenance
+	// Platform operational state. `"system operational"` indicates all services are available. `"system maintenance"` indicates the platform is undergoing planned maintenance.
 	Status GetAPIV4PublicPlatformStatusResponseStatus `json:"status" url:"status"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -2864,7 +2919,7 @@ func (g *GetAPIV4PublicPlatformStatusResponse) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
-// system operational or system maintenance
+// Platform operational state. `"system operational"` indicates all services are available. `"system maintenance"` indicates the platform is undergoing planned maintenance.
 type GetAPIV4PublicPlatformStatusResponseStatus string
 
 const (
@@ -2902,15 +2957,15 @@ type GetAPIV4PublicTickerResponseValue struct {
 	BaseID *int `json:"base_id,omitempty" url:"base_id,omitempty"`
 	// CoinMarketCap ID of quote currency; 0 - if unknown
 	QuoteID *int `json:"quote_id,omitempty" url:"quote_id,omitempty"`
-	// Last price
+	// Most recent trade price in the quote currency.
 	LastPrice *string `json:"last_price,omitempty" url:"last_price,omitempty"`
-	// Volume in quote currency
+	// Rolling 24-hour trading volume in the quote currency.
 	QuoteVolume *string `json:"quote_volume,omitempty" url:"quote_volume,omitempty"`
-	// Volume in base currency
+	// Rolling 24-hour trading volume in the base currency.
 	BaseVolume *string `json:"base_volume,omitempty" url:"base_volume,omitempty"`
-	// Indicates whether trading is disabled
+	// Indicates whether trading is disabled for the market pair.
 	IsFrozen *bool `json:"is_frozen,omitempty" url:"is_frozen,omitempty"`
-	// Change in percent between open and last prices
+	// Percentage change between the rolling 24-hour open price and the last traded price.
 	Change *string `json:"change,omitempty" url:"change,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -3184,11 +3239,11 @@ type GetAPIV4PublicTradesMarketResponseItem struct {
 	TradeID int `json:"tradeID" url:"tradeID"`
 	// Transaction price in quote pair volume.
 	Price string `json:"price" url:"price"`
-	// Transaction amount in quote pair volume.
+	// Transaction amount in the quote (stock) currency. In a BTC_USDT market, the value is the BTC amount. Note: WhiteBIT uses a reversed naming convention compared to standard exchange terminology — the stock/asset currency is called 'quote' here.
 	QuoteVolume string `json:"quote_volume" url:"quote_volume"`
-	// Transaction amount in base pair volume.
+	// Transaction amount in the base (money) currency. In a BTC_USDT market, the value is the USDT amount. Note: WhiteBIT uses a reversed naming convention compared to standard exchange terminology — the settlement/pricing currency is called 'base' here.
 	BaseVolume string `json:"base_volume" url:"base_volume"`
-	// Unix timestamp in milliseconds, identifies when the transaction occurred.
+	// Unix timestamp in seconds (UTC). Identifies when the transaction occurred.
 	TradeTimestamp int `json:"trade_timestamp" url:"trade_timestamp"`
 	// Used to determine whether or not the transaction originated as a buy or sell. Buy – Identifies an ask that was removed from the order book. Sell – Identifies a bid that was removed from the order book.
 	Type GetAPIV4PublicTradesMarketResponseItemType `json:"type" url:"type"`

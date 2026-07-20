@@ -5,51 +5,43 @@ package client
 import (
 	context "context"
 	sdk "github.com/whitebit-exchange/go-sdk"
-	accountendpoints "github.com/whitebit-exchange/go-sdk/accountendpoints"
-	authentication "github.com/whitebit-exchange/go-sdk/authentication"
 	codes "github.com/whitebit-exchange/go-sdk/codes"
 	collateraltrading "github.com/whitebit-exchange/go-sdk/collateraltrading"
 	core "github.com/whitebit-exchange/go-sdk/core"
 	creditline "github.com/whitebit-exchange/go-sdk/creditline"
-	cryptolendingfixed "github.com/whitebit-exchange/go-sdk/cryptolendingfixed"
-	cryptolendingflex "github.com/whitebit-exchange/go-sdk/cryptolendingflex"
 	deposit "github.com/whitebit-exchange/go-sdk/deposit"
 	fees "github.com/whitebit-exchange/go-sdk/fees"
 	internal "github.com/whitebit-exchange/go-sdk/internal"
 	jwt "github.com/whitebit-exchange/go-sdk/jwt"
 	mainaccount "github.com/whitebit-exchange/go-sdk/mainaccount"
 	marketfee "github.com/whitebit-exchange/go-sdk/marketfee"
-	miningpool "github.com/whitebit-exchange/go-sdk/miningpool"
 	option "github.com/whitebit-exchange/go-sdk/option"
 	publicapiv4 "github.com/whitebit-exchange/go-sdk/publicapiv4"
 	spottrading "github.com/whitebit-exchange/go-sdk/spottrading"
 	subaccount "github.com/whitebit-exchange/go-sdk/subaccount"
 	subaccountapikeys "github.com/whitebit-exchange/go-sdk/subaccountapikeys"
 	transfer "github.com/whitebit-exchange/go-sdk/transfer"
+	travelrule "github.com/whitebit-exchange/go-sdk/travelrule"
 	withdraw "github.com/whitebit-exchange/go-sdk/withdraw"
 )
 
 type Client struct {
-	WithRawResponse    *RawClient
-	Authentication     *authentication.Client
-	AccountEndpoints   *accountendpoints.Client
-	PublicAPIV4        *publicapiv4.Client
-	MainAccount        *mainaccount.Client
-	Deposit            *deposit.Client
-	Jwt                *jwt.Client
-	Withdraw           *withdraw.Client
-	Transfer           *transfer.Client
-	Codes              *codes.Client
-	CryptoLendingFixed *cryptolendingfixed.Client
-	CryptoLendingFlex  *cryptolendingflex.Client
-	Fees               *fees.Client
-	SubAccount         *subaccount.Client
-	SubAccountAPIKeys  *subaccountapikeys.Client
-	MiningPool         *miningpool.Client
-	CreditLine         *creditline.Client
-	CollateralTrading  *collateraltrading.Client
-	MarketFee          *marketfee.Client
-	SpotTrading        *spottrading.Client
+	WithRawResponse   *RawClient
+	PublicAPIV4       *publicapiv4.Client
+	MainAccount       *mainaccount.Client
+	Deposit           *deposit.Client
+	Jwt               *jwt.Client
+	Withdraw          *withdraw.Client
+	Transfer          *transfer.Client
+	Codes             *codes.Client
+	Fees              *fees.Client
+	SubAccount        *subaccount.Client
+	SubAccountAPIKeys *subaccountapikeys.Client
+	CreditLine        *creditline.Client
+	TravelRule        *travelrule.Client
+	CollateralTrading *collateraltrading.Client
+	MarketFee         *marketfee.Client
+	SpotTrading       *spottrading.Client
 
 	options *core.RequestOptions
 	baseURL string
@@ -59,28 +51,24 @@ type Client struct {
 func NewClient(opts ...option.RequestOption) *Client {
 	options := core.NewRequestOptions(opts...)
 	return &Client{
-		Authentication:     authentication.NewClient(options),
-		AccountEndpoints:   accountendpoints.NewClient(options),
-		PublicAPIV4:        publicapiv4.NewClient(options),
-		MainAccount:        mainaccount.NewClient(options),
-		Deposit:            deposit.NewClient(options),
-		Jwt:                jwt.NewClient(options),
-		Withdraw:           withdraw.NewClient(options),
-		Transfer:           transfer.NewClient(options),
-		Codes:              codes.NewClient(options),
-		CryptoLendingFixed: cryptolendingfixed.NewClient(options),
-		CryptoLendingFlex:  cryptolendingflex.NewClient(options),
-		Fees:               fees.NewClient(options),
-		SubAccount:         subaccount.NewClient(options),
-		SubAccountAPIKeys:  subaccountapikeys.NewClient(options),
-		MiningPool:         miningpool.NewClient(options),
-		CreditLine:         creditline.NewClient(options),
-		CollateralTrading:  collateraltrading.NewClient(options),
-		MarketFee:          marketfee.NewClient(options),
-		SpotTrading:        spottrading.NewClient(options),
-		WithRawResponse:    NewRawClient(options),
-		options:            options,
-		baseURL:            options.BaseURL,
+		PublicAPIV4:       publicapiv4.NewClient(options),
+		MainAccount:       mainaccount.NewClient(options),
+		Deposit:           deposit.NewClient(options),
+		Jwt:               jwt.NewClient(options),
+		Withdraw:          withdraw.NewClient(options),
+		Transfer:          transfer.NewClient(options),
+		Codes:             codes.NewClient(options),
+		Fees:              fees.NewClient(options),
+		SubAccount:        subaccount.NewClient(options),
+		SubAccountAPIKeys: subaccountapikeys.NewClient(options),
+		CreditLine:        creditline.NewClient(options),
+		TravelRule:        travelrule.NewClient(options),
+		CollateralTrading: collateraltrading.NewClient(options),
+		MarketFee:         marketfee.NewClient(options),
+		SpotTrading:       spottrading.NewClient(options),
+		WithRawResponse:   NewRawClient(options),
+		options:           options,
+		baseURL:           options.BaseURL,
 		caller: internal.NewCaller(
 			&internal.CallerParams{
 				Client:      options.HTTPClient,
@@ -91,6 +79,16 @@ func NewClient(opts ...option.RequestOption) *Client {
 }
 
 // The endpoint creates a quote for converting one currency to another. Quote lifetime is 10 seconds, then quote will be expired.
+//
+// The minimum convert size is derived from the resulting proceeds, not a fixed per-pair floor: a request is rejected as too small when `rate × amount` rounds to zero in the target currency. Account balance is pre-checked at estimate time and re-checked at confirm time, because balance can change within the 10-second quote window. There is an absolute server-side maximum on the conversion amount.
+//
+// <Note>
+// The endpoint can be used to obtain a pre-execution price estimate for a market order. Call the endpoint with the desired amount before placing a market order to see the approximate execution price.
+// </Note>
+//
+// <Note>
+// Error `message` values may be returned as translation keys (for example `validation.required`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+// </Note>
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
@@ -113,6 +111,16 @@ func (c *Client) ConvertEstimate(
 
 // The endpoint confirms an estimated quote.
 //
+// An expired quote returns code `20` (`api.converter.quoteExpired`), which is distinct from a quote that could not be found (code `0`). Balance is re-checked at confirm time and can fail with code `37` even when the estimate succeeded, because balance may change within the 10-second quote window.
+//
+// <Note>
+// A re-confirmed (already used) quote and a quote that never existed both return code `0` with the `quoteId` field key `frontendServerSide.converter.quoteInvalid`. The response alone does not distinguish "already used" from "never existed".
+// </Note>
+//
+// <Note>
+// Error `message` values may be returned as translation keys (for example `api.converter.quoteExpired`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+// </Note>
+//
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
@@ -132,12 +140,19 @@ func (c *Client) ConvertConfirm(
 	return response.Body, nil
 }
 
-// The endpoint returns convert history.
+// The endpoint returns convert history, sorted by `id` descending (newest first).
+//
+// The `from`–`to` window is capped at 30 days per request, even though data is retained for 6 months. A wider range is rejected with code `30` (`api.validation.dateTime.maxRange`).
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
-// **Note:** The endpoint can retrieve data not older than 6 months from current month. For older data, use the Report on the History page.
+//
+// <Note>
+// Error `message` values may be returned as translation keys (for example `api.validation.dateTime.maxRange`) rather than finalized English strings. Treat the `code` and the field name under `errors` as the stable contract.
+// </Note>
+//
+// **Note:** The endpoint can retrieve data not older than 6 months from the current month. For older data, use the Report on the History page.
 func (c *Client) ConvertHistory(
 	ctx context.Context,
 	request *sdk.ConvertHistoryRequest,

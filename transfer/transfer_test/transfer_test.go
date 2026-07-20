@@ -78,7 +78,7 @@ func TestTransferBetweenBalancesWithWireMock(
 		Ticker:  "XLM",
 		Amount:  "0.9",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Transfer.BetweenBalances(
 		context.TODO(),

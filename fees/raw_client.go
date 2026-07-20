@@ -34,7 +34,7 @@ func (r *RawClient) GetFees(
 	ctx context.Context,
 	request *sdk.GetFeesRequest,
 	opts ...option.RequestOption,
-) (*core.Response[[]*sdk.FeeInfo], error) {
+) (*core.Response[[]*sdk.MainAccountFeeInfo], error) {
 	options := core.NewRequestOptions(opts...)
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
@@ -55,7 +55,7 @@ func (r *RawClient) GetFees(
 		options.ToHeader(),
 	)
 	headers.Add("Content-Type", "application/json")
-	var response []*sdk.FeeInfo
+	var response []*sdk.MainAccountFeeInfo
 	raw, err := r.caller.Call(
 		ctx,
 		&internal.CallParams{
@@ -73,7 +73,7 @@ func (r *RawClient) GetFees(
 	if err != nil {
 		return nil, err
 	}
-	return &core.Response[[]*sdk.FeeInfo]{
+	return &core.Response[[]*sdk.MainAccountFeeInfo]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
 		Body:       response,

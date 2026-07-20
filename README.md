@@ -116,11 +116,8 @@ client.Withdraw.CreateWithdraw(ctx, &withdraw.CreateWithdrawRequest{Ticker: "USD
 | `Transfer` | Transfer between main and trade accounts |
 | `Withdraw` | Withdrawal requests |
 | `Codes` | WhiteBit codes — create, apply, history |
-| `CryptoLendingFixed` | Fixed lending plans |
-| `CryptoLendingFlex` | Flex lending plans |
 | `Fees` | Trading fees |
 | `SubAccount` | Sub-account management |
-| `MiningPool` | Hashrate and rewards |
 
 ---
 

@@ -34,6 +34,12 @@ func NewClient(options *core.RequestOptions) *Client {
 
 // The endpoint retrieves a deposit address of the cryptocurrency.
 //
+// <Note>
+// Sub-accounts use this endpoint with their own API key once deposits are enabled for the
+// account. Crypto deposits are disabled by default — to enable them, contact your assigned
+// Account Manager or email institutional@whitebit.com.
+// </Note>
+//
 // <Accordion title="Errors">
 // ```json
 //
@@ -207,8 +213,92 @@ func (c *Client) GetDepositAddress(
 //	  "code": 0,
 //	  "message": "Validation failed",
 //	  "errors": {
-//	    "successLink": ["Uri domain must have only https scheme"],
-//	    "failureLink": ["Uri domain must have only https scheme"]
+//	    "successLink": ["Your domain scheme incorrect. Use https only"],
+//	    "failureLink": ["Your domain scheme incorrect. Use https only"]
+//	  }
+//	}
+//
+// ```
+//
+// ```json
+//
+//	{
+//	  "code": 0,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "ticker": ["Currency is not depositable via API"]
+//	  }
+//	}
+//
+// ```
+//
+// ```json
+//
+//	{
+//	  "code": 0,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "user": ["User not verified"]
+//	  }
+//	}
+//
+// ```
+//
+// ```json
+//
+//	{
+//	  "code": 0,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Amount is too big for deposit"]
+//	  }
+//	}
+//
+// ```
+//
+// ```json
+//
+//	{
+//	  "code": 0,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Daily limit reached"]
+//	  }
+//	}
+//
+// ```
+//
+// ```json
+//
+//	{
+//	  "code": 0,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "amount": ["Expiration date cannot be used for this provider"]
+//	  }
+//	}
+//
+// ```
+//
+// ```json
+//
+//	{
+//	  "code": 0,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "customer.birthDate": ["You must be at least 18 years old"]
+//	  }
+//	}
+//
+// ```
+//
+// ```json
+//
+//	{
+//	  "code": 0,
+//	  "message": "Validation failed",
+//	  "errors": {
+//	    "address": ["Invalid credit card number"]
 //	  }
 //	}
 //
@@ -333,6 +423,11 @@ func (c *Client) RefundDeposit(
 }
 
 // The endpoint creates a new address even when the last created address is not used. The endpoint is not available by default, contact support@whitebit.com to get permissions to use the endpoint.
+//
+// <Note>
+// For sub-accounts, crypto deposits must also be enabled for the account (disabled by
+// default). To enable them, contact your assigned Account Manager or email institutional@whitebit.com.
+// </Note>
 //
 // **Address types:**
 //

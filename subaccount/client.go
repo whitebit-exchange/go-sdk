@@ -40,6 +40,15 @@ func NewClient(options *core.RequestOptions) *Client {
 // - When `shareKyc` is `true`: `email` is **optional**
 // </Note>
 //
+// <Note>
+// Crypto deposits are disabled by default. Once deposits are enabled for the account, the
+// capability applies to the account and its sub-accounts; enablement is not available via
+// API. To request it, contact your assigned Account Manager or email institutional@whitebit.com.
+// Once enabled, a sub-account generates deposit addresses through the standard
+// [deposit-address endpoint](/api-reference/account-wallet/get-cryptocurrency-deposit-address)
+// using its own API key with deposit permission.
+// </Note>
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
@@ -247,12 +256,113 @@ func (c *Client) GetSubAccountBalances(
 // <Note>
 // The API does not cache the response.
 // </Note>
+//
+// <Note>
+// Results are sorted by transaction id descending (newest transfer first). The response is a plain array with no `total`, `has_more`, or cursor — a returned count below `limit` marks the last page (an empty array means no further records).
+// </Note>
+//
+// <Note>
+// **No date filtering:** the endpoint does not accept `startDate` / `endDate` parameters, and pagination is capped at `offset + limit ≤ 10000` (`limit` ≤ 100). The required `id` parameter already scopes results to a single sub-account; for a complete history export beyond the cap, use the Report on the History page.
+// </Note>
 func (c *Client) GetSubAccountTransferHistory(
 	ctx context.Context,
 	request *sdk.GetSubAccountTransferHistoryRequest,
 	opts ...option.RequestOption,
 ) (*sdk.GetSubAccountTransferHistoryResponse, error) {
 	response, err := c.WithRawResponse.GetSubAccountTransferHistory(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// The endpoint returns a paginated list of withdrawal transactions in `unconfirmed_by_main_account` status,
+// created by [sub-accounts](/glossary#sub-account) of the authenticated main account and awaiting main account confirmation.
+// Results are ordered by creation time, newest first.
+//
+// <Note>
+// The sub-account withdrawal endpoints are not available by default. To request access, contact institutional@whitebit.com.
+// A `404 Not Found` response indicates the endpoint is not enabled for the account.
+// </Note>
+//
+// <Note>
+// The sub-account feature must be enabled for the region.
+// </Note>
+func (c *Client) ListUnconfirmedSubAccountWithdrawals(
+	ctx context.Context,
+	request *sdk.ListUnconfirmedSubAccountWithdrawalsRequest,
+	opts ...option.RequestOption,
+) (*sdk.ListUnconfirmedSubAccountWithdrawalsResponse, error) {
+	response, err := c.WithRawResponse.ListUnconfirmedSubAccountWithdrawals(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// The endpoint confirms a single withdrawal transaction created by a [sub-account](/glossary#sub-account)
+// of the authenticated main account. Confirmation is the main account action that approves a withdrawal
+// held in `unconfirmed_by_main_account` status and releases it for processing.
+//
+// Identify the target transaction by its external id, obtained from
+// [List Unconfirmed Sub-Account Withdrawals](/api-reference/sub-accounts/list-unconfirmed-sub-account-withdrawals).
+// Confirmation is the only main account action on an unconfirmed withdrawal; a withdrawal left unconfirmed
+// expires after a retention period. A successful call returns an empty object.
+//
+// <Note>
+// The sub-account withdrawal endpoints are not available by default. To request access, contact institutional@whitebit.com.
+// A `404 Not Found` response indicates the endpoint is not enabled for the account.
+// </Note>
+//
+// <Note>
+// The sub-account feature must be enabled for the region.
+// </Note>
+func (c *Client) ConfirmSubAccountWithdrawal(
+	ctx context.Context,
+	request *sdk.ConfirmSubAccountWithdrawalRequest,
+	opts ...option.RequestOption,
+) (map[string]any, error) {
+	response, err := c.WithRawResponse.ConfirmSubAccountWithdrawal(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// The endpoint generates a temporary KYC verification link for a [sub-account](/glossary#sub-account).
+//
+// <Note>
+// The sub-account must meet all of the following conditions before a KYC URL can be generated:
+// - The sub-account must be activated (have an associated user).
+// - The sub-account must be active (not locked or blocked).
+// - The sub-account must not have shared KYC enabled.
+// </Note>
+//
+// <Warning>
+// Rate limit: 1000 requests/10 sec.
+// </Warning>
+//
+// <Note>
+// The API does not cache the response.
+// </Note>
+func (c *Client) GetSubAccountKycURL(
+	ctx context.Context,
+	request *sdk.GetSubAccountKycURLRequest,
+	opts ...option.RequestOption,
+) (*sdk.GetSubAccountKycURLResponse, error) {
+	response, err := c.WithRawResponse.GetSubAccountKycURL(
 		ctx,
 		request,
 		opts...,

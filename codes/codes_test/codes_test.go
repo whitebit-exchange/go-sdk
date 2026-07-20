@@ -83,7 +83,7 @@ func TestCodesCreateCodeWithWireMock(
 			"some description",
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Codes.CreateCode(
 		context.TODO(),
@@ -114,7 +114,7 @@ func TestCodesApplyCodeWithWireMock(
 			"some passphrase",
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Codes.ApplyCode(
 		context.TODO(),
@@ -141,7 +141,7 @@ func TestCodesGetMyCodesWithWireMock(
 	)
 	request := &sdk.GetMyCodesRequest{
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Codes.GetMyCodes(
 		context.TODO(),
@@ -168,7 +168,7 @@ func TestCodesGetCodesHistoryWithWireMock(
 	)
 	request := &sdk.GetCodesHistoryRequest{
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.Codes.GetCodesHistory(
 		context.TODO(),

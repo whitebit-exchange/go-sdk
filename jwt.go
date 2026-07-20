@@ -18,7 +18,7 @@ type GetWebSocketTokenRequest struct {
 	// Request signature
 	Request string `json:"request" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -40,7 +40,7 @@ func (g *GetWebSocketTokenRequest) SetRequest(request string) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetWebSocketTokenRequest) SetNonce(nonce string) {
+func (g *GetWebSocketTokenRequest) SetNonce(nonce int) {
 	g.Nonce = nonce
 	g.require(getWebSocketTokenRequestFieldNonce)
 }
@@ -78,7 +78,7 @@ type IssueJwtTokenRequest struct {
 	// Nonce window setting
 	NonceWindow *bool `json:"nonceWindow,omitempty" url:"-"`
 	// Unique request identifier
-	Nonce string `json:"nonce" url:"-"`
+	Nonce int `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -107,7 +107,7 @@ func (i *IssueJwtTokenRequest) SetNonceWindow(nonceWindow *bool) {
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (i *IssueJwtTokenRequest) SetNonce(nonce string) {
+func (i *IssueJwtTokenRequest) SetNonce(nonce int) {
 	i.Nonce = nonce
 	i.require(issueJwtTokenRequestFieldNonce)
 }

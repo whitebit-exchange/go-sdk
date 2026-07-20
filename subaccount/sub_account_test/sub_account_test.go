@@ -308,3 +308,86 @@ func TestSubAccountGetSubAccountTransferHistoryWithWireMock(
 	require.NoError(t, invocationErr, "Client method call should succeed")
 	VerifyRequestCount(t, "TestSubAccountGetSubAccountTransferHistoryWithWireMock", "POST", "/api/v4/sub-account/transfer/history", nil, 1)
 }
+
+func TestSubAccountListUnconfirmedSubAccountWithdrawalsWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ListUnconfirmedSubAccountWithdrawalsRequest{
+		Limit: sdk.Int(
+			100,
+		),
+		Offset: sdk.Int(
+			0,
+		),
+	}
+	_, invocationErr := client.SubAccount.ListUnconfirmedSubAccountWithdrawals(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountListUnconfirmedSubAccountWithdrawalsWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountListUnconfirmedSubAccountWithdrawalsWithWireMock", "POST", "/api/v4/sub-account/withdraw/unconfirmed-list", nil, 1)
+}
+
+func TestSubAccountConfirmSubAccountWithdrawalWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.ConfirmSubAccountWithdrawalRequest{
+		ID: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+	}
+	_, invocationErr := client.SubAccount.ConfirmSubAccountWithdrawal(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountConfirmSubAccountWithdrawalWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountConfirmSubAccountWithdrawalWithWireMock", "POST", "/api/v4/sub-account/withdraw/confirm", nil, 1)
+}
+
+func TestSubAccountGetSubAccountKycURLWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetSubAccountKycURLRequest{
+		ID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
+	}
+	_, invocationErr := client.SubAccount.GetSubAccountKycURL(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestSubAccountGetSubAccountKycURLWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestSubAccountGetSubAccountKycURLWithWireMock", "POST", "/api/v4/sub-account/kyc-url", nil, 1)
+}

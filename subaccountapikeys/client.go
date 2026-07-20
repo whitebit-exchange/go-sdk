@@ -32,7 +32,13 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
-// The endpoint creates a new API key for a [sub-account](/glossary#sub-account).
+// The endpoint creates a new API key for a [sub-account](/glossary#sub-account). Each sub-account supports up to 50 API keys, independent from the main account and from other sub-accounts.
+//
+// <Note>
+// A `type: 2` key carries deposit and withdrawal permissions, but crypto deposits must also
+// be enabled for the account. Deposits are disabled by default — to enable them, contact your
+// assigned Account Manager or email institutional@whitebit.com.
+// </Note>
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
@@ -116,6 +122,10 @@ func (c *Client) DeleteSubAccountAPIKey(
 //
 // <Note>
 // The API does not cache the response.
+// </Note>
+//
+// <Note>
+// Results are sorted by api-key id descending (newest key first). The response is a plain array with no `total`, `has_more`, or cursor — a returned count below `limit` marks the last page (an empty array means no further records).
 // </Note>
 func (c *Client) ListSubAccountAPIKeys(
 	ctx context.Context,
