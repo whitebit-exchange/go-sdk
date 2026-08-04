@@ -9931,6 +9931,636 @@ func (o OrderObjectStp) Ptr() *OrderObjectStp {
 	return &o
 }
 
+// Shared order shape returned by the order-creation, cancel, active-orders list, and modify endpoints. Field presence varies by endpoint and order type — see the per-field notes.
+var (
+	orderResponseFieldOrderID             = big.NewInt(1 << 0)
+	orderResponseFieldClientOrderID       = big.NewInt(1 << 1)
+	orderResponseFieldMarket              = big.NewInt(1 << 2)
+	orderResponseFieldSide                = big.NewInt(1 << 3)
+	orderResponseFieldType                = big.NewInt(1 << 4)
+	orderResponseFieldTimestamp           = big.NewInt(1 << 5)
+	orderResponseFieldDealMoney           = big.NewInt(1 << 6)
+	orderResponseFieldDealStock           = big.NewInt(1 << 7)
+	orderResponseFieldAmount              = big.NewInt(1 << 8)
+	orderResponseFieldLeft                = big.NewInt(1 << 9)
+	orderResponseFieldDealFee             = big.NewInt(1 << 10)
+	orderResponseFieldFeeAsset            = big.NewInt(1 << 11)
+	orderResponseFieldPrice               = big.NewInt(1 << 12)
+	orderResponseFieldPostOnly            = big.NewInt(1 << 13)
+	orderResponseFieldIoc                 = big.NewInt(1 << 14)
+	orderResponseFieldStatus              = big.NewInt(1 << 15)
+	orderResponseFieldStp                 = big.NewInt(1 << 16)
+	orderResponseFieldPositionSide        = big.NewInt(1 << 17)
+	orderResponseFieldOto                 = big.NewInt(1 << 18)
+	orderResponseFieldRpi                 = big.NewInt(1 << 19)
+	orderResponseFieldRetail              = big.NewInt(1 << 20)
+	orderResponseFieldReduceOnly          = big.NewInt(1 << 21)
+	orderResponseFieldActivated           = big.NewInt(1 << 22)
+	orderResponseFieldActivationCondition = big.NewInt(1 << 23)
+	orderResponseFieldActivationPrice     = big.NewInt(1 << 24)
+)
+
+type OrderResponse struct {
+	// Unique identifier assigned to the order by the matching engine.
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
+	// Custom client order identifier supplied in the request. Returns an empty string when not specified.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
+	// Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).
+	Market *string `json:"market,omitempty" url:"market,omitempty"`
+	// Order side. Possible values: `buy`, `sell`.
+	Side *string `json:"side,omitempty" url:"side,omitempty"`
+	// Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.
+	Type *string `json:"type,omitempty" url:"type,omitempty"`
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
+	// Filled amount in quote currency. Returns `"0"` while the order remains unfilled.
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
+	// Filled amount in base currency. Returns `"0"` while the order remains unfilled.
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
+	// Order quantity in base currency for limit and stop-limit orders, or in quote currency for buy market orders.
+	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
+	// Remaining unfilled quantity. Equals `amount` for new orders and `"0"` for fully filled orders.
+	Left *string `json:"left,omitempty" url:"left,omitempty"`
+	// Cumulative trading fee charged for filled portions, denominated in the fee asset.
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
+	// Currency ticker of the asset used to pay the trading fee. Omitted when empty.
+	FeeAsset *string `json:"feeAsset,omitempty" url:"feeAsset,omitempty"`
+	// Limit price per unit in quote currency. Present for orders that carry a price (limit and stop-limit shapes); omitted on market and stop-market order shapes.
+	Price *string `json:"price,omitempty" url:"price,omitempty"`
+	// Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Omitted when not set.
+	PostOnly *bool `json:"postOnly,omitempty" url:"postOnly,omitempty"`
+	// Immediate-or-cancel flag. When `true`, the order executes available quantity immediately and cancels the unfilled remainder. Default: `false`.
+	Ioc    *bool        `json:"ioc,omitempty" url:"ioc,omitempty"`
+	Status *OrderStatus `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode applied to the order. Possible values: `no`, `cb`, `cn`, `co`. The response always returns the abbreviated form, even when the request used a legacy value. Default: `no`.
+	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
+	// Position side (for collateral orders). Returned on the cancel, active-orders list, and modify responses; omitted when not set. Spot order-creation responses do not include the field.
+	PositionSide *string `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// OTO order data. Present only when the order belongs to an [OTO](/glossary#one-triggers-the-other-oto) group — returned on the cancel, active-orders list, and modify responses.
+	Oto *OrderResponseOto `json:"oto,omitempty" url:"oto,omitempty"`
+	// Indicates Retail Price Improvement (RPI) mode for the order.
+	Rpi *bool `json:"rpi,omitempty" url:"rpi,omitempty"`
+	// Retail-source taker flag. The field is present only when the order was placed with `retail=true`. See [Retail flag](/glossary#retail-flag).
+	Retail *bool `json:"retail,omitempty" url:"retail,omitempty"`
+	// Reduce-only flag. When `true`, the order can only reduce or close an existing position. Returned on the cancel, active-orders list, and modify responses; spot order-creation responses do not include the field. See [reduce-only](/glossary#reduce-only).
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
+	// Activation status of the stop order. 0 = not yet triggered (waiting for the activation_price condition to be met). 1 = triggered (the stop condition has been met and the order is now active). Returned for stop orders; omitted on other order shapes.
+	Activated *int `json:"activated,omitempty" url:"activated,omitempty"`
+	// Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
+	//
+	// - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
+	// - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
+	ActivationCondition *OrderResponseActivationCondition `json:"activationCondition,omitempty" url:"activationCondition,omitempty"`
+	// The trigger price for the stop order. Always equals the activation_price value submitted in the request. Returned for stop orders; omitted on other order shapes.
+	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (o *OrderResponse) GetOrderID() *int {
+	if o == nil {
+		return nil
+	}
+	return o.OrderID
+}
+
+func (o *OrderResponse) GetClientOrderID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.ClientOrderID
+}
+
+func (o *OrderResponse) GetMarket() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Market
+}
+
+func (o *OrderResponse) GetSide() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Side
+}
+
+func (o *OrderResponse) GetType() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Type
+}
+
+func (o *OrderResponse) GetTimestamp() *float64 {
+	if o == nil {
+		return nil
+	}
+	return o.Timestamp
+}
+
+func (o *OrderResponse) GetDealMoney() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DealMoney
+}
+
+func (o *OrderResponse) GetDealStock() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DealStock
+}
+
+func (o *OrderResponse) GetAmount() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Amount
+}
+
+func (o *OrderResponse) GetLeft() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Left
+}
+
+func (o *OrderResponse) GetDealFee() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DealFee
+}
+
+func (o *OrderResponse) GetFeeAsset() *string {
+	if o == nil {
+		return nil
+	}
+	return o.FeeAsset
+}
+
+func (o *OrderResponse) GetPrice() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Price
+}
+
+func (o *OrderResponse) GetPostOnly() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.PostOnly
+}
+
+func (o *OrderResponse) GetIoc() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.Ioc
+}
+
+func (o *OrderResponse) GetStatus() *OrderStatus {
+	if o == nil {
+		return nil
+	}
+	return o.Status
+}
+
+func (o *OrderResponse) GetStp() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Stp
+}
+
+func (o *OrderResponse) GetPositionSide() *string {
+	if o == nil {
+		return nil
+	}
+	return o.PositionSide
+}
+
+func (o *OrderResponse) GetOto() *OrderResponseOto {
+	if o == nil {
+		return nil
+	}
+	return o.Oto
+}
+
+func (o *OrderResponse) GetRpi() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.Rpi
+}
+
+func (o *OrderResponse) GetRetail() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.Retail
+}
+
+func (o *OrderResponse) GetReduceOnly() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.ReduceOnly
+}
+
+func (o *OrderResponse) GetActivated() *int {
+	if o == nil {
+		return nil
+	}
+	return o.Activated
+}
+
+func (o *OrderResponse) GetActivationCondition() *OrderResponseActivationCondition {
+	if o == nil {
+		return nil
+	}
+	return o.ActivationCondition
+}
+
+func (o *OrderResponse) GetActivationPrice() *string {
+	if o == nil {
+		return nil
+	}
+	return o.ActivationPrice
+}
+
+func (o *OrderResponse) GetExtraProperties() map[string]interface{} {
+	return o.extraProperties
+}
+
+func (o *OrderResponse) require(field *big.Int) {
+	if o.explicitFields == nil {
+		o.explicitFields = big.NewInt(0)
+	}
+	o.explicitFields.Or(o.explicitFields, field)
+}
+
+// SetOrderID sets the OrderID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetOrderID(orderID *int) {
+	o.OrderID = orderID
+	o.require(orderResponseFieldOrderID)
+}
+
+// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetClientOrderID(clientOrderID *string) {
+	o.ClientOrderID = clientOrderID
+	o.require(orderResponseFieldClientOrderID)
+}
+
+// SetMarket sets the Market field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetMarket(market *string) {
+	o.Market = market
+	o.require(orderResponseFieldMarket)
+}
+
+// SetSide sets the Side field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetSide(side *string) {
+	o.Side = side
+	o.require(orderResponseFieldSide)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetType(type_ *string) {
+	o.Type = type_
+	o.require(orderResponseFieldType)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetTimestamp(timestamp *float64) {
+	o.Timestamp = timestamp
+	o.require(orderResponseFieldTimestamp)
+}
+
+// SetDealMoney sets the DealMoney field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetDealMoney(dealMoney *string) {
+	o.DealMoney = dealMoney
+	o.require(orderResponseFieldDealMoney)
+}
+
+// SetDealStock sets the DealStock field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetDealStock(dealStock *string) {
+	o.DealStock = dealStock
+	o.require(orderResponseFieldDealStock)
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetAmount(amount *string) {
+	o.Amount = amount
+	o.require(orderResponseFieldAmount)
+}
+
+// SetLeft sets the Left field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetLeft(left *string) {
+	o.Left = left
+	o.require(orderResponseFieldLeft)
+}
+
+// SetDealFee sets the DealFee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetDealFee(dealFee *string) {
+	o.DealFee = dealFee
+	o.require(orderResponseFieldDealFee)
+}
+
+// SetFeeAsset sets the FeeAsset field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetFeeAsset(feeAsset *string) {
+	o.FeeAsset = feeAsset
+	o.require(orderResponseFieldFeeAsset)
+}
+
+// SetPrice sets the Price field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetPrice(price *string) {
+	o.Price = price
+	o.require(orderResponseFieldPrice)
+}
+
+// SetPostOnly sets the PostOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetPostOnly(postOnly *bool) {
+	o.PostOnly = postOnly
+	o.require(orderResponseFieldPostOnly)
+}
+
+// SetIoc sets the Ioc field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetIoc(ioc *bool) {
+	o.Ioc = ioc
+	o.require(orderResponseFieldIoc)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetStatus(status *OrderStatus) {
+	o.Status = status
+	o.require(orderResponseFieldStatus)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetStp(stp *string) {
+	o.Stp = stp
+	o.require(orderResponseFieldStp)
+}
+
+// SetPositionSide sets the PositionSide field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetPositionSide(positionSide *string) {
+	o.PositionSide = positionSide
+	o.require(orderResponseFieldPositionSide)
+}
+
+// SetOto sets the Oto field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetOto(oto *OrderResponseOto) {
+	o.Oto = oto
+	o.require(orderResponseFieldOto)
+}
+
+// SetRpi sets the Rpi field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetRpi(rpi *bool) {
+	o.Rpi = rpi
+	o.require(orderResponseFieldRpi)
+}
+
+// SetRetail sets the Retail field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetRetail(retail *bool) {
+	o.Retail = retail
+	o.require(orderResponseFieldRetail)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetReduceOnly(reduceOnly *bool) {
+	o.ReduceOnly = reduceOnly
+	o.require(orderResponseFieldReduceOnly)
+}
+
+// SetActivated sets the Activated field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetActivated(activated *int) {
+	o.Activated = activated
+	o.require(orderResponseFieldActivated)
+}
+
+// SetActivationCondition sets the ActivationCondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetActivationCondition(activationCondition *OrderResponseActivationCondition) {
+	o.ActivationCondition = activationCondition
+	o.require(orderResponseFieldActivationCondition)
+}
+
+// SetActivationPrice sets the ActivationPrice field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponse) SetActivationPrice(activationPrice *string) {
+	o.ActivationPrice = activationPrice
+	o.require(orderResponseFieldActivationPrice)
+}
+
+func (o *OrderResponse) UnmarshalJSON(data []byte) error {
+	type unmarshaler OrderResponse
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*o = OrderResponse(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
+	if err != nil {
+		return err
+	}
+	o.extraProperties = extraProperties
+	o.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (o *OrderResponse) MarshalJSON() ([]byte, error) {
+	type embed OrderResponse
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*o),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (o *OrderResponse) String() string {
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(o); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", o)
+}
+
+// Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
+//
+// - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
+// - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
+type OrderResponseActivationCondition string
+
+const (
+	OrderResponseActivationConditionLte OrderResponseActivationCondition = "lte"
+	OrderResponseActivationConditionGte OrderResponseActivationCondition = "gte"
+)
+
+func NewOrderResponseActivationConditionFromString(s string) (OrderResponseActivationCondition, error) {
+	switch s {
+	case "lte":
+		return OrderResponseActivationConditionLte, nil
+	case "gte":
+		return OrderResponseActivationConditionGte, nil
+	}
+	var t OrderResponseActivationCondition
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OrderResponseActivationCondition) Ptr() *OrderResponseActivationCondition {
+	return &o
+}
+
+// OTO order data. Present only when the order belongs to an [OTO](/glossary#one-triggers-the-other-oto) group — returned on the cancel, active-orders list, and modify responses.
+var (
+	orderResponseOtoFieldOtoID      = big.NewInt(1 << 0)
+	orderResponseOtoFieldTakeProfit = big.NewInt(1 << 1)
+	orderResponseOtoFieldStopLoss   = big.NewInt(1 << 2)
+)
+
+type OrderResponseOto struct {
+	// OTO order identifier
+	OtoID *int `json:"otoId,omitempty" url:"otoId,omitempty"`
+	// Take profit order price
+	TakeProfit *string `json:"takeProfit,omitempty" url:"takeProfit,omitempty"`
+	// Stop loss order price
+	StopLoss *string `json:"stopLoss,omitempty" url:"stopLoss,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (o *OrderResponseOto) GetOtoID() *int {
+	if o == nil {
+		return nil
+	}
+	return o.OtoID
+}
+
+func (o *OrderResponseOto) GetTakeProfit() *string {
+	if o == nil {
+		return nil
+	}
+	return o.TakeProfit
+}
+
+func (o *OrderResponseOto) GetStopLoss() *string {
+	if o == nil {
+		return nil
+	}
+	return o.StopLoss
+}
+
+func (o *OrderResponseOto) GetExtraProperties() map[string]interface{} {
+	return o.extraProperties
+}
+
+func (o *OrderResponseOto) require(field *big.Int) {
+	if o.explicitFields == nil {
+		o.explicitFields = big.NewInt(0)
+	}
+	o.explicitFields.Or(o.explicitFields, field)
+}
+
+// SetOtoID sets the OtoID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponseOto) SetOtoID(otoID *int) {
+	o.OtoID = otoID
+	o.require(orderResponseOtoFieldOtoID)
+}
+
+// SetTakeProfit sets the TakeProfit field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponseOto) SetTakeProfit(takeProfit *string) {
+	o.TakeProfit = takeProfit
+	o.require(orderResponseOtoFieldTakeProfit)
+}
+
+// SetStopLoss sets the StopLoss field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OrderResponseOto) SetStopLoss(stopLoss *string) {
+	o.StopLoss = stopLoss
+	o.require(orderResponseOtoFieldStopLoss)
+}
+
+func (o *OrderResponseOto) UnmarshalJSON(data []byte) error {
+	type unmarshaler OrderResponseOto
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*o = OrderResponseOto(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
+	if err != nil {
+		return err
+	}
+	o.extraProperties = extraProperties
+	o.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (o *OrderResponseOto) MarshalJSON() ([]byte, error) {
+	type embed OrderResponseOto
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*o),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (o *OrderResponseOto) String() string {
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(o); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", o)
+}
+
 // Order lifecycle status. `NEW` — accepted, not yet matched. `FILLED` — fully executed. `CANCELED` — canceled before execution. `PARTIAL_FILLED` — partially executed, remainder still active. `PARTIAL_CANCELED` — partially filled, remainder canceled. `CANCELED_TAKER_BAND` — partially filled up to the taker band limit, remainder canceled to protect against excessive order book slippage. `AUTO_CANCELED_REDUCE_ONLY` — pending reduce-only order auto-canceled because the associated position was closed. `AUTO_CANCELED_LIQUIDATION` — pending order auto-canceled because the associated position was force-liquidated. `CANCELED_STP` — order canceled by [Self-Trade Prevention](/platform/self-trade-prevention).
 type OrderStatus = string
 
@@ -13694,11 +14324,13 @@ func (t TravelRuleWithdrawalWalletType) Ptr() *TravelRuleWithdrawalWalletType {
 }
 
 var (
-	unprocessableEntityErrorBodyFieldErrors = big.NewInt(1 << 0)
+	unprocessableEntityErrorBodyFieldCode    = big.NewInt(1 << 0)
+	unprocessableEntityErrorBodyFieldMessage = big.NewInt(1 << 1)
 )
 
 type UnprocessableEntityErrorBody struct {
-	Errors map[string][]string `json:"errors,omitempty" url:"errors,omitempty"`
+	Code    *int    `json:"code,omitempty" url:"code,omitempty"`
+	Message *string `json:"message,omitempty" url:"message,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -13707,11 +14339,18 @@ type UnprocessableEntityErrorBody struct {
 	rawJSON         json.RawMessage
 }
 
-func (u *UnprocessableEntityErrorBody) GetErrors() map[string][]string {
+func (u *UnprocessableEntityErrorBody) GetCode() *int {
 	if u == nil {
 		return nil
 	}
-	return u.Errors
+	return u.Code
+}
+
+func (u *UnprocessableEntityErrorBody) GetMessage() *string {
+	if u == nil {
+		return nil
+	}
+	return u.Message
 }
 
 func (u *UnprocessableEntityErrorBody) GetExtraProperties() map[string]interface{} {
@@ -13725,11 +14364,18 @@ func (u *UnprocessableEntityErrorBody) require(field *big.Int) {
 	u.explicitFields.Or(u.explicitFields, field)
 }
 
-// SetErrors sets the Errors field and marks it as non-optional;
+// SetCode sets the Code field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (u *UnprocessableEntityErrorBody) SetErrors(errors map[string][]string) {
-	u.Errors = errors
-	u.require(unprocessableEntityErrorBodyFieldErrors)
+func (u *UnprocessableEntityErrorBody) SetCode(code *int) {
+	u.Code = code
+	u.require(unprocessableEntityErrorBodyFieldCode)
+}
+
+// SetMessage sets the Message field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (u *UnprocessableEntityErrorBody) SetMessage(message *string) {
+	u.Message = message
+	u.require(unprocessableEntityErrorBodyFieldMessage)
 }
 
 func (u *UnprocessableEntityErrorBody) UnmarshalJSON(data []byte) error {

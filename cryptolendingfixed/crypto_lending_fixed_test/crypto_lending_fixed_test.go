@@ -78,7 +78,7 @@ func TestCryptoLendingFixedGetFixedPlansWithWireMock(
 			"USDT",
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFixed.GetFixedPlans(
 		context.TODO(),
@@ -107,7 +107,7 @@ func TestCryptoLendingFixedCreateFixedInvestmentWithWireMock(
 		PlanID:  "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
 		Amount:  "100",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFixed.CreateFixedInvestment(
 		context.TODO(),
@@ -135,7 +135,7 @@ func TestCryptoLendingFixedCloseFixedInvestmentWithWireMock(
 	request := &sdk.CloseFixedInvestmentRequest{
 		ID:      "0d7b66ff-1909-4938-ab7a-d16d9a64dcd5",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFixed.CloseFixedInvestment(
 		context.TODO(),
@@ -171,7 +171,7 @@ func TestCryptoLendingFixedGetFixedInvestmentsHistoryWithWireMock(
 			1,
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFixed.GetFixedInvestmentsHistory(
 		context.TODO(),
@@ -204,7 +204,7 @@ func TestCryptoLendingFixedGetInterestPaymentHistoryWithWireMock(
 			"USDT",
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFixed.GetInterestPaymentHistory(
 		context.TODO(),

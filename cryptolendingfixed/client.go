@@ -32,7 +32,7 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
-// The endpoint retrieves all active [plans](/glossary#crypto-lending).
+// The endpoint returns investment plan configurations with active status and API access enabled, filtered by the authenticated user's region and plan visibility. Results include public plans and private plans assigned to the account.
 //
 // <Note>
 // These endpoints are available only for B2B partner services. Fill the institutional services form to get permissions to use these endpoints.
@@ -93,6 +93,8 @@ func (c *Client) CreateFixedInvestment(
 }
 
 // The endpoint closes active investment.
+//
+// Early closure is allowed and carries no penalty — the request either succeeds or returns one of the documented errors.
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.

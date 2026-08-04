@@ -10,19 +10,22 @@ import (
 )
 
 var (
-	cancelAllOrdersRequestFieldMarket  = big.NewInt(1 << 0)
-	cancelAllOrdersRequestFieldType    = big.NewInt(1 << 1)
-	cancelAllOrdersRequestFieldRequest = big.NewInt(1 << 2)
-	cancelAllOrdersRequestFieldNonce   = big.NewInt(1 << 3)
+	cancelAllOrdersRequestFieldMarket       = big.NewInt(1 << 0)
+	cancelAllOrdersRequestFieldType         = big.NewInt(1 << 1)
+	cancelAllOrdersRequestFieldPositionSide = big.NewInt(1 << 2)
+	cancelAllOrdersRequestFieldRequest      = big.NewInt(1 << 3)
+	cancelAllOrdersRequestFieldNonce        = big.NewInt(1 << 4)
 )
 
 type CancelAllOrdersRequest struct {
 	// Available [market](/glossary#market). Example: BTC_USDT
 	Market *string `json:"market,omitempty" url:"-"`
 	// Order types to target. Valid values: "spot" — standard spot orders. "margin" — marginal orders placed on spot markets. Note: the "margin" value is not the same as the collateral account balance; "collateral" in other endpoints refers to the funding account, whereas "margin" here refers specifically to the order type. "futures" — marginal orders placed on futures markets (e.g., BTC_PERP). If omitted, the API targets all order types.
-	Type    []CancelAllOrdersRequestTypeItem `json:"type,omitempty" url:"-"`
-	Request *string                          `json:"request,omitempty" url:"-"`
-	Nonce   *int                             `json:"nonce,omitempty" url:"-"`
+	Type []CancelAllOrdersRequestTypeItem `json:"type,omitempty" url:"-"`
+	// [Position side](/glossary#position-side) scope. Accepted only when `market` is a perpetual futures market (e.g., BTC_PERP); values are lowercase on this endpoint.
+	PositionSide *CancelAllOrdersRequestPositionSide `json:"positionSide,omitempty" url:"-"`
+	Request      string                              `json:"request" url:"-"`
+	Nonce        int                                 `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -49,16 +52,23 @@ func (c *CancelAllOrdersRequest) SetType(type_ []CancelAllOrdersRequestTypeItem)
 	c.require(cancelAllOrdersRequestFieldType)
 }
 
+// SetPositionSide sets the PositionSide field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CancelAllOrdersRequest) SetPositionSide(positionSide *CancelAllOrdersRequestPositionSide) {
+	c.PositionSide = positionSide
+	c.require(cancelAllOrdersRequestFieldPositionSide)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelAllOrdersRequest) SetRequest(request *string) {
+func (c *CancelAllOrdersRequest) SetRequest(request string) {
 	c.Request = request
 	c.require(cancelAllOrdersRequestFieldRequest)
 }
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelAllOrdersRequest) SetNonce(nonce *int) {
+func (c *CancelAllOrdersRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(cancelAllOrdersRequestFieldNonce)
 }
@@ -242,16 +252,16 @@ var (
 )
 
 type CreateBulkLimitOrderRequest struct {
-	// Array of limit orders
-	Orders []*BulkOrderItem `json:"orders,omitempty" url:"-"`
+	// Array of limit orders. Each item is validated with the same rules as a single limit order.
+	Orders []*BulkOrderItem `json:"orders" url:"-"`
 	// Controls how the bulk order processor handles failures.
 	//
 	// When true: Processing stops at the first order that fails validation or execution. Only orders up to (but not including) the failed order are processed.
 	//
 	// When false (default): All orders in the bulk request are processed regardless of individual failures. Each order result is returned in the response array.
-	StopOnFail *bool   `json:"stopOnFail,omitempty" url:"-"`
-	Request    *string `json:"request,omitempty" url:"-"`
-	Nonce      *int    `json:"nonce,omitempty" url:"-"`
+	StopOnFail *bool  `json:"stopOnFail,omitempty" url:"-"`
+	Request    string `json:"request" url:"-"`
+	Nonce      int    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -280,14 +290,14 @@ func (c *CreateBulkLimitOrderRequest) SetStopOnFail(stopOnFail *bool) {
 
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateBulkLimitOrderRequest) SetRequest(request *string) {
+func (c *CreateBulkLimitOrderRequest) SetRequest(request string) {
 	c.Request = request
 	c.require(createBulkLimitOrderRequestFieldRequest)
 }
 
 // SetNonce sets the Nonce field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateBulkLimitOrderRequest) SetNonce(nonce *int) {
+func (c *CreateBulkLimitOrderRequest) SetNonce(nonce int) {
 	c.Nonce = nonce
 	c.require(createBulkLimitOrderRequestFieldNonce)
 }
@@ -336,20 +346,25 @@ type LimitOrderRequest struct {
 	Side LimitOrderRequestSide `json:"side" url:"-"`
 	// Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`. Precision: `stockPrec`.
 	Amount string `json:"amount" url:"-"`
-	// Limit price per unit in quote (money) currency. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
-	Price string `json:"price" url:"-"`
+	// Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
+	Price *string `json:"price,omitempty" url:"-"`
 	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
 	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
-	// Post-only flag. When `true`, the order executes only as a [maker](/glossary#maker) order and the system rejects the order if it would match immediately. Default: `false`.
+	// Post-only flag. When `true`, the order executes only as a [maker](/glossary#maker) order and the system rejects the order if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI orders apply post-only behavior automatically, and a request setting both flags fails validation. Default: `false`.
 	PostOnly *bool `json:"postOnly,omitempty" url:"-"`
 	// Immediate-or-cancel (IOC) flag. When `true`, the matching engine executes all or part of the order immediately and cancels any unfilled portion. Default: `false`.
 	//
 	// IOC does not support `rpi=true` because RPI uses post-only behavior by design.
 	// The API returns error code `40` when a request sets both `ioc=true` and `rpi=true`.
+	// IOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).
 	//
 	// Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
 	Ioc *bool `json:"ioc,omitempty" url:"-"`
-	// Best Bid/Offer ([BBO](/glossary#bbo)) execution method. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method. Use method `2` with the `ioc` flag.
+	// Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.
+	//
+	// When `bboRole` is set, `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`). Use method `2` with the `ioc` flag.
+	//
+	// Refer to [Order Parameter Rules](/guides/order-parameter-rules) for the full interaction rules.
 	BboRole *int `json:"bboRole,omitempty" url:"-"`
 	// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
 	//
@@ -359,7 +374,7 @@ type LimitOrderRequest struct {
 	Stp *LimitOrderRequestStp `json:"stp,omitempty" url:"-"`
 	// Enables Retail Price Improvement (RPI) mode. Default: `false`.
 	//
-	// RPI orders use post-only behavior by design. An RPI order does not support `ioc=true`.
+	// RPI orders apply post-only behavior automatically — do not also send an explicit `postOnly=true`: a request combining the two flags fails validation. An RPI order does not support `ioc=true`.
 	// The API returns error code `40` when a request sets both `rpi=true` and `ioc=true`.
 	// RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
 	// RPI executions may apply custom fees or rebates, especially when trading via sub-accounts. Use Query Market Fees to verify effective fees.
@@ -413,7 +428,7 @@ func (l *LimitOrderRequest) SetAmount(amount string) {
 
 // SetPrice sets the Price field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (l *LimitOrderRequest) SetPrice(price string) {
+func (l *LimitOrderRequest) SetPrice(price *string) {
 	l.Price = price
 	l.require(limitOrderRequestFieldPrice)
 }
@@ -740,13 +755,13 @@ type StopLimitOrderRequest struct {
 	Side StopLimitOrderRequestSide `json:"side" url:"-"`
 	// Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount`, `minTotal`, `maxTotal`. Precision: `stockPrec`.
 	Amount string `json:"amount" url:"-"`
-	// Limit price per unit in quote (money) currency applied after the stop triggers. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
-	Price string `json:"price" url:"-"`
+	// Limit price per unit in quote (money) currency applied after the stop triggers. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
+	Price *string `json:"price,omitempty" url:"-"`
 	// Trigger price in quote (money) currency. For buy orders, the stop triggers when the market price rises to or above the specified price. For sell orders, the stop triggers when the market price falls to or below the specified price. Precision: `moneyPrec`.
 	ActivationPrice string `json:"activation_price" url:"-"`
 	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
 	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
-	// Best Bid/Offer ([BBO](/glossary#bbo)) execution method. The system selects the best market price for execution after the stop triggers. `1` = Queue method, `2` = Counterparty method.
+	// Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method. The system selects the best market price for execution after the stop triggers. `1` = Queue method, `2` = Counterparty method. When `bboRole` is set, `price` is not required — the BBO method determines the execution price.
 	BboRole *int `json:"bboRole,omitempty" url:"-"`
 	// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
 	//
@@ -791,7 +806,7 @@ func (s *StopLimitOrderRequest) SetAmount(amount string) {
 
 // SetPrice sets the Price field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *StopLimitOrderRequest) SetPrice(price string) {
+func (s *StopLimitOrderRequest) SetPrice(price *string) {
 	s.Price = price
 	s.require(stopLimitOrderRequestFieldPrice)
 }
@@ -1606,8 +1621,9 @@ var (
 	modifyOrderRequestFieldTotal           = big.NewInt(1 << 4)
 	modifyOrderRequestFieldPrice           = big.NewInt(1 << 5)
 	modifyOrderRequestFieldActivationPrice = big.NewInt(1 << 6)
-	modifyOrderRequestFieldRequest         = big.NewInt(1 << 7)
-	modifyOrderRequestFieldNonce           = big.NewInt(1 << 8)
+	modifyOrderRequestFieldStp             = big.NewInt(1 << 7)
+	modifyOrderRequestFieldRequest         = big.NewInt(1 << 8)
+	modifyOrderRequestFieldNonce           = big.NewInt(1 << 9)
 )
 
 type ModifyOrderRequest struct {
@@ -1625,8 +1641,14 @@ type ModifyOrderRequest struct {
 	Price *string `json:"price,omitempty" url:"-"`
 	// Activation price in [money](/glossary#money) currency. Example: '10000' or 10000
 	ActivationPrice *string `json:"activationPrice,omitempty" url:"-"`
-	Request         string  `json:"request" url:"-"`
-	Nonce           int     `json:"nonce" url:"-"`
+	// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+	//
+	// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+	//
+	// See [Self-Trade Prevention](/platform/self-trade-prevention).
+	Stp     *ModifyOrderRequestStp `json:"stp,omitempty" url:"-"`
+	Request string                 `json:"request" url:"-"`
+	Nonce   int                    `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -1688,6 +1710,13 @@ func (m *ModifyOrderRequest) SetActivationPrice(activationPrice *string) {
 	m.require(modifyOrderRequestFieldActivationPrice)
 }
 
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (m *ModifyOrderRequest) SetStp(stp *ModifyOrderRequestStp) {
+	m.Stp = stp
+	m.require(modifyOrderRequestFieldStp)
+}
+
 // SetRequest sets the Request field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
 func (m *ModifyOrderRequest) SetRequest(request string) {
@@ -1734,8 +1763,8 @@ var (
 type SetKillSwitchRequest struct {
 	// Available [market](/glossary#market). Example: BTC_USDT
 	Market string `json:"market" url:"-"`
-	// Timer value. Example: '5'-'600' or null
-	Timeout string `json:"timeout" url:"-"`
+	// Timer value in seconds ('5'-'600'), or `null` to delete the existing timer. The key must always be present — omitting it fails validation.
+	Timeout *string `json:"timeout,omitempty" url:"-"`
 	// Order types to target. Valid values: "spot" — standard spot orders. "margin" — marginal orders placed on spot markets. Note: the "margin" value is not the same as the collateral account balance; "collateral" in other endpoints refers to the funding account, whereas "margin" here refers specifically to the order type. "futures" — marginal orders placed on futures markets (e.g., BTC_PERP). If omitted, the API targets all order types.
 	Types   []SetKillSwitchRequestTypesItem `json:"types,omitempty" url:"-"`
 	Request *string                         `json:"request,omitempty" url:"-"`
@@ -1761,7 +1790,7 @@ func (s *SetKillSwitchRequest) SetMarket(market string) {
 
 // SetTimeout sets the Timeout field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SetKillSwitchRequest) SetTimeout(timeout string) {
+func (s *SetKillSwitchRequest) SetTimeout(timeout *string) {
 	s.Timeout = timeout
 	s.require(setKillSwitchRequestFieldTimeout)
 }
@@ -2302,31 +2331,44 @@ var (
 	bulkOrderItemFieldPostOnly      = big.NewInt(1 << 4)
 	bulkOrderItemFieldIoc           = big.NewInt(1 << 5)
 	bulkOrderItemFieldClientOrderID = big.NewInt(1 << 6)
-	bulkOrderItemFieldRpi           = big.NewInt(1 << 7)
-	bulkOrderItemFieldRetail        = big.NewInt(1 << 8)
+	bulkOrderItemFieldBboRole       = big.NewInt(1 << 7)
+	bulkOrderItemFieldStp           = big.NewInt(1 << 8)
+	bulkOrderItemFieldRpi           = big.NewInt(1 << 9)
+	bulkOrderItemFieldRetail        = big.NewInt(1 << 10)
 )
 
 type BulkOrderItem struct {
 	// Order side. Allowed values: `buy`, `sell`.
-	Side *BulkOrderItemSide `json:"side,omitempty" url:"side,omitempty"`
+	Side BulkOrderItemSide `json:"side" url:"side"`
 	// Order quantity in base (stock) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for `minAmount` and precision (`stockPrec`).
-	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
-	// Limit price per unit in quote (money) currency. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for precision (`moneyPrec`).
+	Amount string `json:"amount" url:"amount"`
+	// Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Query `GET /api/v4/public/markets` for precision (`moneyPrec`).
 	Price *string `json:"price,omitempty" url:"price,omitempty"`
 	// Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).
-	Market *string `json:"market,omitempty" url:"market,omitempty"`
-	// Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Default: `false`.
+	Market string `json:"market" url:"market"`
+	// Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI items apply post-only behavior automatically, and an item setting both flags fails validation. Default: `false`.
 	PostOnly *bool `json:"postOnly,omitempty" url:"postOnly,omitempty"`
 	// Immediate-or-cancel (IOC) executes all or part of an order immediately and cancels any unfilled portion. Default: `false`.
 	//
 	// IOC does not support `rpi=true` because RPI uses post-only behavior by design.
 	// The API returns error code `40` when an order item sets both `ioc=true` and `rpi=true`.
+	// IOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).
 	Ioc *bool `json:"ioc,omitempty" url:"ioc,omitempty"`
 	// Custom client order identifier. Uniqueness is enforced only among the account's open (pending) orders on the same market — once a previous order is filled or canceled, the same identifier can be reused, including on the same market. Contains only letters, numbers, dashes, dots, or underscores.
 	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
+	// Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method for the item. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.
+	//
+	// When `bboRole` is set, the item's `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`).
+	BboRole *int `json:"bboRole,omitempty" url:"bboRole,omitempty"`
+	// Self-trade prevention mode for the item. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+	//
+	// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+	//
+	// See [Self-Trade Prevention](/platform/self-trade-prevention).
+	Stp *BulkOrderItemStp `json:"stp,omitempty" url:"stp,omitempty"`
 	// Enables Retail Price Improvement (RPI) mode. Default: `false`.
 	//
-	// RPI orders use post-only behavior by design. An RPI order does not support `ioc=true`.
+	// RPI items apply post-only behavior automatically — do not also send an explicit `postOnly=true`: an item combining the two flags fails validation. An RPI order does not support `ioc=true`.
 	// The API returns error code `40` when an order item sets both `rpi=true` and `ioc=true`.
 	Rpi *bool `json:"rpi,omitempty" url:"rpi,omitempty"`
 	// Retail-source taker flag for the bulk-order item. When `true`, the item is eligible to match against orders submitted by RPI makers and may receive price improvement at execution. Default: `false`.
@@ -2347,16 +2389,16 @@ type BulkOrderItem struct {
 	rawJSON         json.RawMessage
 }
 
-func (b *BulkOrderItem) GetSide() *BulkOrderItemSide {
+func (b *BulkOrderItem) GetSide() BulkOrderItemSide {
 	if b == nil {
-		return nil
+		return ""
 	}
 	return b.Side
 }
 
-func (b *BulkOrderItem) GetAmount() *string {
+func (b *BulkOrderItem) GetAmount() string {
 	if b == nil {
-		return nil
+		return ""
 	}
 	return b.Amount
 }
@@ -2368,9 +2410,9 @@ func (b *BulkOrderItem) GetPrice() *string {
 	return b.Price
 }
 
-func (b *BulkOrderItem) GetMarket() *string {
+func (b *BulkOrderItem) GetMarket() string {
 	if b == nil {
-		return nil
+		return ""
 	}
 	return b.Market
 }
@@ -2394,6 +2436,20 @@ func (b *BulkOrderItem) GetClientOrderID() *string {
 		return nil
 	}
 	return b.ClientOrderID
+}
+
+func (b *BulkOrderItem) GetBboRole() *int {
+	if b == nil {
+		return nil
+	}
+	return b.BboRole
+}
+
+func (b *BulkOrderItem) GetStp() *BulkOrderItemStp {
+	if b == nil {
+		return nil
+	}
+	return b.Stp
 }
 
 func (b *BulkOrderItem) GetRpi() *bool {
@@ -2423,14 +2479,14 @@ func (b *BulkOrderItem) require(field *big.Int) {
 
 // SetSide sets the Side field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BulkOrderItem) SetSide(side *BulkOrderItemSide) {
+func (b *BulkOrderItem) SetSide(side BulkOrderItemSide) {
 	b.Side = side
 	b.require(bulkOrderItemFieldSide)
 }
 
 // SetAmount sets the Amount field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BulkOrderItem) SetAmount(amount *string) {
+func (b *BulkOrderItem) SetAmount(amount string) {
 	b.Amount = amount
 	b.require(bulkOrderItemFieldAmount)
 }
@@ -2444,7 +2500,7 @@ func (b *BulkOrderItem) SetPrice(price *string) {
 
 // SetMarket sets the Market field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (b *BulkOrderItem) SetMarket(market *string) {
+func (b *BulkOrderItem) SetMarket(market string) {
 	b.Market = market
 	b.require(bulkOrderItemFieldMarket)
 }
@@ -2468,6 +2524,20 @@ func (b *BulkOrderItem) SetIoc(ioc *bool) {
 func (b *BulkOrderItem) SetClientOrderID(clientOrderID *string) {
 	b.ClientOrderID = clientOrderID
 	b.require(bulkOrderItemFieldClientOrderID)
+}
+
+// SetBboRole sets the BboRole field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BulkOrderItem) SetBboRole(bboRole *int) {
+	b.BboRole = bboRole
+	b.require(bulkOrderItemFieldBboRole)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (b *BulkOrderItem) SetStp(stp *BulkOrderItemStp) {
+	b.Stp = stp
+	b.require(bulkOrderItemFieldStp)
 }
 
 // SetRpi sets the Rpi field and marks it as non-optional;
@@ -2543,6 +2613,39 @@ func NewBulkOrderItemSideFromString(s string) (BulkOrderItemSide, error) {
 }
 
 func (b BulkOrderItemSide) Ptr() *BulkOrderItemSide {
+	return &b
+}
+
+// Self-trade prevention mode for the item. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+//
+// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+//
+// See [Self-Trade Prevention](/platform/self-trade-prevention).
+type BulkOrderItemStp string
+
+const (
+	BulkOrderItemStpNo BulkOrderItemStp = "no"
+	BulkOrderItemStpCb BulkOrderItemStp = "cb"
+	BulkOrderItemStpCn BulkOrderItemStp = "cn"
+	BulkOrderItemStpCo BulkOrderItemStp = "co"
+)
+
+func NewBulkOrderItemStpFromString(s string) (BulkOrderItemStp, error) {
+	switch s {
+	case "no":
+		return BulkOrderItemStpNo, nil
+	case "cb":
+		return BulkOrderItemStpCb, nil
+	case "cn":
+		return BulkOrderItemStpCn, nil
+	case "co":
+		return BulkOrderItemStpCo, nil
+	}
+	var t BulkOrderItemStp
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (b BulkOrderItemStp) Ptr() *BulkOrderItemStp {
 	return &b
 }
 
@@ -2931,485 +3034,30 @@ func (e ExecutedDealSide) Ptr() *ExecutedDealSide {
 	return &e
 }
 
-var (
-	orderResponseFieldOrderID             = big.NewInt(1 << 0)
-	orderResponseFieldClientOrderID       = big.NewInt(1 << 1)
-	orderResponseFieldMarket              = big.NewInt(1 << 2)
-	orderResponseFieldSide                = big.NewInt(1 << 3)
-	orderResponseFieldType                = big.NewInt(1 << 4)
-	orderResponseFieldTimestamp           = big.NewInt(1 << 5)
-	orderResponseFieldDealMoney           = big.NewInt(1 << 6)
-	orderResponseFieldDealStock           = big.NewInt(1 << 7)
-	orderResponseFieldAmount              = big.NewInt(1 << 8)
-	orderResponseFieldLeft                = big.NewInt(1 << 9)
-	orderResponseFieldDealFee             = big.NewInt(1 << 10)
-	orderResponseFieldPrice               = big.NewInt(1 << 11)
-	orderResponseFieldPostOnly            = big.NewInt(1 << 12)
-	orderResponseFieldIoc                 = big.NewInt(1 << 13)
-	orderResponseFieldStatus              = big.NewInt(1 << 14)
-	orderResponseFieldStp                 = big.NewInt(1 << 15)
-	orderResponseFieldPositionSide        = big.NewInt(1 << 16)
-	orderResponseFieldRpi                 = big.NewInt(1 << 17)
-	orderResponseFieldRetail              = big.NewInt(1 << 18)
-	orderResponseFieldReduceOnly          = big.NewInt(1 << 19)
-	orderResponseFieldActivated           = big.NewInt(1 << 20)
-	orderResponseFieldActivationCondition = big.NewInt(1 << 21)
-	orderResponseFieldActivationPrice     = big.NewInt(1 << 22)
-)
-
-type OrderResponse struct {
-	// Unique identifier assigned to the order by the matching engine.
-	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
-	// Custom client order identifier supplied in the request. Returns an empty string when not specified.
-	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
-	// Trading pair for the order. Format: `BASE_QUOTE` (e.g., `BTC_USDT`).
-	Market *string `json:"market,omitempty" url:"market,omitempty"`
-	// Order side. Possible values: `buy`, `sell`.
-	Side *string `json:"side,omitempty" url:"side,omitempty"`
-	// Order type. Possible values: `limit`, `market`, `stock market`, `stop limit`, `stop market`.
-	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
-	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	// Filled amount in quote currency. Returns `"0"` while the order remains unfilled.
-	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
-	// Filled amount in base currency. Returns `"0"` while the order remains unfilled.
-	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
-	// Order quantity in base currency for limit and stop-limit orders, or in quote currency for buy market orders.
-	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
-	// Remaining unfilled quantity. Equals `amount` for new orders and `"0"` for fully filled orders.
-	Left *string `json:"left,omitempty" url:"left,omitempty"`
-	// Cumulative trading fee charged for filled portions, denominated in the fee asset.
-	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
-	// Limit price per unit in quote currency. Returns `"0"` for market orders.
-	Price *string `json:"price,omitempty" url:"price,omitempty"`
-	// Post-only flag. When `true`, the order executes only as a maker order and is rejected if it would match immediately. Default: `false`.
-	PostOnly *bool `json:"postOnly,omitempty" url:"postOnly,omitempty"`
-	// Immediate-or-cancel flag. When `true`, the order executes available quantity immediately and cancels the unfilled remainder. Default: `false`.
-	Ioc    *bool        `json:"ioc,omitempty" url:"ioc,omitempty"`
-	Status *OrderStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self-trade prevention mode applied to the order. Possible values: `no`, `cb`, `cn`, `co`. The response always returns the abbreviated form, even when the request used a legacy value. Default: `no`.
-	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
-	// Position side (for collateral orders)
-	PositionSide *string `json:"positionSide,omitempty" url:"positionSide,omitempty"`
-	// Indicates Retail Price Improvement (RPI) mode for the order.
-	Rpi *bool `json:"rpi,omitempty" url:"rpi,omitempty"`
-	// Retail-source taker flag. The field is present only when the order was placed with `retail=true`. See [Retail flag](/glossary#retail-flag).
-	Retail *bool `json:"retail,omitempty" url:"retail,omitempty"`
-	// Reduce-only flag. When `true`, the order can only reduce or close an existing position. See [reduce-only](/glossary#reduce-only).
-	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
-	// Activation status of the stop order. 0 = not yet triggered (waiting for the activation_price condition to be met). 1 = triggered (the stop condition has been met and the order is now active).
-	Activated *int `json:"activated,omitempty" url:"activated,omitempty"`
-	// Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
-	//
-	// - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
-	// - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
-	ActivationCondition *OrderResponseActivationCondition `json:"activationCondition,omitempty" url:"activationCondition,omitempty"`
-	// The trigger price for the stop order. Always equals the activation_price value submitted in the request.
-	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (o *OrderResponse) GetOrderID() *int {
-	if o == nil {
-		return nil
-	}
-	return o.OrderID
-}
-
-func (o *OrderResponse) GetClientOrderID() *string {
-	if o == nil {
-		return nil
-	}
-	return o.ClientOrderID
-}
-
-func (o *OrderResponse) GetMarket() *string {
-	if o == nil {
-		return nil
-	}
-	return o.Market
-}
-
-func (o *OrderResponse) GetSide() *string {
-	if o == nil {
-		return nil
-	}
-	return o.Side
-}
-
-func (o *OrderResponse) GetType() *string {
-	if o == nil {
-		return nil
-	}
-	return o.Type
-}
-
-func (o *OrderResponse) GetTimestamp() *float64 {
-	if o == nil {
-		return nil
-	}
-	return o.Timestamp
-}
-
-func (o *OrderResponse) GetDealMoney() *string {
-	if o == nil {
-		return nil
-	}
-	return o.DealMoney
-}
-
-func (o *OrderResponse) GetDealStock() *string {
-	if o == nil {
-		return nil
-	}
-	return o.DealStock
-}
-
-func (o *OrderResponse) GetAmount() *string {
-	if o == nil {
-		return nil
-	}
-	return o.Amount
-}
-
-func (o *OrderResponse) GetLeft() *string {
-	if o == nil {
-		return nil
-	}
-	return o.Left
-}
-
-func (o *OrderResponse) GetDealFee() *string {
-	if o == nil {
-		return nil
-	}
-	return o.DealFee
-}
-
-func (o *OrderResponse) GetPrice() *string {
-	if o == nil {
-		return nil
-	}
-	return o.Price
-}
-
-func (o *OrderResponse) GetPostOnly() *bool {
-	if o == nil {
-		return nil
-	}
-	return o.PostOnly
-}
-
-func (o *OrderResponse) GetIoc() *bool {
-	if o == nil {
-		return nil
-	}
-	return o.Ioc
-}
-
-func (o *OrderResponse) GetStatus() *OrderStatus {
-	if o == nil {
-		return nil
-	}
-	return o.Status
-}
-
-func (o *OrderResponse) GetStp() *string {
-	if o == nil {
-		return nil
-	}
-	return o.Stp
-}
-
-func (o *OrderResponse) GetPositionSide() *string {
-	if o == nil {
-		return nil
-	}
-	return o.PositionSide
-}
-
-func (o *OrderResponse) GetRpi() *bool {
-	if o == nil {
-		return nil
-	}
-	return o.Rpi
-}
-
-func (o *OrderResponse) GetRetail() *bool {
-	if o == nil {
-		return nil
-	}
-	return o.Retail
-}
-
-func (o *OrderResponse) GetReduceOnly() *bool {
-	if o == nil {
-		return nil
-	}
-	return o.ReduceOnly
-}
-
-func (o *OrderResponse) GetActivated() *int {
-	if o == nil {
-		return nil
-	}
-	return o.Activated
-}
-
-func (o *OrderResponse) GetActivationCondition() *OrderResponseActivationCondition {
-	if o == nil {
-		return nil
-	}
-	return o.ActivationCondition
-}
-
-func (o *OrderResponse) GetActivationPrice() *string {
-	if o == nil {
-		return nil
-	}
-	return o.ActivationPrice
-}
-
-func (o *OrderResponse) GetExtraProperties() map[string]interface{} {
-	return o.extraProperties
-}
-
-func (o *OrderResponse) require(field *big.Int) {
-	if o.explicitFields == nil {
-		o.explicitFields = big.NewInt(0)
-	}
-	o.explicitFields.Or(o.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetOrderID(orderID *int) {
-	o.OrderID = orderID
-	o.require(orderResponseFieldOrderID)
-}
-
-// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetClientOrderID(clientOrderID *string) {
-	o.ClientOrderID = clientOrderID
-	o.require(orderResponseFieldClientOrderID)
-}
-
-// SetMarket sets the Market field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetMarket(market *string) {
-	o.Market = market
-	o.require(orderResponseFieldMarket)
-}
-
-// SetSide sets the Side field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetSide(side *string) {
-	o.Side = side
-	o.require(orderResponseFieldSide)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetType(type_ *string) {
-	o.Type = type_
-	o.require(orderResponseFieldType)
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetTimestamp(timestamp *float64) {
-	o.Timestamp = timestamp
-	o.require(orderResponseFieldTimestamp)
-}
-
-// SetDealMoney sets the DealMoney field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetDealMoney(dealMoney *string) {
-	o.DealMoney = dealMoney
-	o.require(orderResponseFieldDealMoney)
-}
-
-// SetDealStock sets the DealStock field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetDealStock(dealStock *string) {
-	o.DealStock = dealStock
-	o.require(orderResponseFieldDealStock)
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetAmount(amount *string) {
-	o.Amount = amount
-	o.require(orderResponseFieldAmount)
-}
-
-// SetLeft sets the Left field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetLeft(left *string) {
-	o.Left = left
-	o.require(orderResponseFieldLeft)
-}
-
-// SetDealFee sets the DealFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetDealFee(dealFee *string) {
-	o.DealFee = dealFee
-	o.require(orderResponseFieldDealFee)
-}
-
-// SetPrice sets the Price field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetPrice(price *string) {
-	o.Price = price
-	o.require(orderResponseFieldPrice)
-}
-
-// SetPostOnly sets the PostOnly field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetPostOnly(postOnly *bool) {
-	o.PostOnly = postOnly
-	o.require(orderResponseFieldPostOnly)
-}
-
-// SetIoc sets the Ioc field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetIoc(ioc *bool) {
-	o.Ioc = ioc
-	o.require(orderResponseFieldIoc)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetStatus(status *OrderStatus) {
-	o.Status = status
-	o.require(orderResponseFieldStatus)
-}
-
-// SetStp sets the Stp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetStp(stp *string) {
-	o.Stp = stp
-	o.require(orderResponseFieldStp)
-}
-
-// SetPositionSide sets the PositionSide field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetPositionSide(positionSide *string) {
-	o.PositionSide = positionSide
-	o.require(orderResponseFieldPositionSide)
-}
-
-// SetRpi sets the Rpi field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetRpi(rpi *bool) {
-	o.Rpi = rpi
-	o.require(orderResponseFieldRpi)
-}
-
-// SetRetail sets the Retail field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetRetail(retail *bool) {
-	o.Retail = retail
-	o.require(orderResponseFieldRetail)
-}
-
-// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetReduceOnly(reduceOnly *bool) {
-	o.ReduceOnly = reduceOnly
-	o.require(orderResponseFieldReduceOnly)
-}
-
-// SetActivated sets the Activated field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetActivated(activated *int) {
-	o.Activated = activated
-	o.require(orderResponseFieldActivated)
-}
-
-// SetActivationCondition sets the ActivationCondition field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetActivationCondition(activationCondition *OrderResponseActivationCondition) {
-	o.ActivationCondition = activationCondition
-	o.require(orderResponseFieldActivationCondition)
-}
-
-// SetActivationPrice sets the ActivationPrice field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (o *OrderResponse) SetActivationPrice(activationPrice *string) {
-	o.ActivationPrice = activationPrice
-	o.require(orderResponseFieldActivationPrice)
-}
-
-func (o *OrderResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler OrderResponse
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*o = OrderResponse(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *o)
-	if err != nil {
-		return err
-	}
-	o.extraProperties = extraProperties
-	o.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (o *OrderResponse) MarshalJSON() ([]byte, error) {
-	type embed OrderResponse
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*o),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (o *OrderResponse) String() string {
-	if len(o.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(o); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", o)
-}
-
-// Trigger condition for the stop order. Response-only — not accepted in the request body, and cannot be overridden. Derived from `side`:
-//
-// - `side = buy` → `gte`. The order activates when the market price rises to or above `activation_price`.
-// - `side = sell` → `lte`. The order activates when the market price falls to or below `activation_price`.
-type OrderResponseActivationCondition string
+// [Position side](/glossary#position-side) scope. Accepted only when `market` is a perpetual futures market (e.g., BTC_PERP); values are lowercase on this endpoint.
+type CancelAllOrdersRequestPositionSide string
 
 const (
-	OrderResponseActivationConditionLte OrderResponseActivationCondition = "lte"
-	OrderResponseActivationConditionGte OrderResponseActivationCondition = "gte"
+	CancelAllOrdersRequestPositionSideBoth  CancelAllOrdersRequestPositionSide = "both"
+	CancelAllOrdersRequestPositionSideLong  CancelAllOrdersRequestPositionSide = "long"
+	CancelAllOrdersRequestPositionSideShort CancelAllOrdersRequestPositionSide = "short"
 )
 
-func NewOrderResponseActivationConditionFromString(s string) (OrderResponseActivationCondition, error) {
+func NewCancelAllOrdersRequestPositionSideFromString(s string) (CancelAllOrdersRequestPositionSide, error) {
 	switch s {
-	case "lte":
-		return OrderResponseActivationConditionLte, nil
-	case "gte":
-		return OrderResponseActivationConditionGte, nil
+	case "both":
+		return CancelAllOrdersRequestPositionSideBoth, nil
+	case "long":
+		return CancelAllOrdersRequestPositionSideLong, nil
+	case "short":
+		return CancelAllOrdersRequestPositionSideShort, nil
 	}
-	var t OrderResponseActivationCondition
+	var t CancelAllOrdersRequestPositionSide
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
 }
 
-func (o OrderResponseActivationCondition) Ptr() *OrderResponseActivationCondition {
-	return &o
+func (c CancelAllOrdersRequestPositionSide) Ptr() *CancelAllOrdersRequestPositionSide {
+	return &c
 }
 
 type CancelAllOrdersRequestTypeItem string
@@ -3901,7 +3549,7 @@ type GetKillSwitchStatusResponseItem struct {
 	StartTime *int `json:"startTime,omitempty" url:"startTime,omitempty"`
 	// Unix timestamp (seconds) when the kill-switch will cancel orders. Equals `startTime + timeout`.
 	CancellationTime *int `json:"cancellationTime,omitempty" url:"cancellationTime,omitempty"`
-	// Order types targeted by the kill-switch. Possible values: `spot`, `margin`, `futures`.
+	// Order types targeted by the kill-switch. Possible values: `spot`, `margin`, `futures`. Returns `null` when the timer was created without `types` (the kill-switch then targets all order types).
 	Types []GetKillSwitchStatusResponseItemTypesItem `json:"types,omitempty" url:"types,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
@@ -4986,6 +4634,39 @@ func (m MarketOrderRequestStp) Ptr() *MarketOrderRequestStp {
 	return &m
 }
 
+// Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+//
+// Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+//
+// See [Self-Trade Prevention](/platform/self-trade-prevention).
+type ModifyOrderRequestStp string
+
+const (
+	ModifyOrderRequestStpNo ModifyOrderRequestStp = "no"
+	ModifyOrderRequestStpCb ModifyOrderRequestStp = "cb"
+	ModifyOrderRequestStpCn ModifyOrderRequestStp = "cn"
+	ModifyOrderRequestStpCo ModifyOrderRequestStp = "co"
+)
+
+func NewModifyOrderRequestStpFromString(s string) (ModifyOrderRequestStp, error) {
+	switch s {
+	case "no":
+		return ModifyOrderRequestStpNo, nil
+	case "cb":
+		return ModifyOrderRequestStpCb, nil
+	case "cn":
+		return ModifyOrderRequestStpCn, nil
+	case "co":
+		return ModifyOrderRequestStpCo, nil
+	}
+	var t ModifyOrderRequestStp
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (m ModifyOrderRequestStp) Ptr() *ModifyOrderRequestStp {
+	return &m
+}
+
 type SetKillSwitchRequestTypesItem string
 
 const (
@@ -5011,22 +4692,85 @@ func (s SetKillSwitchRequestTypesItem) Ptr() *SetKillSwitchRequestTypesItem {
 	return &s
 }
 
+type SetKillSwitchResponse struct {
+	SetKillSwitchResponseCancellationTime *SetKillSwitchResponseCancellationTime
+	// Deleting a timer (`timeout: null`) returns a literal empty array (`[]`).
+	UnknownList []interface{}
+
+	typ string
+}
+
+func (s *SetKillSwitchResponse) GetSetKillSwitchResponseCancellationTime() *SetKillSwitchResponseCancellationTime {
+	if s == nil {
+		return nil
+	}
+	return s.SetKillSwitchResponseCancellationTime
+}
+
+func (s *SetKillSwitchResponse) GetUnknownList() []interface{} {
+	if s == nil {
+		return nil
+	}
+	return s.UnknownList
+}
+
+func (s *SetKillSwitchResponse) UnmarshalJSON(data []byte) error {
+	valueSetKillSwitchResponseCancellationTime := new(SetKillSwitchResponseCancellationTime)
+	if err := json.Unmarshal(data, &valueSetKillSwitchResponseCancellationTime); err == nil {
+		s.typ = "SetKillSwitchResponseCancellationTime"
+		s.SetKillSwitchResponseCancellationTime = valueSetKillSwitchResponseCancellationTime
+		return nil
+	}
+	var valueUnknownList []interface{}
+	if err := json.Unmarshal(data, &valueUnknownList); err == nil {
+		s.typ = "UnknownList"
+		s.UnknownList = valueUnknownList
+		return nil
+	}
+	return fmt.Errorf("%s cannot be deserialized as a %T", data, s)
+}
+
+func (s SetKillSwitchResponse) MarshalJSON() ([]byte, error) {
+	if s.typ == "SetKillSwitchResponseCancellationTime" || s.SetKillSwitchResponseCancellationTime != nil {
+		return json.Marshal(s.SetKillSwitchResponseCancellationTime)
+	}
+	if s.typ == "UnknownList" || s.UnknownList != nil {
+		return json.Marshal(s.UnknownList)
+	}
+	return nil, fmt.Errorf("type %T does not include a non-empty union type", s)
+}
+
+type SetKillSwitchResponseVisitor interface {
+	VisitSetKillSwitchResponseCancellationTime(*SetKillSwitchResponseCancellationTime) error
+	VisitUnknownList([]interface{}) error
+}
+
+func (s *SetKillSwitchResponse) Accept(visitor SetKillSwitchResponseVisitor) error {
+	if s.typ == "SetKillSwitchResponseCancellationTime" || s.SetKillSwitchResponseCancellationTime != nil {
+		return visitor.VisitSetKillSwitchResponseCancellationTime(s.SetKillSwitchResponseCancellationTime)
+	}
+	if s.typ == "UnknownList" || s.UnknownList != nil {
+		return visitor.VisitUnknownList(s.UnknownList)
+	}
+	return fmt.Errorf("type %T does not include a non-empty union type", s)
+}
+
 var (
-	setKillSwitchResponseFieldMarket           = big.NewInt(1 << 0)
-	setKillSwitchResponseFieldStartTime        = big.NewInt(1 << 1)
-	setKillSwitchResponseFieldCancellationTime = big.NewInt(1 << 2)
-	setKillSwitchResponseFieldTypes            = big.NewInt(1 << 3)
+	setKillSwitchResponseCancellationTimeFieldMarket           = big.NewInt(1 << 0)
+	setKillSwitchResponseCancellationTimeFieldStartTime        = big.NewInt(1 << 1)
+	setKillSwitchResponseCancellationTimeFieldCancellationTime = big.NewInt(1 << 2)
+	setKillSwitchResponseCancellationTimeFieldTypes            = big.NewInt(1 << 3)
 )
 
-type SetKillSwitchResponse struct {
+type SetKillSwitchResponseCancellationTime struct {
 	// Trading pair the timer applies to.
 	Market *string `json:"market,omitempty" url:"market,omitempty"`
 	// Unix timestamp (seconds) when the timer was created or last reset.
 	StartTime *int `json:"startTime,omitempty" url:"startTime,omitempty"`
 	// Unix timestamp (seconds) when the kill-switch will cancel orders. Equals `startTime + timeout`.
 	CancellationTime *int `json:"cancellationTime,omitempty" url:"cancellationTime,omitempty"`
-	// Order types targeted by the kill-switch. Possible values: `spot`, `margin`, `futures`.
-	Types []SetKillSwitchResponseTypesItem `json:"types,omitempty" url:"types,omitempty"`
+	// Order types targeted by the kill-switch. Possible values: `spot`, `margin`, `futures`. Returns `null` when the timer was created without `types` (the kill-switch then targets all order types).
+	Types []SetKillSwitchResponseCancellationTimeTypesItem `json:"types,omitempty" url:"types,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -5035,39 +4779,39 @@ type SetKillSwitchResponse struct {
 	rawJSON         json.RawMessage
 }
 
-func (s *SetKillSwitchResponse) GetMarket() *string {
+func (s *SetKillSwitchResponseCancellationTime) GetMarket() *string {
 	if s == nil {
 		return nil
 	}
 	return s.Market
 }
 
-func (s *SetKillSwitchResponse) GetStartTime() *int {
+func (s *SetKillSwitchResponseCancellationTime) GetStartTime() *int {
 	if s == nil {
 		return nil
 	}
 	return s.StartTime
 }
 
-func (s *SetKillSwitchResponse) GetCancellationTime() *int {
+func (s *SetKillSwitchResponseCancellationTime) GetCancellationTime() *int {
 	if s == nil {
 		return nil
 	}
 	return s.CancellationTime
 }
 
-func (s *SetKillSwitchResponse) GetTypes() []SetKillSwitchResponseTypesItem {
+func (s *SetKillSwitchResponseCancellationTime) GetTypes() []SetKillSwitchResponseCancellationTimeTypesItem {
 	if s == nil {
 		return nil
 	}
 	return s.Types
 }
 
-func (s *SetKillSwitchResponse) GetExtraProperties() map[string]interface{} {
+func (s *SetKillSwitchResponseCancellationTime) GetExtraProperties() map[string]interface{} {
 	return s.extraProperties
 }
 
-func (s *SetKillSwitchResponse) require(field *big.Int) {
+func (s *SetKillSwitchResponseCancellationTime) require(field *big.Int) {
 	if s.explicitFields == nil {
 		s.explicitFields = big.NewInt(0)
 	}
@@ -5076,39 +4820,39 @@ func (s *SetKillSwitchResponse) require(field *big.Int) {
 
 // SetMarket sets the Market field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SetKillSwitchResponse) SetMarket(market *string) {
+func (s *SetKillSwitchResponseCancellationTime) SetMarket(market *string) {
 	s.Market = market
-	s.require(setKillSwitchResponseFieldMarket)
+	s.require(setKillSwitchResponseCancellationTimeFieldMarket)
 }
 
 // SetStartTime sets the StartTime field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SetKillSwitchResponse) SetStartTime(startTime *int) {
+func (s *SetKillSwitchResponseCancellationTime) SetStartTime(startTime *int) {
 	s.StartTime = startTime
-	s.require(setKillSwitchResponseFieldStartTime)
+	s.require(setKillSwitchResponseCancellationTimeFieldStartTime)
 }
 
 // SetCancellationTime sets the CancellationTime field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SetKillSwitchResponse) SetCancellationTime(cancellationTime *int) {
+func (s *SetKillSwitchResponseCancellationTime) SetCancellationTime(cancellationTime *int) {
 	s.CancellationTime = cancellationTime
-	s.require(setKillSwitchResponseFieldCancellationTime)
+	s.require(setKillSwitchResponseCancellationTimeFieldCancellationTime)
 }
 
 // SetTypes sets the Types field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (s *SetKillSwitchResponse) SetTypes(types []SetKillSwitchResponseTypesItem) {
+func (s *SetKillSwitchResponseCancellationTime) SetTypes(types []SetKillSwitchResponseCancellationTimeTypesItem) {
 	s.Types = types
-	s.require(setKillSwitchResponseFieldTypes)
+	s.require(setKillSwitchResponseCancellationTimeFieldTypes)
 }
 
-func (s *SetKillSwitchResponse) UnmarshalJSON(data []byte) error {
-	type unmarshaler SetKillSwitchResponse
+func (s *SetKillSwitchResponseCancellationTime) UnmarshalJSON(data []byte) error {
+	type unmarshaler SetKillSwitchResponseCancellationTime
 	var value unmarshaler
 	if err := json.Unmarshal(data, &value); err != nil {
 		return err
 	}
-	*s = SetKillSwitchResponse(value)
+	*s = SetKillSwitchResponseCancellationTime(value)
 	extraProperties, err := internal.ExtractExtraProperties(data, *s)
 	if err != nil {
 		return err
@@ -5118,8 +4862,8 @@ func (s *SetKillSwitchResponse) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (s *SetKillSwitchResponse) MarshalJSON() ([]byte, error) {
-	type embed SetKillSwitchResponse
+func (s *SetKillSwitchResponseCancellationTime) MarshalJSON() ([]byte, error) {
+	type embed SetKillSwitchResponseCancellationTime
 	var marshaler = struct {
 		embed
 	}{
@@ -5129,7 +4873,7 @@ func (s *SetKillSwitchResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(explicitMarshaler)
 }
 
-func (s *SetKillSwitchResponse) String() string {
+func (s *SetKillSwitchResponseCancellationTime) String() string {
 	if len(s.rawJSON) > 0 {
 		if value, err := internal.StringifyJSON(s.rawJSON); err == nil {
 			return value
@@ -5141,28 +4885,28 @@ func (s *SetKillSwitchResponse) String() string {
 	return fmt.Sprintf("%#v", s)
 }
 
-type SetKillSwitchResponseTypesItem string
+type SetKillSwitchResponseCancellationTimeTypesItem string
 
 const (
-	SetKillSwitchResponseTypesItemSpot    SetKillSwitchResponseTypesItem = "spot"
-	SetKillSwitchResponseTypesItemMargin  SetKillSwitchResponseTypesItem = "margin"
-	SetKillSwitchResponseTypesItemFutures SetKillSwitchResponseTypesItem = "futures"
+	SetKillSwitchResponseCancellationTimeTypesItemSpot    SetKillSwitchResponseCancellationTimeTypesItem = "spot"
+	SetKillSwitchResponseCancellationTimeTypesItemMargin  SetKillSwitchResponseCancellationTimeTypesItem = "margin"
+	SetKillSwitchResponseCancellationTimeTypesItemFutures SetKillSwitchResponseCancellationTimeTypesItem = "futures"
 )
 
-func NewSetKillSwitchResponseTypesItemFromString(s string) (SetKillSwitchResponseTypesItem, error) {
+func NewSetKillSwitchResponseCancellationTimeTypesItemFromString(s string) (SetKillSwitchResponseCancellationTimeTypesItem, error) {
 	switch s {
 	case "spot":
-		return SetKillSwitchResponseTypesItemSpot, nil
+		return SetKillSwitchResponseCancellationTimeTypesItemSpot, nil
 	case "margin":
-		return SetKillSwitchResponseTypesItemMargin, nil
+		return SetKillSwitchResponseCancellationTimeTypesItemMargin, nil
 	case "futures":
-		return SetKillSwitchResponseTypesItemFutures, nil
+		return SetKillSwitchResponseCancellationTimeTypesItemFutures, nil
 	}
-	var t SetKillSwitchResponseTypesItem
+	var t SetKillSwitchResponseCancellationTimeTypesItem
 	return "", fmt.Errorf("%s is not a valid %T", s, t)
 }
 
-func (s SetKillSwitchResponseTypesItem) Ptr() *SetKillSwitchResponseTypesItem {
+func (s SetKillSwitchResponseCancellationTimeTypesItem) Ptr() *SetKillSwitchResponseCancellationTimeTypesItem {
 	return &s
 }
 

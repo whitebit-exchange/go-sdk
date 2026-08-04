@@ -493,7 +493,7 @@ func (r *RawClient) CancelAllOrders(
 	ctx context.Context,
 	request *sdk.CancelAllOrdersRequest,
 	opts ...option.RequestOption,
-) (*core.Response[any], error) {
+) (*core.Response[[]any], error) {
 	options := core.NewRequestOptions(opts...)
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
@@ -514,6 +514,7 @@ func (r *RawClient) CancelAllOrders(
 		options.ToHeader(),
 	)
 	headers.Add("Content-Type", "application/json")
+	var response []any
 	raw, err := r.caller.Call(
 		ctx,
 		&internal.CallParams{
@@ -525,16 +526,17 @@ func (r *RawClient) CancelAllOrders(
 			QueryParameters: options.QueryParameters,
 			Client:          options.HTTPClient,
 			Request:         request,
+			Response:        &response,
 			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &core.Response[any]{
+	return &core.Response[[]any]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
-		Body:       nil,
+		Body:       response,
 	}, nil
 }
 

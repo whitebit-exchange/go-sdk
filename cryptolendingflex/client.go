@@ -32,7 +32,7 @@ func NewClient(options *core.RequestOptions) *Client {
 	}
 }
 
-// Retrieve list of active [Flex Plans](/glossary#crypto-lending).
+// The endpoint returns flex investment plan configurations with active status, filtered by the authenticated user's region and plan visibility. Results include public plans and private plans assigned to the account.
 //
 // Available after September 22, 2025.
 //

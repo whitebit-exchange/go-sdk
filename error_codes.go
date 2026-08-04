@@ -13,6 +13,11 @@ var ErrorCodes internal.ErrorCodes = internal.ErrorCodes{
 			APIError: apiError,
 		}
 	},
+	451: func(apiError *core.APIError) error {
+		return &UnavailableForLegalReasonsError{
+			APIError: apiError,
+		}
+	},
 	400: func(apiError *core.APIError) error {
 		return &BadRequestError{
 			APIError: apiError,

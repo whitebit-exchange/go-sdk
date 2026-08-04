@@ -177,7 +177,31 @@ func (u *UnauthorizedError) Unwrap() error {
 	return u.APIError
 }
 
-// Validation error. Returned when the `market` path parameter is unknown or not enabled for trading.
+// Returned when the service is not available in the caller's region.
+type UnavailableForLegalReasonsError struct {
+	*core.APIError
+	Body *ErrorV4
+}
+
+func (u *UnavailableForLegalReasonsError) UnmarshalJSON(data []byte) error {
+	var body *ErrorV4
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	u.StatusCode = 451
+	u.Body = body
+	return nil
+}
+
+func (u *UnavailableForLegalReasonsError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(u.Body)
+}
+
+func (u *UnavailableForLegalReasonsError) Unwrap() error {
+	return u.APIError
+}
+
+// Validation error. Returned when the `market` path parameter is unknown, missing, or not enabled for trading, or when `limit` or `level` is not an integer.
 type UnprocessableEntityError struct {
 	*core.APIError
 	Body interface{}

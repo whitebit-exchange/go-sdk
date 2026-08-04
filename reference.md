@@ -402,14 +402,18 @@ client.PublicAPIV4.MaintenanceStatus(
 <dl>
 <dd>
 
-The endpoint retrieves configuration and trading rules for all available spot, futures, and TradFi futures markets. Use the response to discover tradeable pairs, check minimum order sizes, and read fee schedules. Each entry includes precision settings, fee ratios, and order-size constraints for the market.
+The endpoint retrieves configuration and trading rules for all available spot and futures markets (TradFi futures markets are coming soon and are not yet returned). Use the response to discover tradeable pairs, check minimum order sizes, and read fee schedules. Each entry includes precision settings, fee ratios, and order-size constraints for the market.
 
 <Note>
 Market configuration is reference data, re-synced from the database approximately every 10 seconds. Polling more frequently returns identical data. The cache is shared across all callers.
 </Note>
 
 <Note>
-TradFi futures markets are region-gated. Markets not available in a given region are omitted from the response entirely and do not appear under any other market type.
+TradFi futures markets are coming soon and are not yet returned by this endpoint. Once available, they will be region-gated: markets not available in a given region are omitted from the response entirely and do not appear under any other market type.
+</Note>
+
+<Note>
+A market with an announced delisting carries the announced date in `delistedAt` and stays tradeable until the delisting runs. Once the delisting runs, the platform cancels the active orders on the market and drops the market from this response — [Query delisting orders](/api-reference/spot-trading/query-delisting-orders) is a signed request that returns the authenticated account's resulting spot order records. An announcement can be rescheduled or canceled, so treat `delistedAt` as the current plan rather than a settled fact and re-read the value on the next poll.
 </Note>
 
 <Warning>
@@ -623,7 +627,7 @@ client.PublicAPIV4.Orderbook(
 <dl>
 <dd>
 
-**level:** `*int` — Aggregation level for price grouping. Level 0 applies no aggregation. Levels 1–5 provide increasing aggregation of the order book.
+**level:** `*int` — Aggregation level for price grouping. Level 0 applies no aggregation. Levels 1–5 provide increasing aggregation of the order book; values up to 10 are accepted. Out-of-range values are clamped to the 0–10 range rather than rejected.
     
 </dd>
 </dl>
@@ -716,7 +720,7 @@ client.PublicAPIV4.Depth(
 <dl>
 <dd>
 
-The endpoint retrieves the [trades](/glossary#deal-trade) that have been executed recently on the requested [market](/glossary#market).
+The endpoint retrieves the [trades](/glossary#deal-trade) that have been executed recently on the requested [market](/glossary#market). It returns up to the 100 most recent trades; the response size is fixed and there is no `limit` parameter.
 
 <Note>
 The API caches the response for 1 second
@@ -1147,6 +1151,54 @@ client.PublicAPIV4.FundingHistory(
 
 **offset:** `*int` — Number of records to skip. Maximum: 1000000
     
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.PublicAPIV4.MiningPoolOverview() -> *sdk.GetAPIV4PublicMiningPoolResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns overall information about the current mining pool state.
+
+Hash rate is expressed in H units.
+
+<Warning>
+Rate limit 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+client.PublicAPIV4.MiningPoolOverview(
+        context.TODO(),
+    )
+}
+```
 </dd>
 </dl>
 </dd>
@@ -2583,9 +2635,9 @@ End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glos
 
 Beneficiary information.
 
-⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
+⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
 
-Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `tin` is required for UAH_IBAN; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
+Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
     
 </dd>
 </dl>
@@ -2779,7 +2831,7 @@ client.Withdraw.CreateWithdrawPay(
 <dl>
 <dd>
 
-**beneficiary:** `map[string]any` — Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
+**beneficiary:** `map[string]any` — Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
     
 </dd>
 </dl>
@@ -3471,6 +3523,1519 @@ client.Codes.GetCodesHistory(
 <dd>
 
 **offset:** `*int` — Use the OFFSET clause to return entries starting from a particular line.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## Crypto Lending - Fixed
+<details><summary><code>client.CryptoLendingFixed.GetFixedPlans(request) -> []*sdk.FixedPlan</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns investment plan configurations with active status and API access enabled, filtered by the authenticated user's region and plan visibility. Results include public plans and private plans assigned to the account.
+
+<Note>
+These endpoints are available only for B2B partner services. Fill the institutional services form to get permissions to use these endpoints.
+</Note>
+
+**Note:** When target currency is different from source currency, interest amount in target currency will be calculated using `interestRatio` value.
+
+**Examples:**
+- When source currency = USDT, target currency = BTC and interest ratio = 40000, interest is received in BTC and equals the USDT interest amount divided by the interest ratio (e.g. 0.000025 BTC per 1 USDT of interest).
+- When source currency equals target currency, interest ratio equals 1.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetFixedPlansRequest{
+        Ticker: sdk.String(
+            "USDT",
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFixed.GetFixedPlans(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**ticker:** `*string` — [Invest plan](/glossary#crypto-lending) source currency's [ticker](/glossary#ticker). Example: BTC
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFixed.CreateFixedInvestment(request) -> *sdk.CreateFixedInvestmentResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint creates a new investment to the specified [invest plan](/glossary#crypto-lending).
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CreateFixedInvestmentRequest{
+        PlanID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
+        Amount: "100",
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFixed.CreateFixedInvestment(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**planID:** `string` — [Invest plan](/glossary#crypto-lending) identifier
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**amount:** `string` — Investment amount
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFixed.CloseFixedInvestment(request) -> map[string]any</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint closes active investment.
+
+Early closure is allowed and carries no penalty — the request either succeeds or returns one of the documented errors.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CloseFixedInvestmentRequest{
+        ID: "0d7b66ff-1909-4938-ab7a-d16d9a64dcd5",
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFixed.CloseFixedInvestment(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**id:** `string` — Investment identifier
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFixed.GetFixedInvestmentsHistory(request) -> *sdk.GetFixedInvestmentsHistoryResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint retrieves an investments history.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetFixedInvestmentsHistoryRequest{
+        ID: sdk.String(
+            "0d7b66ff-1909-4938-ab7a-d16d9a64dcd5",
+        ),
+        Ticker: sdk.String(
+            "USDT",
+        ),
+        Status: sdk.Int(
+            1,
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFixed.GetFixedInvestmentsHistory(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**id:** `*string` — Investment identifier
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**ticker:** `*string` — [Invest plan](/glossary#crypto-lending) source currency's [ticker](/glossary#ticker)
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**status:** `*int` — Investment status (1 - active, 2 - closed)
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Use the OFFSET clause to return entries starting from a particular line.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFixed.GetInterestPaymentHistory(request) -> *sdk.GetInterestPaymentHistoryResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint retrieves the history of interest payments.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetInterestPaymentHistoryRequest{
+        PlanID: sdk.String(
+            "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
+        ),
+        Ticker: sdk.String(
+            "USDT",
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFixed.GetInterestPaymentHistory(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**planID:** `*string` — [Invest plan](/glossary#crypto-lending) identifier
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**ticker:** `*string` — [Invest plan](/glossary#crypto-lending) target currency's [ticker](/glossary#ticker)
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**limit:** `*int` — LIMIT is a special clause used to limit records a particular query can return.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Use the OFFSET clause to return entries starting from a particular line.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## Crypto Lending - Flex
+<details><summary><code>client.CryptoLendingFlex.GetFlexPlans(request) -> []*sdk.FlexPlan</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns flex investment plan configurations with active status, filtered by the authenticated user's region and plan visibility. Results include public plans and private plans assigned to the account.
+
+Available after September 22, 2025.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetFlexPlansRequest{
+        Limit: sdk.Int(
+            50,
+        ),
+        Offset: sdk.Int(
+            0,
+        ),
+        Ticker: sdk.String(
+            "USDT",
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.GetFlexPlans(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Pagination limit.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Pagination offset.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**ticker:** `*string` — Filter by currency [ticker](/glossary#ticker). Example: USDT
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFlex.GetUserFlexInvestments(request) -> *sdk.GetUserFlexInvestmentsResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Retrieve user's investment portfolio with optional filtering.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetUserFlexInvestmentsRequest{
+        Limit: sdk.Int(
+            100,
+        ),
+        Offset: sdk.Int(
+            0,
+        ),
+        Ticker: sdk.String(
+            "USDT",
+        ),
+        Plan: sdk.String(
+            "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
+        ),
+        Investment: sdk.String(
+            "invest_id_123",
+        ),
+        InvestmentStatus: sdk.Int(
+            1,
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.GetUserFlexInvestments(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Pagination limit. Default: 100.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Pagination offset. Default: 0.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**ticker:** `*string` — Filter by currency [ticker](/glossary#ticker). Example: USDT.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**plan:** `*string` — Filter by plan ID (UUID).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**investment:** `*string` — Filter by investment ID.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**investmentStatus:** `*int` — Filter by status (1=ACTIVE, 0=CLOSED).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFlex.GetFlexInvestmentHistory(request) -> *sdk.GetFlexInvestmentHistoryResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Retrieve complete investment operations history with advanced filtering.
+
+**Available Action Types:**
+- 1: INVEST - Investment creation
+- 2: REINVEST - Automatic reinvestment
+- 3: WITHDRAW_FROM_INVESTMENT - Partial withdrawal
+- 4: DAILY_EARNING - Daily earnings
+- 5: CLOSE_INVESTMENT - Investment closure
+- 6: OPEN_INVESTMENT - Investment opening
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetFlexInvestmentHistoryRequest{
+        Limit: sdk.Int(
+            50,
+        ),
+        Offset: sdk.Int(
+            0,
+        ),
+        Plan: sdk.String(
+            "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
+        ),
+        Investment: sdk.String(
+            "inv_123",
+        ),
+        Transaction: sdk.String(
+            "tx_456",
+        ),
+        DateFrom: sdk.Int(
+            1640995200,
+        ),
+        DateTo: sdk.Int(
+            1641081600,
+        ),
+        ActionTypes: []int{
+            1,
+            2,
+            4,
+        },
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.GetFlexInvestmentHistory(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Pagination limit.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Pagination offset.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**plan:** `*string` — Filter by plan ID (UUID).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**investment:** `*string` — Filter by investment ID.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**transaction:** `*string` — Filter by transaction ID.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**dateFrom:** `*int` — Filter from date (timestamp).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**dateTo:** `*int` — Filter to date (timestamp).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**actionTypes:** `[]int` — Array of operation type IDs. See table below.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFlex.GetFlexPaymentHistory(request) -> *sdk.GetFlexPaymentHistoryResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Retrieve investment earnings history (ONLY DAILY_EARNING operations).
+
+**Note:** The endpoint automatically filters to show ONLY DAILY_EARNING operations (type 4).
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetFlexPaymentHistoryRequest{
+        Limit: sdk.Int(
+            50,
+        ),
+        Offset: sdk.Int(
+            0,
+        ),
+        Plan: sdk.String(
+            "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
+        ),
+        Investment: sdk.String(
+            "inv_123",
+        ),
+        Transaction: sdk.String(
+            "tx_456",
+        ),
+        DateFrom: sdk.Int(
+            1640995200,
+        ),
+        DateTo: sdk.Int(
+            1641081600,
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.GetFlexPaymentHistory(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Pagination limit.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Pagination offset.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**plan:** `*string` — Filter by plan ID (UUID).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**investment:** `*string` — Filter by investment ID.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**transaction:** `*string` — Filter by transaction ID.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**dateFrom:** `*int` — Filter from date (timestamp).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**dateTo:** `*int` — Filter to date (timestamp).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFlex.CreateFlexInvestment(request) -> *sdk.CreateFlexInvestmentResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Create new investment in a Flex plan.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CreateFlexInvestmentRequest{
+        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
+        Amount: "1000.500000",
+        WithReinvest: sdk.Bool(
+            true,
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.CreateFlexInvestment(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**plan:** `string` — Plan external ID (UUID).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**amount:** `string` — Investment amount.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**withReinvest:** `*bool` — Enable auto-reinvestment.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFlex.WithdrawFromFlexInvestment(request) -> *sdk.WithdrawFromFlexInvestmentResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Withdraw specified amount from user's investment.
+
+**Note:** Plan must be active and accessible to user.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.WithdrawFromFlexInvestmentRequest{
+        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
+        Amount: "500.250000",
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.WithdrawFromFlexInvestment(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**plan:** `string` — Plan external ID (UUID).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**amount:** `string` — Withdrawal amount.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFlex.CloseFlexInvestment(request) -> *sdk.CloseFlexInvestmentResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Completely close investment and withdraw all funds.
+
+**Validation Rules:**
+- plan: required, string, UUID format, must exist
+- Investment must be ACTIVE
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CloseFlexInvestmentRequest{
+        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.CloseFlexInvestment(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**plan:** `string` — Plan external ID (UUID).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.CryptoLendingFlex.UpdateFlexAutoReinvestment(request) -> *sdk.UpdateFlexAutoReinvestmentResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Enable/disable automatic reinvestment for user's investment.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.UpdateFlexAutoReinvestmentRequest{
+        Plan: "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
+        Enabled: sdk.Bool(
+            true,
+        ),
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.CryptoLendingFlex.UpdateFlexAutoReinvestment(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**plan:** `string` — Plan external ID (UUID).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**enabled:** `*bool` — Enable or disable auto-reinvestment.
     
 </dd>
 </dl>
@@ -4641,6 +6206,7 @@ The API does not cache the response.
 request := &sdk.CreateSubAccountAPIKeyRequest{
         Type: 1,
         SubAccountID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
+        Title: "Trading Bot Key",
     }
 client.SubAccountAPIKeys.CreateSubAccountAPIKey(
         context.TODO(),
@@ -4677,7 +6243,7 @@ client.SubAccountAPIKeys.CreateSubAccountAPIKey(
 <dl>
 <dd>
 
-**title:** `*string` — Custom title/name for the API key
+**title:** `string` — Custom title/name for the API key
     
 </dd>
 </dl>
@@ -5233,6 +6799,968 @@ client.SubAccountAPIKeys.DeleteSubAccountAPIKeyIPAddress(
 <dd>
 
 **ip:** `string` — IP address to remove from allowed list
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+## Mining Pool
+<details><summary><code>client.MiningPool.GetMiningRewards(request) -> *sdk.GetMiningRewardsResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns rewards received from mining.
+Results are ordered by reward date, newest first.
+
+The response does not include a `total` field. Detect the last page when
+`data.length < limit`.
+
+The `offset` parameter is capped at 10000. To paginate reward histories
+beyond that, window the request by `from` and `to` (Unix timestamps).
+
+<Note>
+The `account` filter is not validated at the request layer. An unknown or
+not-owned account name is treated as an empty filter and returns HTTP `200`
+with an empty `data` array — the same response as a valid account with no
+rewards in the requested window. An account without mining access also
+returns empty data, so an empty response does not distinguish "no mining
+access" from "no rewards in range."
+</Note>
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetMiningRewardsRequest{}
+client.MiningPool.GetMiningRewards(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**account:** `*string` — Mining pool account
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**from:** `*int` — Date timestamp starting from which rewards are received
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**to:** `*int` — Date timestamp until which rewards are received
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**limit:** `*int` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.GetMiningHashrate(request) -> *sdk.GetMiningHashrateResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns hashrate of mining pool account.
+
+<Note>
+There is no dedicated "mining not enabled" error. An account that is
+administratively disabled for mining returns HTTP `200` with empty data
+rather than an error.
+</Note>
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+
+<Note>
+The API does not cache the response.
+</Note>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetMiningHashrateRequest{
+        Account: "miner123",
+    }
+client.MiningPool.GetMiningHashrate(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**account:** `string` — Mining pool account
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**from:** `*int` — Unix timestamp of starting point
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**to:** `*int` — Unix timestamp of final point
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**interval:** `*sdk.GetMiningHashrateRequestInterval` — Timestamp interval
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.GetMiningPayoutDestination(request) -> *sdk.GetMiningPayoutDestinationResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Returns the current payout destination setting for a specific mining account belonging to the authenticated user.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetMiningPayoutDestinationRequest{
+        AccountName: "my_miner_01",
+    }
+client.MiningPool.GetMiningPayoutDestination(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**accountName:** `string` — Mining pool account name
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.SetMiningPayoutDestination(request) -> *sdk.SetMiningPayoutDestinationResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Updates the payout destination for a specific mining account belonging to the authenticated user. Can be set to main balance or an external BTC address.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.SetMiningPayoutDestinationRequest{
+        AccountName: "my_miner_01",
+        Destination: sdk.SetMiningPayoutDestinationRequestDestinationMainBalance,
+    }
+client.MiningPool.SetMiningPayoutDestination(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**accountName:** `string` — Mining pool account name
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**destination:** `*sdk.SetMiningPayoutDestinationRequestDestination` — Payout destination type
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**address:** `*string` — External BTC address. Required when destination is external_address. Supports all standard Bitcoin address formats.
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.GetMiningMinerInfo(request) -> *sdk.GetMiningMinerInfoResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Returns fee information and stratum connection details with worker counts for a specific mining account.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetMiningMinerInfoRequest{
+        Account: "my_miner_01",
+    }
+client.MiningPool.GetMiningMinerInfo(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**account:** `string` — Mining pool account name
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.GetMiningWorkerNames(request) -> *sdk.GetMiningWorkerNamesResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Returns a paginated list of online worker names for a specific mining account.
+Results are ordered by worker name ascending (alphabetical).
+
+The response does not include a `total` field. Detect the last page when
+`data.workers.length < limit`.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetMiningWorkerNamesRequest{
+        Account: "my_miner_01",
+    }
+client.MiningPool.GetMiningWorkerNames(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**account:** `string` — Mining pool account name
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Pagination offset
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Pagination limit
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.GetMiningWorkerHashrate(request) -> *sdk.GetMiningWorkerHashrateResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Returns hashrate performance history for a specific worker on a mining account.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetMiningWorkerHashrateRequest{
+        Account: "my_miner_01",
+        Worker: "worker_001",
+    }
+client.MiningPool.GetMiningWorkerHashrate(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**account:** `string` — Mining pool account name
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**worker:** `string` — Worker name
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**interval:** `*sdk.GetMiningWorkerHashrateRequestInterval` — Time frame granularity
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**from:** `*int` — Start timestamp in Unix seconds. Must be <= now
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**to:** `*int` — End timestamp in Unix seconds. Must be <= now
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.CreateMiningWatcherLink(request) -> *sdk.CreateMiningWatcherLinkResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Creates a new watcher link for one or more mining accounts, granting specific permissions with a configurable expiration.
+
+<Note>
+The number of active watcher links per mining account is capped (configurable
+server-side; currently 3 by default). Exceeding the cap returns a `400` with
+`Limit exceeded`.
+</Note>
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CreateMiningWatcherLinkRequest{
+        Accounts: []string{
+            "my_miner_01",
+            "my_miner_02",
+        },
+        Name: "monitoring_link",
+        Permissions: []sdk.CreateMiningWatcherLinkRequestPermissionsItem{
+            sdk.CreateMiningWatcherLinkRequestPermissionsItemDashboard,
+            sdk.CreateMiningWatcherLinkRequestPermissionsItemWorkers,
+        },
+        LiveUntil: sdk.CreateMiningWatcherLinkRequestLiveUntilOneH,
+    }
+client.MiningPool.CreateMiningWatcherLink(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**accounts:** `[]string` — Array of mining account names
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**name:** `string` — Link name (alphanumeric and underscores only)
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**permissions:** `[]*sdk.CreateMiningWatcherLinkRequestPermissionsItem` — Array of permissions
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**liveUntil:** `*sdk.CreateMiningWatcherLinkRequestLiveUntil` — Expiration period
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.ListMiningWatcherLinks(request) -> *sdk.ListMiningWatcherLinksResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Returns all active watcher links for a specific mining account.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.ListMiningWatcherLinksRequest{
+        Account: "my_miner_01",
+    }
+client.MiningPool.ListMiningWatcherLinks(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**account:** `string` — Mining pool account name
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.CreateMiningAccount(request) -> *sdk.CreateMiningAccountResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Creates a new mining account for the authenticated user. The account name must be unique within the user's accounts.
+
+<Note>
+The number of mining accounts per user is capped (configurable server-side).
+Creating an account beyond the cap returns a `400` with
+`miningPool.validation.maxAccounts`.
+</Note>
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.CreateMiningAccountRequest{
+        Name: "my_miner_01",
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.MiningPool.CreateMiningAccount(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**name:** `string` — Mining pool account name. Must be unique. Alphanumeric characters and underscores allowed.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**referralCode:** `*string` — Optional referral code for account creation
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
+<details><summary><code>client.MiningPool.GetMiningAccounts(request) -> *sdk.GetMiningAccountsResponse</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+Returns a list of mining accounts for the authenticated user. Supports filtering by account name.
+Results are ordered by account creation time, newest first.
+
+The response does not include a `total` field. Detect the last page when
+`data.length < limit`.
+
+<Warning>
+Rate limit: 1000 requests/10 sec.
+</Warning>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetMiningAccountsRequest{
+        Request: "{{request}}",
+        Nonce: 1594297865000,
+    }
+client.MiningPool.GetMiningAccounts(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**name:** `*string` — Optional filter to search for a specific mining account name (exact match)
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `string` — Request signature
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` — Unique request identifier
     
 </dd>
 </dl>
@@ -7330,6 +9858,140 @@ If not specified, returns position history for all markets.
 </dl>
 </details>
 
+<details><summary><code>client.CollateralTrading.GetClosedPositionsPnl(request) -> []*sdk.GetClosedPositionsPnlResponseItem</code></summary>
+<dl>
+<dd>
+
+#### 📝 Description
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+The endpoint returns one aggregated profit-and-loss record per closed [collateral](/glossary#balance-collateral) position for the authenticated account — the same closed-position PNL the trading terminal shows. Records are sorted by `closeDate` descending, then `positionId` descending. Use the optional `startDate` and `endDate` parameters to narrow the window; the filter applies to the position close time.
+
+<Note>
+The endpoint supports pagination via `limit` (default: 50, max: 100) and `offset` (default: 0); the sum of `offset` and `limit` must not exceed 10000. A response that returns fewer than `limit` records indicates the last page.
+</Note>
+
+<Note>
+**Close-time windowing:** a position opened before the requested window but closed inside the window returns complete aggregates — fees, average prices, and closed size cover the full position lifetime, not only the requested window.
+</Note>
+
+<Warning>
+Rate limit: 12000 requests/10 sec.
+</Warning>
+
+<Accordion title="Error Codes">
+  - `30` - default validation error code (invalid pagination — `limit` outside 1–100, or `offset` + `limit` above 10000 — or a date filter that violates `startDate` ≤ `endDate` ≤ `now + 1s`)
+</Accordion>
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### 🔌 Usage
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+```go
+request := &sdk.GetClosedPositionsPnlRequest{
+        StartDate: sdk.Int(
+            1778000000,
+        ),
+        EndDate: sdk.Int(
+            1778100000,
+        ),
+        Limit: sdk.Int(
+            50,
+        ),
+        Offset: sdk.Int(
+            0,
+        ),
+        Request: sdk.String(
+            "{{request}}",
+        ),
+        Nonce: sdk.Int(
+            1594297865000,
+        ),
+    }
+client.CollateralTrading.GetClosedPositionsPnl(
+        context.TODO(),
+        request,
+    )
+}
+```
+</dd>
+</dl>
+</dd>
+</dl>
+
+#### ⚙️ Parameters
+
+<dl>
+<dd>
+
+<dl>
+<dd>
+
+**startDate:** `*int` — Start of the query window as a Unix timestamp in seconds, applied to the position close time. Optional, no default. Must be ≤ `endDate`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**endDate:** `*int` — End of the query window as a Unix timestamp in seconds, applied to the position close time. Optional, no default. Must be ≥ `startDate` and ≤ `now + 1s`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**limit:** `*int` — Maximum number of records to return. Default: `50`. Minimum: `1`. Maximum: `100`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**offset:** `*int` — Number of records to skip. Default: `0`. The sum of `offset` and `limit` must not exceed 10000.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**request:** `*string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `*int` 
+    
+</dd>
+</dl>
+</dd>
+</dl>
+
+
+</dd>
+</dl>
+</details>
+
 <details><summary><code>client.CollateralTrading.GetFundingHistory(request) -> *sdk.GetFundingHistoryResponse</code></summary>
 <dl>
 <dd>
@@ -8226,7 +10888,7 @@ See [Self-Trade Prevention](/platform/self-trade-prevention).
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CancelConditionalOrder(request) -> error</code></summary>
+<details><summary><code>client.CollateralTrading.CancelConditionalOrder(request) -> []any</code></summary>
 <dl>
 <dd>
 
@@ -8348,16 +11010,16 @@ client.CollateralTrading.CancelConditionalOrder(
 <dl>
 <dd>
 
-The endpoint cancels an OCO order.
+The endpoint cancels an OCO order. Identify the order by `orderId` or `clientOrderId` — exactly one of the two must be provided. A request specifying both identifiers, or neither, fails validation.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
 
 <Accordion title="Error Codes">
-  - `30` - default validation error code
+  - `30` - default validation error code. Also returned when the request specifies both `orderId` and `clientOrderId`, or neither
   - `31` - market validation failed
-  - `2` - OCO order not found. Returned whether the `orderId` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+  - `2` - OCO order not found. Returned whether the identifier (`orderId` or `clientOrderId`) does not exist, or the order was already filled or already cancelled — these cases are not distinguished
 </Accordion>
 
 <Accordion title="Errors">
@@ -8387,7 +11049,9 @@ Rate limit: 10000 requests/10 sec.
 ```go
 request := &sdk.CancelOcoOrderRequest{
         Market: "BTC_USDT",
-        OrderID: 117703764514,
+        OrderID: sdk.Int(
+            117703764513,
+        ),
         Request: "{{request}}",
         Nonce: 1594297865000,
     }
@@ -8410,7 +11074,7 @@ client.CollateralTrading.CancelOcoOrder(
 <dl>
 <dd>
 
-**market:** `string` 
+**market:** `string` — Market of the OCO order to cancel. Example: BTC_USDT
     
 </dd>
 </dl>
@@ -8418,7 +11082,15 @@ client.CollateralTrading.CancelOcoOrder(
 <dl>
 <dd>
 
-**orderID:** `int` 
+**orderID:** `*int` — OCO order identifier (the `id` returned at creation and by the OCO listings). Required if `clientOrderId` is not set; mutually exclusive with `clientOrderId`.
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**clientOrderID:** `*string` — Client-defined order ID supplied at order creation. Required if `orderId` is not set; mutually exclusive with `orderId`.
     
 </dd>
 </dl>
@@ -8446,7 +11118,7 @@ client.CollateralTrading.CancelOcoOrder(
 </dl>
 </details>
 
-<details><summary><code>client.CollateralTrading.CancelOtoOrder(request) -> error</code></summary>
+<details><summary><code>client.CollateralTrading.CancelOtoOrder(request) -> []any</code></summary>
 <dl>
 <dd>
 
@@ -8572,6 +11244,8 @@ client.CollateralTrading.CancelOtoOrder(
 Returns the account's default spot and futures maker and taker fees, plus any custom per-market overrides.
 
 The `maker` and `taker` fields represent default spot trading fees. The `futures_maker` and `futures_taker` fields represent default futures trading fees. The `custom_fee` object lists per-market overrides, keyed by market name.
+
+For accounts with the [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order mode enabled, the response returns non-null RPI maker fee premiums applied on top of the maker rates when RPI orders execute.
 
 The system calculates the effective futures fee as the lower value between the user-specific custom fee and the market-specific fee.
 
@@ -8768,6 +11442,7 @@ Rate limit: 10000 requests/10 sec.
 <Note>
   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+  - RPI orders apply post-only behavior automatically — do not also send `postOnly=true`: a request combining `rpi=true` with an explicit `postOnly=true` fails validation.
   - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
   - `retail=true` and `rpi=true` cannot be combined. The API returns error code `41` when both flags are set.
   - `retail=true` has no effect on a `postOnly=true` order. Post-only orders are makers and cannot be retail takers.
@@ -8997,7 +11672,6 @@ request := &sdk.LimitOrderRequest{
         Market: "BTC_USDT",
         Side: sdk.LimitOrderRequestSideBuy,
         Amount: "0.001",
-        Price: "9800",
         Request: "{{request}}",
         Nonce: 1594297865000,
     }
@@ -9044,7 +11718,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**price:** `string` — Limit price per unit in quote (money) currency. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
+**price:** `*string` — Limit price per unit in quote (money) currency. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
     
 </dd>
 </dl>
@@ -9060,7 +11734,7 @@ client.SpotTrading.CreateLimitOrder(
 <dl>
 <dd>
 
-**postOnly:** `*bool` — Post-only flag. When `true`, the order executes only as a [maker](/glossary#maker) order and the system rejects the order if it would match immediately. Default: `false`.
+**postOnly:** `*bool` — Post-only flag. When `true`, the order executes only as a [maker](/glossary#maker) order and the system rejects the order if it would match immediately. Allowed only when `bboRole` is not set. Do not combine with `rpi=true` — RPI orders apply post-only behavior automatically, and a request setting both flags fails validation. Default: `false`.
     
 </dd>
 </dl>
@@ -9074,6 +11748,7 @@ Immediate-or-cancel (IOC) flag. When `true`, the matching engine executes all or
 
 IOC does not support `rpi=true` because RPI uses post-only behavior by design.
 The API returns error code `40` when a request sets both `ioc=true` and `rpi=true`.
+IOC cannot be combined with `postOnly=true` (error code `37`), and with `bboRole` it is allowed only for the Counterparty method (`2`).
 
 Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported parameter combinations.
     
@@ -9083,7 +11758,13 @@ Refer to [Order Parameter Rules](/guides/order-parameter-rules) for unsupported 
 <dl>
 <dd>
 
-**bboRole:** `*int` — Best Bid/Offer ([BBO](/glossary#bbo)) execution method. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method. Use method `2` with the `ioc` flag.
+**bboRole:** `*int` 
+
+Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method. The system selects the best market price for execution. `1` = Queue method, `2` = Counterparty method.
+
+When `bboRole` is set, `price` is not required — the BBO method determines the execution price. `postOnly` is allowed only when `bboRole` is not set; `ioc` can be combined only with the Counterparty method (`2`). Use method `2` with the `ioc` flag.
+
+Refer to [Order Parameter Rules](/guides/order-parameter-rules) for the full interaction rules.
     
 </dd>
 </dl>
@@ -9109,7 +11790,7 @@ See [Self-Trade Prevention](/platform/self-trade-prevention).
 
 Enables Retail Price Improvement (RPI) mode. Default: `false`.
 
-RPI orders use post-only behavior by design. An RPI order does not support `ioc=true`.
+RPI orders apply post-only behavior automatically — do not also send an explicit `postOnly=true`: a request combining the two flags fails validation. An RPI order does not support `ioc=true`.
 The API returns error code `40` when a request sets both `rpi=true` and `ioc=true`.
 RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
 RPI executions may apply custom fees or rebates, especially when trading via sub-accounts. Use Query Market Fees to verify effective fees.
@@ -9181,6 +11862,7 @@ The endpoint creates bulk [limit trading orders](/glossary#limit-order). Each or
 <Note>
   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+  - RPI orders apply post-only behavior automatically — do not also send `postOnly=true`: a request combining `rpi=true` with an explicit `postOnly=true` fails validation.
   - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
   - `retail=true` and `rpi=true` cannot be combined. The API returns error code `41` when both flags are set on an item.
   - `retail=true` has no effect on a `postOnly=true` item. Post-only orders are makers and cannot be retail takers.
@@ -9293,16 +11975,12 @@ Individual order errors (in multiply response):
 request := &sdk.CreateBulkLimitOrderRequest{
         Orders: []*sdk.BulkOrderItem{
             &sdk.BulkOrderItem{
-                Side: sdk.BulkOrderItemSideBuy.Ptr(),
-                Amount: sdk.String(
-                    "0.02",
-                ),
+                Side: sdk.BulkOrderItemSideBuy,
+                Amount: "0.02",
                 Price: sdk.String(
                     "40000",
                 ),
-                Market: sdk.String(
-                    "BTC_USDT",
-                ),
+                Market: "BTC_USDT",
                 PostOnly: sdk.Bool(
                     false,
                 ),
@@ -9320,16 +11998,12 @@ request := &sdk.CreateBulkLimitOrderRequest{
                 ),
             },
             &sdk.BulkOrderItem{
-                Side: sdk.BulkOrderItemSideSell.Ptr(),
-                Amount: sdk.String(
-                    "0.0001",
-                ),
+                Side: sdk.BulkOrderItemSideSell,
+                Amount: "0.0001",
                 Price: sdk.String(
                     "41000",
                 ),
-                Market: sdk.String(
-                    "BTC_USDT",
-                ),
+                Market: "BTC_USDT",
                 PostOnly: sdk.Bool(
                     false,
                 ),
@@ -9347,16 +12021,12 @@ request := &sdk.CreateBulkLimitOrderRequest{
                 ),
             },
             &sdk.BulkOrderItem{
-                Side: sdk.BulkOrderItemSideSell.Ptr(),
-                Amount: sdk.String(
-                    "0.02",
-                ),
+                Side: sdk.BulkOrderItemSideSell,
+                Amount: "0.02",
                 Price: sdk.String(
                     "41000",
                 ),
-                Market: sdk.String(
-                    "BTC_USDT",
-                ),
+                Market: "BTC_USDT",
                 PostOnly: sdk.Bool(
                     false,
                 ),
@@ -9374,6 +12044,8 @@ request := &sdk.CreateBulkLimitOrderRequest{
                 ),
             },
         },
+        Request: "{{request}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CreateBulkLimitOrder(
         context.TODO(),
@@ -9394,7 +12066,7 @@ client.SpotTrading.CreateBulkLimitOrder(
 <dl>
 <dd>
 
-**orders:** `[]*sdk.BulkOrderItem` — Array of limit orders
+**orders:** `[]*sdk.BulkOrderItem` — Array of limit orders. Each item is validated with the same rules as a single limit order.
     
 </dd>
 </dl>
@@ -9416,7 +12088,7 @@ When false (default): All orders in the bulk request are processed regardless of
 <dl>
 <dd>
 
-**request:** `*string` 
+**request:** `string` 
     
 </dd>
 </dl>
@@ -9424,7 +12096,7 @@ When false (default): All orders in the bulk request are processed regardless of
 <dl>
 <dd>
 
-**nonce:** `*int` 
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -10046,7 +12718,6 @@ request := &sdk.StopLimitOrderRequest{
         Market: "BTC_USDT",
         Side: sdk.StopLimitOrderRequestSideBuy,
         Amount: "0.001",
-        Price: "9800",
         ActivationPrice: "10000",
         Request: "{{request}}",
         Nonce: 1594297865000,
@@ -10094,7 +12765,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**price:** `string` — Limit price per unit in quote (money) currency applied after the stop triggers. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
+**price:** `*string` — Limit price per unit in quote (money) currency applied after the stop triggers. Required unless `bboRole` is set — the BBO execution method replaces the explicit price. Minimum and maximum values are market-dependent. Precision: `moneyPrec`.
     
 </dd>
 </dl>
@@ -10118,7 +12789,7 @@ client.SpotTrading.CreateStopLimitOrder(
 <dl>
 <dd>
 
-**bboRole:** `*int` — Best Bid/Offer ([BBO](/glossary#bbo)) execution method. The system selects the best market price for execution after the stop triggers. `1` = Queue method, `2` = Counterparty method.
+**bboRole:** `*int` — Best Bid/Offer ([BBO](/glossary#best-bid-offer-bbo)) execution method. The system selects the best market price for execution after the stop triggers. `1` = Queue method, `2` = Counterparty method. When `bboRole` is set, `price` is not required — the BBO method determines the execution price.
     
 </dd>
 </dl>
@@ -10440,9 +13111,8 @@ Rate limit: 10000 requests/10 sec.
 </Warning>
 
 <Note>
-- Cancellation by clientOrderId takes priority over orderId.
-- The request supports working only with orderId or only with clientOrderId.
-- Do not pass both values at the same time.
+- The request accepts exactly one identifier: either `orderId` or `clientOrderId`.
+- Sending both identifiers, or neither, returns a validation error.
 </Note>
 
 <Accordion title="Error Codes">
@@ -10819,7 +13489,7 @@ client.SpotTrading.CancelBulkOrders(
 </dl>
 </details>
 
-<details><summary><code>client.SpotTrading.CancelAllOrders(request) -> error</code></summary>
+<details><summary><code>client.SpotTrading.CancelAllOrders(request) -> []any</code></summary>
 <dl>
 <dd>
 
@@ -10899,6 +13569,8 @@ request := &sdk.CancelAllOrdersRequest{
             sdk.CancelAllOrdersRequestTypeItemMargin,
             sdk.CancelAllOrdersRequestTypeItemFutures,
         },
+        Request: "{{request}}",
+        Nonce: 1594297865000,
     }
 client.SpotTrading.CancelAllOrders(
         context.TODO(),
@@ -10935,7 +13607,7 @@ client.SpotTrading.CancelAllOrders(
 <dl>
 <dd>
 
-**request:** `*string` 
+**positionSide:** `*sdk.CancelAllOrdersRequestPositionSide` — [Position side](/glossary#position-side) scope. Accepted only when `market` is a perpetual futures market (e.g., BTC_PERP); values are lowercase on this endpoint.
     
 </dd>
 </dl>
@@ -10943,7 +13615,15 @@ client.SpotTrading.CancelAllOrders(
 <dl>
 <dd>
 
-**nonce:** `*int` 
+**request:** `string` 
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
+**nonce:** `int` 
     
 </dd>
 </dl>
@@ -11690,17 +14370,16 @@ The endpoint modifies existing [order](/glossary#orders).
 
 Supported order types: limit, stop limit, stop market.
 
-Request must contain one of the following parameters: amount, price, activationPrice.
+Request must contain at least one of the following parameters: amount, total, price, activationPrice.
 
 <Warning>
 Rate limit: 10000 requests/10 sec.
 </Warning>
 
 <Note>
-- Use total parameter instead of amount for modify buy stop market order.
-- Modification by clientOrderId takes priority.
-- The request supports working only with orderId or only with clientOrderId.
-- Do not pass both values at the same time.
+- Use total parameter instead of amount for modify buy stop market order. `amount` and `total` are mutually exclusive — a request sending both is rejected.
+- The request accepts exactly one identifier: either `orderId` or `clientOrderId`.
+- Sending both identifiers, or neither, returns a validation error.
 </Note>
 
 <Note>
@@ -11845,6 +14524,20 @@ client.SpotTrading.ModifyOrder(
 <dl>
 <dd>
 
+**stp:** `*sdk.ModifyOrderRequestStp` 
+
+Self-trade prevention mode. Allowed values: `no` (self-trades allowed), `cb` (cancel both the new and the existing order), `cn` (cancel the new order, keep the existing), `co` (cancel the existing order, place the new one). Default: `no`.
+
+Legacy values `cancel_both`, `cancel_new`, `cancel_old` are deprecated: the API accepts the legacy values with identical behavior until a deprecation deadline is announced, then rejects the legacy values. Responses always return the abbreviated form, regardless of which variant the request used.
+
+See [Self-Trade Prevention](/platform/self-trade-prevention).
+    
+</dd>
+</dl>
+
+<dl>
+<dd>
+
 **request:** `string` 
     
 </dd>
@@ -11941,7 +14634,6 @@ Rate limit: 10000 requests/10 sec.
 ```go
 request := &sdk.SetKillSwitchRequest{
         Market: "BTC_USDT",
-        Timeout: "60",
     }
 client.SpotTrading.SetKillSwitch(
         context.TODO(),
@@ -11970,7 +14662,7 @@ client.SpotTrading.SetKillSwitch(
 <dl>
 <dd>
 
-**timeout:** `string` — Timer value. Example: '5'-'600' or null
+**timeout:** `*string` — Timer value in seconds ('5'-'600'), or `null` to delete the existing timer. The key must always be present — omitting it fails validation.
     
 </dd>
 </dl>

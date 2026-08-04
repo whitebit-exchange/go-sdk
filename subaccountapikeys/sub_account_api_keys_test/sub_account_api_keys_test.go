@@ -76,6 +76,7 @@ func TestSubAccountAPIKeysCreateSubAccountAPIKeyWithWireMock(
 	request := &sdk.CreateSubAccountAPIKeyRequest{
 		Type:         1,
 		SubAccountID: "8e667b4a-0b71-4988-8af5-9474dbfaeb51",
+		Title:        "Trading Bot Key",
 	}
 	_, invocationErr := client.SubAccountAPIKeys.CreateSubAccountAPIKey(
 		context.TODO(),

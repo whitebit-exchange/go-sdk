@@ -151,9 +151,9 @@ type CreateWithdrawRequest struct {
 	CustomerIP *string `json:"customerIp,omitempty" url:"-"`
 	// Beneficiary information.
 	//
-	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
+	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
 	//
-	// Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `tin` is required for UAH_IBAN; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
+	// Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
 	Beneficiary *CreateWithdrawRequestBeneficiary `json:"beneficiary,omitempty" url:"-"`
 	// Travel Rule information for regulatory compliance.
 	//
@@ -337,7 +337,7 @@ type WithdrawRequest struct {
 	PartialEnable *bool `json:"partialEnable,omitempty" url:"-"`
 	// End-customer IP address forwarded to the [fiat](/glossary#fiat) [provider](/glossary#provider) for antifraud checks before the withdrawal is processed. ⚠️ Required if currency [ticker](/glossary#ticker) is USD or EUR with VISAMASTER [provider](/glossary#provider).
 	CustomerIP *string `json:"customerIp,omitempty" url:"-"`
-	// Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
+	// Beneficiary information data. Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR
 	Beneficiary map[string]interface{} `json:"beneficiary,omitempty" url:"-"`
 	// Travel Rule information data. Required if currency is crypto and the account is from [EEA](/glossary#european-economic-area-eea)
 	TravelRule map[string]interface{} `json:"travelRule,omitempty" url:"-"`
@@ -567,38 +567,33 @@ func (c *CreateExpressWithdrawTokenResponse) String() string {
 
 // Beneficiary information.
 //
-// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
+// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER, USD, EUR.
 //
-// Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `tin` is required for UAH_IBAN; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
+// Per-field requirements vary by currency and provider. Card-related fields (`cardToken`, `card.*`, `cardTokenSave`, `fingerprintSession`) apply only to card-acquiring rails; bank-related fields (`bank.*`) apply to bank-rail withdrawals; `phone`, `email`, and `birthDate` are required for VISAMASTER/Mercuryo rails. See `/asset-status-list` for the active provider per currency.
 var (
 	createWithdrawRequestBeneficiaryFieldFirstName          = big.NewInt(1 << 0)
 	createWithdrawRequestBeneficiaryFieldLastName           = big.NewInt(1 << 1)
-	createWithdrawRequestBeneficiaryFieldTin                = big.NewInt(1 << 2)
-	createWithdrawRequestBeneficiaryFieldPhone              = big.NewInt(1 << 3)
-	createWithdrawRequestBeneficiaryFieldEmail              = big.NewInt(1 << 4)
-	createWithdrawRequestBeneficiaryFieldBirthDate          = big.NewInt(1 << 5)
-	createWithdrawRequestBeneficiaryFieldCode               = big.NewInt(1 << 6)
-	createWithdrawRequestBeneficiaryFieldCardToken          = big.NewInt(1 << 7)
-	createWithdrawRequestBeneficiaryFieldCardTokenSave      = big.NewInt(1 << 8)
-	createWithdrawRequestBeneficiaryFieldFingerprintSession = big.NewInt(1 << 9)
-	createWithdrawRequestBeneficiaryFieldCard               = big.NewInt(1 << 10)
-	createWithdrawRequestBeneficiaryFieldAddress            = big.NewInt(1 << 11)
-	createWithdrawRequestBeneficiaryFieldBank               = big.NewInt(1 << 12)
+	createWithdrawRequestBeneficiaryFieldPhone              = big.NewInt(1 << 2)
+	createWithdrawRequestBeneficiaryFieldEmail              = big.NewInt(1 << 3)
+	createWithdrawRequestBeneficiaryFieldBirthDate          = big.NewInt(1 << 4)
+	createWithdrawRequestBeneficiaryFieldCode               = big.NewInt(1 << 5)
+	createWithdrawRequestBeneficiaryFieldCardToken          = big.NewInt(1 << 6)
+	createWithdrawRequestBeneficiaryFieldCardTokenSave      = big.NewInt(1 << 7)
+	createWithdrawRequestBeneficiaryFieldFingerprintSession = big.NewInt(1 << 8)
+	createWithdrawRequestBeneficiaryFieldCard               = big.NewInt(1 << 9)
+	createWithdrawRequestBeneficiaryFieldAddress            = big.NewInt(1 << 10)
+	createWithdrawRequestBeneficiaryFieldBank               = big.NewInt(1 << 11)
 )
 
 type CreateWithdrawRequestBeneficiary struct {
 	// Beneficiary first name. Max length: 40 symbols, latin letters and special characters.
 	//
-	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, USD, EUR
+	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, USD, EUR
 	FirstName *string `json:"firstName,omitempty" url:"firstName,omitempty"`
 	// Beneficiary last name. Max length: 40 symbols, latin letters and special characters.
 	//
-	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: UAH_IBAN, USD_VISAMASTER, USD, EUR
+	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, USD, EUR
 	LastName *string `json:"lastName,omitempty" url:"lastName,omitempty"`
-	// Beneficiary TAX payer number. Integer, 10 digits.
-	//
-	// ⚠️ Required if currency is UAH_IBAN.
-	Tin *int `json:"tin,omitempty" url:"tin,omitempty"`
 	// Beneficiary phone number.
 	//
 	// ⚠️ Required if currency [ticker](/glossary#ticker) is one of: USD_VISAMASTER, EUR_VISAMASTER
@@ -645,13 +640,6 @@ func (c *CreateWithdrawRequestBeneficiary) GetLastName() *string {
 		return nil
 	}
 	return c.LastName
-}
-
-func (c *CreateWithdrawRequestBeneficiary) GetTin() *int {
-	if c == nil {
-		return nil
-	}
-	return c.Tin
 }
 
 func (c *CreateWithdrawRequestBeneficiary) GetPhone() *string {
@@ -747,13 +735,6 @@ func (c *CreateWithdrawRequestBeneficiary) SetFirstName(firstName *string) {
 func (c *CreateWithdrawRequestBeneficiary) SetLastName(lastName *string) {
 	c.LastName = lastName
 	c.require(createWithdrawRequestBeneficiaryFieldLastName)
-}
-
-// SetTin sets the Tin field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateWithdrawRequestBeneficiary) SetTin(tin *int) {
-	c.Tin = tin
-	c.require(createWithdrawRequestBeneficiaryFieldTin)
 }
 
 // SetPhone sets the Phone field and marks it as non-optional;

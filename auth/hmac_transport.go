@@ -21,7 +21,9 @@ import (
 //	import whitebitauth "github.com/whitebit-exchange/go-sdk/auth"
 //
 //	c := client.NewClient(
-//	    option.WithTxcApikey("YOUR_API_KEY"),
+//	    option.WithAPIKey("YOUR_API_KEY"),
+//	    option.WithTxcPayload(""),
+//	    option.WithTxcSignature(""),
 //	    option.WithHTTPClient(whitebitauth.NewHmacClient("YOUR_API_SECRET")),
 //	)
 type HmacTransport struct {
@@ -51,13 +53,24 @@ func (t *HmacTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		return next.RoundTrip(req)
 	}
 
-	if body["nonce"] == nil {
-		body["nonce"] = time.Now().UnixMilli()
-	}
-	if body["request"] == nil {
+	// request/nonce: fill if falsy, not just if absent. Some endpoints' generated
+	// request structs declare request/nonce as required (OpenAPI marks them
+	// required for the wire contract, since they're mandatory for non-SDK
+	// callers), so Fern emits non-optional fields that always serialize as their
+	// zero value ("", 0) when the caller doesn't set them — which a strict
+	// "== nil" presence check would never catch. "" and 0 are never legitimate
+	// caller-supplied values for these two fields, so treating them as absent is
+	// safe and still lets an explicitly-set nonce survive.
+	if v, ok := body["request"].(string); !ok || v == "" {
 		body["request"] = req.URL.Path
 	}
-	if body["nonceWindow"] == nil {
+	if v, ok := body["nonce"].(float64); !ok || v == 0 {
+		body["nonce"] = time.Now().UnixMilli()
+	}
+	// nonceWindow is genuinely optional in every spec and defaults to false
+	// server-side — an explicit `nonceWindow: false` from the caller must
+	// survive, so only fill it in when the key is missing entirely.
+	if _, ok := body["nonceWindow"]; !ok {
 		body["nonceWindow"] = true
 	}
 

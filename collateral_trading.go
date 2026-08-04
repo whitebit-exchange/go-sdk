@@ -85,17 +85,22 @@ func (c *CancelConditionalOrderRequest) MarshalJSON() ([]byte, error) {
 }
 
 var (
-	cancelOcoOrderRequestFieldMarket  = big.NewInt(1 << 0)
-	cancelOcoOrderRequestFieldOrderID = big.NewInt(1 << 1)
-	cancelOcoOrderRequestFieldRequest = big.NewInt(1 << 2)
-	cancelOcoOrderRequestFieldNonce   = big.NewInt(1 << 3)
+	cancelOcoOrderRequestFieldMarket        = big.NewInt(1 << 0)
+	cancelOcoOrderRequestFieldOrderID       = big.NewInt(1 << 1)
+	cancelOcoOrderRequestFieldClientOrderID = big.NewInt(1 << 2)
+	cancelOcoOrderRequestFieldRequest       = big.NewInt(1 << 3)
+	cancelOcoOrderRequestFieldNonce         = big.NewInt(1 << 4)
 )
 
 type CancelOcoOrderRequest struct {
-	Market  string `json:"market" url:"-"`
-	OrderID int    `json:"orderId" url:"-"`
-	Request string `json:"request" url:"-"`
-	Nonce   int    `json:"nonce" url:"-"`
+	// Market of the OCO order to cancel. Example: BTC_USDT
+	Market string `json:"market" url:"-"`
+	// OCO order identifier (the `id` returned at creation and by the OCO listings). Required if `clientOrderId` is not set; mutually exclusive with `clientOrderId`.
+	OrderID *int `json:"orderId,omitempty" url:"-"`
+	// Client-defined order ID supplied at order creation. Required if `orderId` is not set; mutually exclusive with `orderId`.
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"-"`
+	Request       string  `json:"request" url:"-"`
+	Nonce         int     `json:"nonce" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -117,9 +122,16 @@ func (c *CancelOcoOrderRequest) SetMarket(market string) {
 
 // SetOrderID sets the OrderID field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderRequest) SetOrderID(orderID int) {
+func (c *CancelOcoOrderRequest) SetOrderID(orderID *int) {
 	c.OrderID = orderID
 	c.require(cancelOcoOrderRequestFieldOrderID)
+}
+
+// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *CancelOcoOrderRequest) SetClientOrderID(clientOrderID *string) {
+	c.ClientOrderID = clientOrderID
+	c.require(cancelOcoOrderRequestFieldClientOrderID)
 }
 
 // SetRequest sets the Request field and marks it as non-optional;
@@ -1510,6 +1522,101 @@ func (c *CreateCollateralTriggerMarketOrderRequest) MarshalJSON() ([]byte, error
 }
 
 var (
+	getClosedPositionsPnlRequestFieldStartDate = big.NewInt(1 << 0)
+	getClosedPositionsPnlRequestFieldEndDate   = big.NewInt(1 << 1)
+	getClosedPositionsPnlRequestFieldLimit     = big.NewInt(1 << 2)
+	getClosedPositionsPnlRequestFieldOffset    = big.NewInt(1 << 3)
+	getClosedPositionsPnlRequestFieldRequest   = big.NewInt(1 << 4)
+	getClosedPositionsPnlRequestFieldNonce     = big.NewInt(1 << 5)
+)
+
+type GetClosedPositionsPnlRequest struct {
+	// Start of the query window as a Unix timestamp in seconds, applied to the position close time. Optional, no default. Must be ≤ `endDate`.
+	StartDate *int `json:"startDate,omitempty" url:"-"`
+	// End of the query window as a Unix timestamp in seconds, applied to the position close time. Optional, no default. Must be ≥ `startDate` and ≤ `now + 1s`.
+	EndDate *int `json:"endDate,omitempty" url:"-"`
+	// Maximum number of records to return. Default: `50`. Minimum: `1`. Maximum: `100`.
+	Limit *int `json:"limit,omitempty" url:"-"`
+	// Number of records to skip. Default: `0`. The sum of `offset` and `limit` must not exceed 10000.
+	Offset  *int    `json:"offset,omitempty" url:"-"`
+	Request *string `json:"request,omitempty" url:"-"`
+	Nonce   *int    `json:"nonce,omitempty" url:"-"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+}
+
+func (g *GetClosedPositionsPnlRequest) require(field *big.Int) {
+	if g.explicitFields == nil {
+		g.explicitFields = big.NewInt(0)
+	}
+	g.explicitFields.Or(g.explicitFields, field)
+}
+
+// SetStartDate sets the StartDate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlRequest) SetStartDate(startDate *int) {
+	g.StartDate = startDate
+	g.require(getClosedPositionsPnlRequestFieldStartDate)
+}
+
+// SetEndDate sets the EndDate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlRequest) SetEndDate(endDate *int) {
+	g.EndDate = endDate
+	g.require(getClosedPositionsPnlRequestFieldEndDate)
+}
+
+// SetLimit sets the Limit field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlRequest) SetLimit(limit *int) {
+	g.Limit = limit
+	g.require(getClosedPositionsPnlRequestFieldLimit)
+}
+
+// SetOffset sets the Offset field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlRequest) SetOffset(offset *int) {
+	g.Offset = offset
+	g.require(getClosedPositionsPnlRequestFieldOffset)
+}
+
+// SetRequest sets the Request field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlRequest) SetRequest(request *string) {
+	g.Request = request
+	g.require(getClosedPositionsPnlRequestFieldRequest)
+}
+
+// SetNonce sets the Nonce field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlRequest) SetNonce(nonce *int) {
+	g.Nonce = nonce
+	g.require(getClosedPositionsPnlRequestFieldNonce)
+}
+
+func (g *GetClosedPositionsPnlRequest) UnmarshalJSON(data []byte) error {
+	type unmarshaler GetClosedPositionsPnlRequest
+	var body unmarshaler
+	if err := json.Unmarshal(data, &body); err != nil {
+		return err
+	}
+	*g = GetClosedPositionsPnlRequest(body)
+	return nil
+}
+
+func (g *GetClosedPositionsPnlRequest) MarshalJSON() ([]byte, error) {
+	type embed GetClosedPositionsPnlRequest
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+var (
 	getCollateralAccountAdlQuantileRequestFieldRequest = big.NewInt(1 << 0)
 	getCollateralAccountAdlQuantileRequestFieldNonce   = big.NewInt(1 << 1)
 )
@@ -2077,6 +2184,1007 @@ func (a ActiveOrderStatus) Ptr() *ActiveOrderStatus {
 	return &a
 }
 
+// Conditional-order leg as returned by `/api/v4/conditional-orders`. Field names use camelCase (`postOnly`, `activationPrice`) — unlike the snake_case legs returned by `/api/v4/oco-orders` and `/api/v4/order/oco-cancel`; do not treat the two shapes as interchangeable.
+var (
+	conditionalOrderLegFieldOrderID             = big.NewInt(1 << 0)
+	conditionalOrderLegFieldClientOrderID       = big.NewInt(1 << 1)
+	conditionalOrderLegFieldMarket              = big.NewInt(1 << 2)
+	conditionalOrderLegFieldSide                = big.NewInt(1 << 3)
+	conditionalOrderLegFieldType                = big.NewInt(1 << 4)
+	conditionalOrderLegFieldTimestamp           = big.NewInt(1 << 5)
+	conditionalOrderLegFieldDealMoney           = big.NewInt(1 << 6)
+	conditionalOrderLegFieldDealStock           = big.NewInt(1 << 7)
+	conditionalOrderLegFieldAmount              = big.NewInt(1 << 8)
+	conditionalOrderLegFieldLeft                = big.NewInt(1 << 9)
+	conditionalOrderLegFieldDealFee             = big.NewInt(1 << 10)
+	conditionalOrderLegFieldPostOnly            = big.NewInt(1 << 11)
+	conditionalOrderLegFieldStatus              = big.NewInt(1 << 12)
+	conditionalOrderLegFieldStp                 = big.NewInt(1 << 13)
+	conditionalOrderLegFieldPositionSide        = big.NewInt(1 << 14)
+	conditionalOrderLegFieldReduceOnly          = big.NewInt(1 << 15)
+	conditionalOrderLegFieldMtime               = big.NewInt(1 << 16)
+	conditionalOrderLegFieldPrice               = big.NewInt(1 << 17)
+	conditionalOrderLegFieldActivationPrice     = big.NewInt(1 << 18)
+	conditionalOrderLegFieldActivationCondition = big.NewInt(1 << 19)
+	conditionalOrderLegFieldActivated           = big.NewInt(1 << 20)
+)
+
+type ConditionalOrderLeg struct {
+	// Order identifier
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
+	// Custom order identifier. Empty string if not specified
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
+	// Market name
+	Market *string `json:"market,omitempty" url:"market,omitempty"`
+	// Order side
+	Side *ConditionalOrderLegSide `json:"side,omitempty" url:"side,omitempty"`
+	// Order type
+	Type *string `json:"type,omitempty" url:"type,omitempty"`
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
+	// Executed amount in money
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
+	// Executed amount in stock
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
+	// Order amount
+	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
+	// Unexecuted amount in stock
+	Left *string `json:"left,omitempty" url:"left,omitempty"`
+	// Executed fee by deal
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
+	// Post-only flag. Omitted when not set
+	PostOnly *bool `json:"postOnly,omitempty" url:"postOnly,omitempty"`
+	// Order status (for example `OPEN` for an active leg, `CANCELED` after cancellation).
+	Status *string `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value. Omitted when not set.
+	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
+	// Position side of the leg. Present on futures markets (`BOTH` in one-way mode, `LONG`/`SHORT` in hedge mode); omitted on margin-spot markets.
+	PositionSide *ConditionalOrderLegPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// Reduce-only flag. When `true`, the leg can only reduce or close an existing position.
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
+	// Timestamp of order modification
+	Mtime *float64 `json:"mtime,omitempty" url:"mtime,omitempty"`
+	// Order price
+	Price *string `json:"price,omitempty" url:"price,omitempty"`
+	// Activation price. Returned on the stop-loss leg; omitted when not set
+	ActivationPrice *string `json:"activationPrice,omitempty" url:"activationPrice,omitempty"`
+	// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`. Returned on the stop-loss leg; omitted when not set.
+	ActivationCondition *ConditionalOrderLegActivationCondition `json:"activationCondition,omitempty" url:"activationCondition,omitempty"`
+	// Activation status (0 - not activated, 1 - activated). Omitted when not set
+	Activated *int `json:"activated,omitempty" url:"activated,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (c *ConditionalOrderLeg) GetOrderID() *int {
+	if c == nil {
+		return nil
+	}
+	return c.OrderID
+}
+
+func (c *ConditionalOrderLeg) GetClientOrderID() *string {
+	if c == nil {
+		return nil
+	}
+	return c.ClientOrderID
+}
+
+func (c *ConditionalOrderLeg) GetMarket() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Market
+}
+
+func (c *ConditionalOrderLeg) GetSide() *ConditionalOrderLegSide {
+	if c == nil {
+		return nil
+	}
+	return c.Side
+}
+
+func (c *ConditionalOrderLeg) GetType() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Type
+}
+
+func (c *ConditionalOrderLeg) GetTimestamp() *float64 {
+	if c == nil {
+		return nil
+	}
+	return c.Timestamp
+}
+
+func (c *ConditionalOrderLeg) GetDealMoney() *string {
+	if c == nil {
+		return nil
+	}
+	return c.DealMoney
+}
+
+func (c *ConditionalOrderLeg) GetDealStock() *string {
+	if c == nil {
+		return nil
+	}
+	return c.DealStock
+}
+
+func (c *ConditionalOrderLeg) GetAmount() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Amount
+}
+
+func (c *ConditionalOrderLeg) GetLeft() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Left
+}
+
+func (c *ConditionalOrderLeg) GetDealFee() *string {
+	if c == nil {
+		return nil
+	}
+	return c.DealFee
+}
+
+func (c *ConditionalOrderLeg) GetPostOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.PostOnly
+}
+
+func (c *ConditionalOrderLeg) GetStatus() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Status
+}
+
+func (c *ConditionalOrderLeg) GetStp() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Stp
+}
+
+func (c *ConditionalOrderLeg) GetPositionSide() *ConditionalOrderLegPositionSide {
+	if c == nil {
+		return nil
+	}
+	return c.PositionSide
+}
+
+func (c *ConditionalOrderLeg) GetReduceOnly() *bool {
+	if c == nil {
+		return nil
+	}
+	return c.ReduceOnly
+}
+
+func (c *ConditionalOrderLeg) GetMtime() *float64 {
+	if c == nil {
+		return nil
+	}
+	return c.Mtime
+}
+
+func (c *ConditionalOrderLeg) GetPrice() *string {
+	if c == nil {
+		return nil
+	}
+	return c.Price
+}
+
+func (c *ConditionalOrderLeg) GetActivationPrice() *string {
+	if c == nil {
+		return nil
+	}
+	return c.ActivationPrice
+}
+
+func (c *ConditionalOrderLeg) GetActivationCondition() *ConditionalOrderLegActivationCondition {
+	if c == nil {
+		return nil
+	}
+	return c.ActivationCondition
+}
+
+func (c *ConditionalOrderLeg) GetActivated() *int {
+	if c == nil {
+		return nil
+	}
+	return c.Activated
+}
+
+func (c *ConditionalOrderLeg) GetExtraProperties() map[string]interface{} {
+	return c.extraProperties
+}
+
+func (c *ConditionalOrderLeg) require(field *big.Int) {
+	if c.explicitFields == nil {
+		c.explicitFields = big.NewInt(0)
+	}
+	c.explicitFields.Or(c.explicitFields, field)
+}
+
+// SetOrderID sets the OrderID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetOrderID(orderID *int) {
+	c.OrderID = orderID
+	c.require(conditionalOrderLegFieldOrderID)
+}
+
+// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetClientOrderID(clientOrderID *string) {
+	c.ClientOrderID = clientOrderID
+	c.require(conditionalOrderLegFieldClientOrderID)
+}
+
+// SetMarket sets the Market field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetMarket(market *string) {
+	c.Market = market
+	c.require(conditionalOrderLegFieldMarket)
+}
+
+// SetSide sets the Side field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetSide(side *ConditionalOrderLegSide) {
+	c.Side = side
+	c.require(conditionalOrderLegFieldSide)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetType(type_ *string) {
+	c.Type = type_
+	c.require(conditionalOrderLegFieldType)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetTimestamp(timestamp *float64) {
+	c.Timestamp = timestamp
+	c.require(conditionalOrderLegFieldTimestamp)
+}
+
+// SetDealMoney sets the DealMoney field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetDealMoney(dealMoney *string) {
+	c.DealMoney = dealMoney
+	c.require(conditionalOrderLegFieldDealMoney)
+}
+
+// SetDealStock sets the DealStock field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetDealStock(dealStock *string) {
+	c.DealStock = dealStock
+	c.require(conditionalOrderLegFieldDealStock)
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetAmount(amount *string) {
+	c.Amount = amount
+	c.require(conditionalOrderLegFieldAmount)
+}
+
+// SetLeft sets the Left field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetLeft(left *string) {
+	c.Left = left
+	c.require(conditionalOrderLegFieldLeft)
+}
+
+// SetDealFee sets the DealFee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetDealFee(dealFee *string) {
+	c.DealFee = dealFee
+	c.require(conditionalOrderLegFieldDealFee)
+}
+
+// SetPostOnly sets the PostOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetPostOnly(postOnly *bool) {
+	c.PostOnly = postOnly
+	c.require(conditionalOrderLegFieldPostOnly)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetStatus(status *string) {
+	c.Status = status
+	c.require(conditionalOrderLegFieldStatus)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetStp(stp *string) {
+	c.Stp = stp
+	c.require(conditionalOrderLegFieldStp)
+}
+
+// SetPositionSide sets the PositionSide field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetPositionSide(positionSide *ConditionalOrderLegPositionSide) {
+	c.PositionSide = positionSide
+	c.require(conditionalOrderLegFieldPositionSide)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetReduceOnly(reduceOnly *bool) {
+	c.ReduceOnly = reduceOnly
+	c.require(conditionalOrderLegFieldReduceOnly)
+}
+
+// SetMtime sets the Mtime field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetMtime(mtime *float64) {
+	c.Mtime = mtime
+	c.require(conditionalOrderLegFieldMtime)
+}
+
+// SetPrice sets the Price field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetPrice(price *string) {
+	c.Price = price
+	c.require(conditionalOrderLegFieldPrice)
+}
+
+// SetActivationPrice sets the ActivationPrice field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetActivationPrice(activationPrice *string) {
+	c.ActivationPrice = activationPrice
+	c.require(conditionalOrderLegFieldActivationPrice)
+}
+
+// SetActivationCondition sets the ActivationCondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetActivationCondition(activationCondition *ConditionalOrderLegActivationCondition) {
+	c.ActivationCondition = activationCondition
+	c.require(conditionalOrderLegFieldActivationCondition)
+}
+
+// SetActivated sets the Activated field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (c *ConditionalOrderLeg) SetActivated(activated *int) {
+	c.Activated = activated
+	c.require(conditionalOrderLegFieldActivated)
+}
+
+func (c *ConditionalOrderLeg) UnmarshalJSON(data []byte) error {
+	type unmarshaler ConditionalOrderLeg
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*c = ConditionalOrderLeg(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *c)
+	if err != nil {
+		return err
+	}
+	c.extraProperties = extraProperties
+	c.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (c *ConditionalOrderLeg) MarshalJSON() ([]byte, error) {
+	type embed ConditionalOrderLeg
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*c),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (c *ConditionalOrderLeg) String() string {
+	if len(c.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(c); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", c)
+}
+
+// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`. Returned on the stop-loss leg; omitted when not set.
+type ConditionalOrderLegActivationCondition string
+
+const (
+	ConditionalOrderLegActivationConditionGte ConditionalOrderLegActivationCondition = "gte"
+	ConditionalOrderLegActivationConditionLte ConditionalOrderLegActivationCondition = "lte"
+)
+
+func NewConditionalOrderLegActivationConditionFromString(s string) (ConditionalOrderLegActivationCondition, error) {
+	switch s {
+	case "gte":
+		return ConditionalOrderLegActivationConditionGte, nil
+	case "lte":
+		return ConditionalOrderLegActivationConditionLte, nil
+	}
+	var t ConditionalOrderLegActivationCondition
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c ConditionalOrderLegActivationCondition) Ptr() *ConditionalOrderLegActivationCondition {
+	return &c
+}
+
+// Position side of the leg. Present on futures markets (`BOTH` in one-way mode, `LONG`/`SHORT` in hedge mode); omitted on margin-spot markets.
+type ConditionalOrderLegPositionSide string
+
+const (
+	ConditionalOrderLegPositionSideLong  ConditionalOrderLegPositionSide = "LONG"
+	ConditionalOrderLegPositionSideShort ConditionalOrderLegPositionSide = "SHORT"
+	ConditionalOrderLegPositionSideBoth  ConditionalOrderLegPositionSide = "BOTH"
+)
+
+func NewConditionalOrderLegPositionSideFromString(s string) (ConditionalOrderLegPositionSide, error) {
+	switch s {
+	case "LONG":
+		return ConditionalOrderLegPositionSideLong, nil
+	case "SHORT":
+		return ConditionalOrderLegPositionSideShort, nil
+	case "BOTH":
+		return ConditionalOrderLegPositionSideBoth, nil
+	}
+	var t ConditionalOrderLegPositionSide
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c ConditionalOrderLegPositionSide) Ptr() *ConditionalOrderLegPositionSide {
+	return &c
+}
+
+// Order side
+type ConditionalOrderLegSide string
+
+const (
+	ConditionalOrderLegSideBuy  ConditionalOrderLegSide = "buy"
+	ConditionalOrderLegSideSell ConditionalOrderLegSide = "sell"
+)
+
+func NewConditionalOrderLegSideFromString(s string) (ConditionalOrderLegSide, error) {
+	switch s {
+	case "buy":
+		return ConditionalOrderLegSideBuy, nil
+	case "sell":
+		return ConditionalOrderLegSideSell, nil
+	}
+	var t ConditionalOrderLegSide
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (c ConditionalOrderLegSide) Ptr() *ConditionalOrderLegSide {
+	return &c
+}
+
+// OCO order leg as returned by `/api/v4/oco-orders` and `/api/v4/order/oco-cancel`. Field names use snake_case (`post_only`, `activation_price`) — unlike the camelCase legs returned by `/api/v4/conditional-orders`.
+var (
+	ocoOrderLegFieldOrderID             = big.NewInt(1 << 0)
+	ocoOrderLegFieldClientOrderID       = big.NewInt(1 << 1)
+	ocoOrderLegFieldMarket              = big.NewInt(1 << 2)
+	ocoOrderLegFieldSide                = big.NewInt(1 << 3)
+	ocoOrderLegFieldType                = big.NewInt(1 << 4)
+	ocoOrderLegFieldTimestamp           = big.NewInt(1 << 5)
+	ocoOrderLegFieldDealMoney           = big.NewInt(1 << 6)
+	ocoOrderLegFieldDealStock           = big.NewInt(1 << 7)
+	ocoOrderLegFieldAmount              = big.NewInt(1 << 8)
+	ocoOrderLegFieldLeft                = big.NewInt(1 << 9)
+	ocoOrderLegFieldDealFee             = big.NewInt(1 << 10)
+	ocoOrderLegFieldPostOnly            = big.NewInt(1 << 11)
+	ocoOrderLegFieldFeeAsset            = big.NewInt(1 << 12)
+	ocoOrderLegFieldStatus              = big.NewInt(1 << 13)
+	ocoOrderLegFieldStp                 = big.NewInt(1 << 14)
+	ocoOrderLegFieldPositionSide        = big.NewInt(1 << 15)
+	ocoOrderLegFieldReduceOnly          = big.NewInt(1 << 16)
+	ocoOrderLegFieldMtime               = big.NewInt(1 << 17)
+	ocoOrderLegFieldPrice               = big.NewInt(1 << 18)
+	ocoOrderLegFieldActivationPrice     = big.NewInt(1 << 19)
+	ocoOrderLegFieldActivationCondition = big.NewInt(1 << 20)
+	ocoOrderLegFieldActivated           = big.NewInt(1 << 21)
+)
+
+type OcoOrderLeg struct {
+	// Order identifier
+	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
+	// Custom order identifier. Empty string if not specified
+	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
+	// Market name
+	Market *string `json:"market,omitempty" url:"market,omitempty"`
+	// Order side
+	Side *OcoOrderLegSide `json:"side,omitempty" url:"side,omitempty"`
+	// Order type
+	Type *string `json:"type,omitempty" url:"type,omitempty"`
+	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
+	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
+	// Executed amount in money
+	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
+	// Executed amount in stock
+	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
+	// Order amount
+	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
+	// Unexecuted amount in stock
+	Left *string `json:"left,omitempty" url:"left,omitempty"`
+	// Executed fee by deal
+	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
+	// Post-only flag
+	PostOnly *bool `json:"post_only,omitempty" url:"post_only,omitempty"`
+	// Currency ticker of the asset used to pay the trading fee. Omitted when empty.
+	FeeAsset *string `json:"feeAsset,omitempty" url:"feeAsset,omitempty"`
+	// Order status (for example `OPEN` for an active leg, `CANCELED` after cancellation).
+	Status *string `json:"status,omitempty" url:"status,omitempty"`
+	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
+	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
+	// Position side of the leg. Present on futures markets (`BOTH` in one-way mode, `LONG`/`SHORT` in hedge mode); omitted on margin-spot markets.
+	PositionSide *OcoOrderLegPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
+	// Reduce-only flag. When `true`, the leg can only reduce or close an existing position.
+	ReduceOnly *bool `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
+	// Timestamp of order modification
+	Mtime *float64 `json:"mtime,omitempty" url:"mtime,omitempty"`
+	// Order price
+	Price *string `json:"price,omitempty" url:"price,omitempty"`
+	// Activation price. Returned on the stop-loss leg
+	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
+	// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`. Returned on the stop-loss leg.
+	ActivationCondition *OcoOrderLegActivationCondition `json:"activation_condition,omitempty" url:"activation_condition,omitempty"`
+	// Activation status (0 - not activated, 1 - activated). Returned on the stop-loss leg
+	Activated *int `json:"activated,omitempty" url:"activated,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (o *OcoOrderLeg) GetOrderID() *int {
+	if o == nil {
+		return nil
+	}
+	return o.OrderID
+}
+
+func (o *OcoOrderLeg) GetClientOrderID() *string {
+	if o == nil {
+		return nil
+	}
+	return o.ClientOrderID
+}
+
+func (o *OcoOrderLeg) GetMarket() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Market
+}
+
+func (o *OcoOrderLeg) GetSide() *OcoOrderLegSide {
+	if o == nil {
+		return nil
+	}
+	return o.Side
+}
+
+func (o *OcoOrderLeg) GetType() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Type
+}
+
+func (o *OcoOrderLeg) GetTimestamp() *float64 {
+	if o == nil {
+		return nil
+	}
+	return o.Timestamp
+}
+
+func (o *OcoOrderLeg) GetDealMoney() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DealMoney
+}
+
+func (o *OcoOrderLeg) GetDealStock() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DealStock
+}
+
+func (o *OcoOrderLeg) GetAmount() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Amount
+}
+
+func (o *OcoOrderLeg) GetLeft() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Left
+}
+
+func (o *OcoOrderLeg) GetDealFee() *string {
+	if o == nil {
+		return nil
+	}
+	return o.DealFee
+}
+
+func (o *OcoOrderLeg) GetPostOnly() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.PostOnly
+}
+
+func (o *OcoOrderLeg) GetFeeAsset() *string {
+	if o == nil {
+		return nil
+	}
+	return o.FeeAsset
+}
+
+func (o *OcoOrderLeg) GetStatus() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Status
+}
+
+func (o *OcoOrderLeg) GetStp() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Stp
+}
+
+func (o *OcoOrderLeg) GetPositionSide() *OcoOrderLegPositionSide {
+	if o == nil {
+		return nil
+	}
+	return o.PositionSide
+}
+
+func (o *OcoOrderLeg) GetReduceOnly() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.ReduceOnly
+}
+
+func (o *OcoOrderLeg) GetMtime() *float64 {
+	if o == nil {
+		return nil
+	}
+	return o.Mtime
+}
+
+func (o *OcoOrderLeg) GetPrice() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Price
+}
+
+func (o *OcoOrderLeg) GetActivationPrice() *string {
+	if o == nil {
+		return nil
+	}
+	return o.ActivationPrice
+}
+
+func (o *OcoOrderLeg) GetActivationCondition() *OcoOrderLegActivationCondition {
+	if o == nil {
+		return nil
+	}
+	return o.ActivationCondition
+}
+
+func (o *OcoOrderLeg) GetActivated() *int {
+	if o == nil {
+		return nil
+	}
+	return o.Activated
+}
+
+func (o *OcoOrderLeg) GetExtraProperties() map[string]interface{} {
+	return o.extraProperties
+}
+
+func (o *OcoOrderLeg) require(field *big.Int) {
+	if o.explicitFields == nil {
+		o.explicitFields = big.NewInt(0)
+	}
+	o.explicitFields.Or(o.explicitFields, field)
+}
+
+// SetOrderID sets the OrderID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetOrderID(orderID *int) {
+	o.OrderID = orderID
+	o.require(ocoOrderLegFieldOrderID)
+}
+
+// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetClientOrderID(clientOrderID *string) {
+	o.ClientOrderID = clientOrderID
+	o.require(ocoOrderLegFieldClientOrderID)
+}
+
+// SetMarket sets the Market field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetMarket(market *string) {
+	o.Market = market
+	o.require(ocoOrderLegFieldMarket)
+}
+
+// SetSide sets the Side field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetSide(side *OcoOrderLegSide) {
+	o.Side = side
+	o.require(ocoOrderLegFieldSide)
+}
+
+// SetType sets the Type field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetType(type_ *string) {
+	o.Type = type_
+	o.require(ocoOrderLegFieldType)
+}
+
+// SetTimestamp sets the Timestamp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetTimestamp(timestamp *float64) {
+	o.Timestamp = timestamp
+	o.require(ocoOrderLegFieldTimestamp)
+}
+
+// SetDealMoney sets the DealMoney field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetDealMoney(dealMoney *string) {
+	o.DealMoney = dealMoney
+	o.require(ocoOrderLegFieldDealMoney)
+}
+
+// SetDealStock sets the DealStock field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetDealStock(dealStock *string) {
+	o.DealStock = dealStock
+	o.require(ocoOrderLegFieldDealStock)
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetAmount(amount *string) {
+	o.Amount = amount
+	o.require(ocoOrderLegFieldAmount)
+}
+
+// SetLeft sets the Left field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetLeft(left *string) {
+	o.Left = left
+	o.require(ocoOrderLegFieldLeft)
+}
+
+// SetDealFee sets the DealFee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetDealFee(dealFee *string) {
+	o.DealFee = dealFee
+	o.require(ocoOrderLegFieldDealFee)
+}
+
+// SetPostOnly sets the PostOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetPostOnly(postOnly *bool) {
+	o.PostOnly = postOnly
+	o.require(ocoOrderLegFieldPostOnly)
+}
+
+// SetFeeAsset sets the FeeAsset field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetFeeAsset(feeAsset *string) {
+	o.FeeAsset = feeAsset
+	o.require(ocoOrderLegFieldFeeAsset)
+}
+
+// SetStatus sets the Status field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetStatus(status *string) {
+	o.Status = status
+	o.require(ocoOrderLegFieldStatus)
+}
+
+// SetStp sets the Stp field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetStp(stp *string) {
+	o.Stp = stp
+	o.require(ocoOrderLegFieldStp)
+}
+
+// SetPositionSide sets the PositionSide field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetPositionSide(positionSide *OcoOrderLegPositionSide) {
+	o.PositionSide = positionSide
+	o.require(ocoOrderLegFieldPositionSide)
+}
+
+// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetReduceOnly(reduceOnly *bool) {
+	o.ReduceOnly = reduceOnly
+	o.require(ocoOrderLegFieldReduceOnly)
+}
+
+// SetMtime sets the Mtime field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetMtime(mtime *float64) {
+	o.Mtime = mtime
+	o.require(ocoOrderLegFieldMtime)
+}
+
+// SetPrice sets the Price field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetPrice(price *string) {
+	o.Price = price
+	o.require(ocoOrderLegFieldPrice)
+}
+
+// SetActivationPrice sets the ActivationPrice field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetActivationPrice(activationPrice *string) {
+	o.ActivationPrice = activationPrice
+	o.require(ocoOrderLegFieldActivationPrice)
+}
+
+// SetActivationCondition sets the ActivationCondition field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetActivationCondition(activationCondition *OcoOrderLegActivationCondition) {
+	o.ActivationCondition = activationCondition
+	o.require(ocoOrderLegFieldActivationCondition)
+}
+
+// SetActivated sets the Activated field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (o *OcoOrderLeg) SetActivated(activated *int) {
+	o.Activated = activated
+	o.require(ocoOrderLegFieldActivated)
+}
+
+func (o *OcoOrderLeg) UnmarshalJSON(data []byte) error {
+	type unmarshaler OcoOrderLeg
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*o = OcoOrderLeg(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *o)
+	if err != nil {
+		return err
+	}
+	o.extraProperties = extraProperties
+	o.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (o *OcoOrderLeg) MarshalJSON() ([]byte, error) {
+	type embed OcoOrderLeg
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*o),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, o.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (o *OcoOrderLeg) String() string {
+	if len(o.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(o.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(o); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", o)
+}
+
+// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`. Returned on the stop-loss leg.
+type OcoOrderLegActivationCondition string
+
+const (
+	OcoOrderLegActivationConditionGte OcoOrderLegActivationCondition = "gte"
+	OcoOrderLegActivationConditionLte OcoOrderLegActivationCondition = "lte"
+)
+
+func NewOcoOrderLegActivationConditionFromString(s string) (OcoOrderLegActivationCondition, error) {
+	switch s {
+	case "gte":
+		return OcoOrderLegActivationConditionGte, nil
+	case "lte":
+		return OcoOrderLegActivationConditionLte, nil
+	}
+	var t OcoOrderLegActivationCondition
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OcoOrderLegActivationCondition) Ptr() *OcoOrderLegActivationCondition {
+	return &o
+}
+
+// Position side of the leg. Present on futures markets (`BOTH` in one-way mode, `LONG`/`SHORT` in hedge mode); omitted on margin-spot markets.
+type OcoOrderLegPositionSide string
+
+const (
+	OcoOrderLegPositionSideLong  OcoOrderLegPositionSide = "LONG"
+	OcoOrderLegPositionSideShort OcoOrderLegPositionSide = "SHORT"
+	OcoOrderLegPositionSideBoth  OcoOrderLegPositionSide = "BOTH"
+)
+
+func NewOcoOrderLegPositionSideFromString(s string) (OcoOrderLegPositionSide, error) {
+	switch s {
+	case "LONG":
+		return OcoOrderLegPositionSideLong, nil
+	case "SHORT":
+		return OcoOrderLegPositionSideShort, nil
+	case "BOTH":
+		return OcoOrderLegPositionSideBoth, nil
+	}
+	var t OcoOrderLegPositionSide
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OcoOrderLegPositionSide) Ptr() *OcoOrderLegPositionSide {
+	return &o
+}
+
+// Order side
+type OcoOrderLegSide string
+
+const (
+	OcoOrderLegSideBuy  OcoOrderLegSide = "buy"
+	OcoOrderLegSideSell OcoOrderLegSide = "sell"
+)
+
+func NewOcoOrderLegSideFromString(s string) (OcoOrderLegSide, error) {
+	switch s {
+	case "buy":
+		return OcoOrderLegSideBuy, nil
+	case "sell":
+		return OcoOrderLegSideSell, nil
+	}
+	var t OcoOrderLegSide
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (o OcoOrderLegSide) Ptr() *OcoOrderLegSide {
+	return &o
+}
+
 var (
 	cancelOcoOrderResponseFieldID         = big.NewInt(1 << 0)
 	cancelOcoOrderResponseFieldStopLoss   = big.NewInt(1 << 1)
@@ -2086,10 +3194,10 @@ var (
 type CancelOcoOrderResponse struct {
 	// OCO order identifier
 	ID *int `json:"id,omitempty" url:"id,omitempty"`
-	// Cancelled stop loss order details
-	StopLoss *CancelOcoOrderResponseStopLoss `json:"stop_loss,omitempty" url:"stop_loss,omitempty"`
-	// Cancelled take profit order details
-	TakeProfit *CancelOcoOrderResponseTakeProfit `json:"take_profit,omitempty" url:"take_profit,omitempty"`
+	// Cancelled stop loss order details. Includes the `activation_price` / `activation_condition` / `activated` trigger fields.
+	StopLoss *OcoOrderLeg `json:"stop_loss,omitempty" url:"stop_loss,omitempty"`
+	// Cancelled take profit order details. The trigger fields are omitted on this leg.
+	TakeProfit *OcoOrderLeg `json:"take_profit,omitempty" url:"take_profit,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -2105,14 +3213,14 @@ func (c *CancelOcoOrderResponse) GetID() *int {
 	return c.ID
 }
 
-func (c *CancelOcoOrderResponse) GetStopLoss() *CancelOcoOrderResponseStopLoss {
+func (c *CancelOcoOrderResponse) GetStopLoss() *OcoOrderLeg {
 	if c == nil {
 		return nil
 	}
 	return c.StopLoss
 }
 
-func (c *CancelOcoOrderResponse) GetTakeProfit() *CancelOcoOrderResponseTakeProfit {
+func (c *CancelOcoOrderResponse) GetTakeProfit() *OcoOrderLeg {
 	if c == nil {
 		return nil
 	}
@@ -2139,14 +3247,14 @@ func (c *CancelOcoOrderResponse) SetID(id *int) {
 
 // SetStopLoss sets the StopLoss field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponse) SetStopLoss(stopLoss *CancelOcoOrderResponseStopLoss) {
+func (c *CancelOcoOrderResponse) SetStopLoss(stopLoss *OcoOrderLeg) {
 	c.StopLoss = stopLoss
 	c.require(cancelOcoOrderResponseFieldStopLoss)
 }
 
 // SetTakeProfit sets the TakeProfit field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponse) SetTakeProfit(takeProfit *CancelOcoOrderResponseTakeProfit) {
+func (c *CancelOcoOrderResponse) SetTakeProfit(takeProfit *OcoOrderLeg) {
 	c.TakeProfit = takeProfit
 	c.require(cancelOcoOrderResponseFieldTakeProfit)
 }
@@ -2188,828 +3296,6 @@ func (c *CancelOcoOrderResponse) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", c)
-}
-
-// Cancelled stop loss order details
-var (
-	cancelOcoOrderResponseStopLossFieldOrderID             = big.NewInt(1 << 0)
-	cancelOcoOrderResponseStopLossFieldClientOrderID       = big.NewInt(1 << 1)
-	cancelOcoOrderResponseStopLossFieldMarket              = big.NewInt(1 << 2)
-	cancelOcoOrderResponseStopLossFieldSide                = big.NewInt(1 << 3)
-	cancelOcoOrderResponseStopLossFieldType                = big.NewInt(1 << 4)
-	cancelOcoOrderResponseStopLossFieldTimestamp           = big.NewInt(1 << 5)
-	cancelOcoOrderResponseStopLossFieldDealMoney           = big.NewInt(1 << 6)
-	cancelOcoOrderResponseStopLossFieldDealStock           = big.NewInt(1 << 7)
-	cancelOcoOrderResponseStopLossFieldAmount              = big.NewInt(1 << 8)
-	cancelOcoOrderResponseStopLossFieldTakerFee            = big.NewInt(1 << 9)
-	cancelOcoOrderResponseStopLossFieldMakerFee            = big.NewInt(1 << 10)
-	cancelOcoOrderResponseStopLossFieldLeft                = big.NewInt(1 << 11)
-	cancelOcoOrderResponseStopLossFieldDealFee             = big.NewInt(1 << 12)
-	cancelOcoOrderResponseStopLossFieldPostOnly            = big.NewInt(1 << 13)
-	cancelOcoOrderResponseStopLossFieldMtime               = big.NewInt(1 << 14)
-	cancelOcoOrderResponseStopLossFieldPrice               = big.NewInt(1 << 15)
-	cancelOcoOrderResponseStopLossFieldActivationPrice     = big.NewInt(1 << 16)
-	cancelOcoOrderResponseStopLossFieldActivationCondition = big.NewInt(1 << 17)
-	cancelOcoOrderResponseStopLossFieldActivated           = big.NewInt(1 << 18)
-	cancelOcoOrderResponseStopLossFieldStatus              = big.NewInt(1 << 19)
-	cancelOcoOrderResponseStopLossFieldStp                 = big.NewInt(1 << 20)
-)
-
-type CancelOcoOrderResponseStopLoss struct {
-	// Order identifier
-	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
-	// Custom order identifier. Empty string if not specified
-	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
-	// Market name
-	Market *string `json:"market,omitempty" url:"market,omitempty"`
-	// Order side
-	Side *CancelOcoOrderResponseStopLossSide `json:"side,omitempty" url:"side,omitempty"`
-	// Order type
-	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
-	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	// Executed amount in money
-	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
-	// Executed amount in stock
-	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
-	// Order amount
-	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
-	// Taker fee ratio
-	TakerFee *string `json:"takerFee,omitempty" url:"takerFee,omitempty"`
-	// Maker fee ratio
-	MakerFee *string `json:"makerFee,omitempty" url:"makerFee,omitempty"`
-	// Unexecuted amount in stock
-	Left *string `json:"left,omitempty" url:"left,omitempty"`
-	// Executed fee by deal
-	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
-	// Post-only flag
-	PostOnly *bool `json:"post_only,omitempty" url:"post_only,omitempty"`
-	// Timestamp of order modification
-	Mtime *float64 `json:"mtime,omitempty" url:"mtime,omitempty"`
-	// Order price
-	Price *string `json:"price,omitempty" url:"price,omitempty"`
-	// Activation price
-	ActivationPrice *string `json:"activation_price,omitempty" url:"activation_price,omitempty"`
-	// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
-	ActivationCondition *CancelOcoOrderResponseStopLossActivationCondition `json:"activation_condition,omitempty" url:"activation_condition,omitempty"`
-	// Activation status (0 - not activated, 1 - activated)
-	Activated *int         `json:"activated,omitempty" url:"activated,omitempty"`
-	Status    *OrderStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
-	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetOrderID() *int {
-	if c == nil {
-		return nil
-	}
-	return c.OrderID
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetClientOrderID() *string {
-	if c == nil {
-		return nil
-	}
-	return c.ClientOrderID
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetMarket() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Market
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetSide() *CancelOcoOrderResponseStopLossSide {
-	if c == nil {
-		return nil
-	}
-	return c.Side
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetType() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Type
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetTimestamp() *float64 {
-	if c == nil {
-		return nil
-	}
-	return c.Timestamp
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetDealMoney() *string {
-	if c == nil {
-		return nil
-	}
-	return c.DealMoney
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetDealStock() *string {
-	if c == nil {
-		return nil
-	}
-	return c.DealStock
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetAmount() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Amount
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetTakerFee() *string {
-	if c == nil {
-		return nil
-	}
-	return c.TakerFee
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetMakerFee() *string {
-	if c == nil {
-		return nil
-	}
-	return c.MakerFee
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetLeft() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Left
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetDealFee() *string {
-	if c == nil {
-		return nil
-	}
-	return c.DealFee
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetPostOnly() *bool {
-	if c == nil {
-		return nil
-	}
-	return c.PostOnly
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetMtime() *float64 {
-	if c == nil {
-		return nil
-	}
-	return c.Mtime
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetPrice() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Price
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetActivationPrice() *string {
-	if c == nil {
-		return nil
-	}
-	return c.ActivationPrice
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetActivationCondition() *CancelOcoOrderResponseStopLossActivationCondition {
-	if c == nil {
-		return nil
-	}
-	return c.ActivationCondition
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetActivated() *int {
-	if c == nil {
-		return nil
-	}
-	return c.Activated
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetStatus() *OrderStatus {
-	if c == nil {
-		return nil
-	}
-	return c.Status
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetStp() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Stp
-}
-
-func (c *CancelOcoOrderResponseStopLoss) GetExtraProperties() map[string]interface{} {
-	return c.extraProperties
-}
-
-func (c *CancelOcoOrderResponseStopLoss) require(field *big.Int) {
-	if c.explicitFields == nil {
-		c.explicitFields = big.NewInt(0)
-	}
-	c.explicitFields.Or(c.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetOrderID(orderID *int) {
-	c.OrderID = orderID
-	c.require(cancelOcoOrderResponseStopLossFieldOrderID)
-}
-
-// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetClientOrderID(clientOrderID *string) {
-	c.ClientOrderID = clientOrderID
-	c.require(cancelOcoOrderResponseStopLossFieldClientOrderID)
-}
-
-// SetMarket sets the Market field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetMarket(market *string) {
-	c.Market = market
-	c.require(cancelOcoOrderResponseStopLossFieldMarket)
-}
-
-// SetSide sets the Side field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetSide(side *CancelOcoOrderResponseStopLossSide) {
-	c.Side = side
-	c.require(cancelOcoOrderResponseStopLossFieldSide)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetType(type_ *string) {
-	c.Type = type_
-	c.require(cancelOcoOrderResponseStopLossFieldType)
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetTimestamp(timestamp *float64) {
-	c.Timestamp = timestamp
-	c.require(cancelOcoOrderResponseStopLossFieldTimestamp)
-}
-
-// SetDealMoney sets the DealMoney field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetDealMoney(dealMoney *string) {
-	c.DealMoney = dealMoney
-	c.require(cancelOcoOrderResponseStopLossFieldDealMoney)
-}
-
-// SetDealStock sets the DealStock field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetDealStock(dealStock *string) {
-	c.DealStock = dealStock
-	c.require(cancelOcoOrderResponseStopLossFieldDealStock)
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetAmount(amount *string) {
-	c.Amount = amount
-	c.require(cancelOcoOrderResponseStopLossFieldAmount)
-}
-
-// SetTakerFee sets the TakerFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetTakerFee(takerFee *string) {
-	c.TakerFee = takerFee
-	c.require(cancelOcoOrderResponseStopLossFieldTakerFee)
-}
-
-// SetMakerFee sets the MakerFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetMakerFee(makerFee *string) {
-	c.MakerFee = makerFee
-	c.require(cancelOcoOrderResponseStopLossFieldMakerFee)
-}
-
-// SetLeft sets the Left field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetLeft(left *string) {
-	c.Left = left
-	c.require(cancelOcoOrderResponseStopLossFieldLeft)
-}
-
-// SetDealFee sets the DealFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetDealFee(dealFee *string) {
-	c.DealFee = dealFee
-	c.require(cancelOcoOrderResponseStopLossFieldDealFee)
-}
-
-// SetPostOnly sets the PostOnly field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetPostOnly(postOnly *bool) {
-	c.PostOnly = postOnly
-	c.require(cancelOcoOrderResponseStopLossFieldPostOnly)
-}
-
-// SetMtime sets the Mtime field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetMtime(mtime *float64) {
-	c.Mtime = mtime
-	c.require(cancelOcoOrderResponseStopLossFieldMtime)
-}
-
-// SetPrice sets the Price field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetPrice(price *string) {
-	c.Price = price
-	c.require(cancelOcoOrderResponseStopLossFieldPrice)
-}
-
-// SetActivationPrice sets the ActivationPrice field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetActivationPrice(activationPrice *string) {
-	c.ActivationPrice = activationPrice
-	c.require(cancelOcoOrderResponseStopLossFieldActivationPrice)
-}
-
-// SetActivationCondition sets the ActivationCondition field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetActivationCondition(activationCondition *CancelOcoOrderResponseStopLossActivationCondition) {
-	c.ActivationCondition = activationCondition
-	c.require(cancelOcoOrderResponseStopLossFieldActivationCondition)
-}
-
-// SetActivated sets the Activated field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetActivated(activated *int) {
-	c.Activated = activated
-	c.require(cancelOcoOrderResponseStopLossFieldActivated)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetStatus(status *OrderStatus) {
-	c.Status = status
-	c.require(cancelOcoOrderResponseStopLossFieldStatus)
-}
-
-// SetStp sets the Stp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseStopLoss) SetStp(stp *string) {
-	c.Stp = stp
-	c.require(cancelOcoOrderResponseStopLossFieldStp)
-}
-
-func (c *CancelOcoOrderResponseStopLoss) UnmarshalJSON(data []byte) error {
-	type unmarshaler CancelOcoOrderResponseStopLoss
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*c = CancelOcoOrderResponseStopLoss(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *c)
-	if err != nil {
-		return err
-	}
-	c.extraProperties = extraProperties
-	c.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (c *CancelOcoOrderResponseStopLoss) MarshalJSON() ([]byte, error) {
-	type embed CancelOcoOrderResponseStopLoss
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*c),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (c *CancelOcoOrderResponseStopLoss) String() string {
-	if len(c.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(c); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", c)
-}
-
-// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
-type CancelOcoOrderResponseStopLossActivationCondition string
-
-const (
-	CancelOcoOrderResponseStopLossActivationConditionGte CancelOcoOrderResponseStopLossActivationCondition = "gte"
-	CancelOcoOrderResponseStopLossActivationConditionLte CancelOcoOrderResponseStopLossActivationCondition = "lte"
-)
-
-func NewCancelOcoOrderResponseStopLossActivationConditionFromString(s string) (CancelOcoOrderResponseStopLossActivationCondition, error) {
-	switch s {
-	case "gte":
-		return CancelOcoOrderResponseStopLossActivationConditionGte, nil
-	case "lte":
-		return CancelOcoOrderResponseStopLossActivationConditionLte, nil
-	}
-	var t CancelOcoOrderResponseStopLossActivationCondition
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CancelOcoOrderResponseStopLossActivationCondition) Ptr() *CancelOcoOrderResponseStopLossActivationCondition {
-	return &c
-}
-
-// Order side
-type CancelOcoOrderResponseStopLossSide string
-
-const (
-	CancelOcoOrderResponseStopLossSideBuy  CancelOcoOrderResponseStopLossSide = "buy"
-	CancelOcoOrderResponseStopLossSideSell CancelOcoOrderResponseStopLossSide = "sell"
-)
-
-func NewCancelOcoOrderResponseStopLossSideFromString(s string) (CancelOcoOrderResponseStopLossSide, error) {
-	switch s {
-	case "buy":
-		return CancelOcoOrderResponseStopLossSideBuy, nil
-	case "sell":
-		return CancelOcoOrderResponseStopLossSideSell, nil
-	}
-	var t CancelOcoOrderResponseStopLossSide
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CancelOcoOrderResponseStopLossSide) Ptr() *CancelOcoOrderResponseStopLossSide {
-	return &c
-}
-
-// Cancelled take profit order details
-var (
-	cancelOcoOrderResponseTakeProfitFieldOrderID       = big.NewInt(1 << 0)
-	cancelOcoOrderResponseTakeProfitFieldClientOrderID = big.NewInt(1 << 1)
-	cancelOcoOrderResponseTakeProfitFieldMarket        = big.NewInt(1 << 2)
-	cancelOcoOrderResponseTakeProfitFieldSide          = big.NewInt(1 << 3)
-	cancelOcoOrderResponseTakeProfitFieldType          = big.NewInt(1 << 4)
-	cancelOcoOrderResponseTakeProfitFieldTimestamp     = big.NewInt(1 << 5)
-	cancelOcoOrderResponseTakeProfitFieldDealMoney     = big.NewInt(1 << 6)
-	cancelOcoOrderResponseTakeProfitFieldDealStock     = big.NewInt(1 << 7)
-	cancelOcoOrderResponseTakeProfitFieldAmount        = big.NewInt(1 << 8)
-	cancelOcoOrderResponseTakeProfitFieldLeft          = big.NewInt(1 << 9)
-	cancelOcoOrderResponseTakeProfitFieldDealFee       = big.NewInt(1 << 10)
-	cancelOcoOrderResponseTakeProfitFieldPostOnly      = big.NewInt(1 << 11)
-	cancelOcoOrderResponseTakeProfitFieldMtime         = big.NewInt(1 << 12)
-	cancelOcoOrderResponseTakeProfitFieldPrice         = big.NewInt(1 << 13)
-	cancelOcoOrderResponseTakeProfitFieldStatus        = big.NewInt(1 << 14)
-	cancelOcoOrderResponseTakeProfitFieldStp           = big.NewInt(1 << 15)
-)
-
-type CancelOcoOrderResponseTakeProfit struct {
-	// Order identifier
-	OrderID *int `json:"orderId,omitempty" url:"orderId,omitempty"`
-	// Custom order identifier. Empty string if not specified
-	ClientOrderID *string `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
-	// Market name
-	Market *string `json:"market,omitempty" url:"market,omitempty"`
-	// Order side
-	Side *CancelOcoOrderResponseTakeProfitSide `json:"side,omitempty" url:"side,omitempty"`
-	// Order type
-	Type *string `json:"type,omitempty" url:"type,omitempty"`
-	// Unix timestamp in seconds (UTC) of order creation, with microsecond precision.
-	Timestamp *float64 `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	// Executed amount in money
-	DealMoney *string `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
-	// Executed amount in stock
-	DealStock *string `json:"dealStock,omitempty" url:"dealStock,omitempty"`
-	// Order amount
-	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
-	// Unexecuted amount in stock
-	Left *string `json:"left,omitempty" url:"left,omitempty"`
-	// Executed fee by deal
-	DealFee *string `json:"dealFee,omitempty" url:"dealFee,omitempty"`
-	// Post-only flag
-	PostOnly *bool `json:"post_only,omitempty" url:"post_only,omitempty"`
-	// Timestamp of order modification
-	Mtime *float64 `json:"mtime,omitempty" url:"mtime,omitempty"`
-	// Order price
-	Price  *string      `json:"price,omitempty" url:"price,omitempty"`
-	Status *OrderStatus `json:"status,omitempty" url:"status,omitempty"`
-	// Self-trade prevention mode. Possible values: `no`, `cb`, `cn`, `co`. Always returned in abbreviated form, even when the request used a legacy value.
-	Stp *string `json:"stp,omitempty" url:"stp,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetOrderID() *int {
-	if c == nil {
-		return nil
-	}
-	return c.OrderID
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetClientOrderID() *string {
-	if c == nil {
-		return nil
-	}
-	return c.ClientOrderID
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetMarket() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Market
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetSide() *CancelOcoOrderResponseTakeProfitSide {
-	if c == nil {
-		return nil
-	}
-	return c.Side
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetType() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Type
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetTimestamp() *float64 {
-	if c == nil {
-		return nil
-	}
-	return c.Timestamp
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetDealMoney() *string {
-	if c == nil {
-		return nil
-	}
-	return c.DealMoney
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetDealStock() *string {
-	if c == nil {
-		return nil
-	}
-	return c.DealStock
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetAmount() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Amount
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetLeft() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Left
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetDealFee() *string {
-	if c == nil {
-		return nil
-	}
-	return c.DealFee
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetPostOnly() *bool {
-	if c == nil {
-		return nil
-	}
-	return c.PostOnly
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetMtime() *float64 {
-	if c == nil {
-		return nil
-	}
-	return c.Mtime
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetPrice() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Price
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetStatus() *OrderStatus {
-	if c == nil {
-		return nil
-	}
-	return c.Status
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetStp() *string {
-	if c == nil {
-		return nil
-	}
-	return c.Stp
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) GetExtraProperties() map[string]interface{} {
-	return c.extraProperties
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) require(field *big.Int) {
-	if c.explicitFields == nil {
-		c.explicitFields = big.NewInt(0)
-	}
-	c.explicitFields.Or(c.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetOrderID(orderID *int) {
-	c.OrderID = orderID
-	c.require(cancelOcoOrderResponseTakeProfitFieldOrderID)
-}
-
-// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetClientOrderID(clientOrderID *string) {
-	c.ClientOrderID = clientOrderID
-	c.require(cancelOcoOrderResponseTakeProfitFieldClientOrderID)
-}
-
-// SetMarket sets the Market field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetMarket(market *string) {
-	c.Market = market
-	c.require(cancelOcoOrderResponseTakeProfitFieldMarket)
-}
-
-// SetSide sets the Side field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetSide(side *CancelOcoOrderResponseTakeProfitSide) {
-	c.Side = side
-	c.require(cancelOcoOrderResponseTakeProfitFieldSide)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetType(type_ *string) {
-	c.Type = type_
-	c.require(cancelOcoOrderResponseTakeProfitFieldType)
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetTimestamp(timestamp *float64) {
-	c.Timestamp = timestamp
-	c.require(cancelOcoOrderResponseTakeProfitFieldTimestamp)
-}
-
-// SetDealMoney sets the DealMoney field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetDealMoney(dealMoney *string) {
-	c.DealMoney = dealMoney
-	c.require(cancelOcoOrderResponseTakeProfitFieldDealMoney)
-}
-
-// SetDealStock sets the DealStock field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetDealStock(dealStock *string) {
-	c.DealStock = dealStock
-	c.require(cancelOcoOrderResponseTakeProfitFieldDealStock)
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetAmount(amount *string) {
-	c.Amount = amount
-	c.require(cancelOcoOrderResponseTakeProfitFieldAmount)
-}
-
-// SetLeft sets the Left field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetLeft(left *string) {
-	c.Left = left
-	c.require(cancelOcoOrderResponseTakeProfitFieldLeft)
-}
-
-// SetDealFee sets the DealFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetDealFee(dealFee *string) {
-	c.DealFee = dealFee
-	c.require(cancelOcoOrderResponseTakeProfitFieldDealFee)
-}
-
-// SetPostOnly sets the PostOnly field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetPostOnly(postOnly *bool) {
-	c.PostOnly = postOnly
-	c.require(cancelOcoOrderResponseTakeProfitFieldPostOnly)
-}
-
-// SetMtime sets the Mtime field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetMtime(mtime *float64) {
-	c.Mtime = mtime
-	c.require(cancelOcoOrderResponseTakeProfitFieldMtime)
-}
-
-// SetPrice sets the Price field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetPrice(price *string) {
-	c.Price = price
-	c.require(cancelOcoOrderResponseTakeProfitFieldPrice)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetStatus(status *OrderStatus) {
-	c.Status = status
-	c.require(cancelOcoOrderResponseTakeProfitFieldStatus)
-}
-
-// SetStp sets the Stp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CancelOcoOrderResponseTakeProfit) SetStp(stp *string) {
-	c.Stp = stp
-	c.require(cancelOcoOrderResponseTakeProfitFieldStp)
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) UnmarshalJSON(data []byte) error {
-	type unmarshaler CancelOcoOrderResponseTakeProfit
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*c = CancelOcoOrderResponseTakeProfit(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *c)
-	if err != nil {
-		return err
-	}
-	c.extraProperties = extraProperties
-	c.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) MarshalJSON() ([]byte, error) {
-	type embed CancelOcoOrderResponseTakeProfit
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*c),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, c.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (c *CancelOcoOrderResponseTakeProfit) String() string {
-	if len(c.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(c.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(c); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", c)
-}
-
-// Order side
-type CancelOcoOrderResponseTakeProfitSide string
-
-const (
-	CancelOcoOrderResponseTakeProfitSideBuy  CancelOcoOrderResponseTakeProfitSide = "buy"
-	CancelOcoOrderResponseTakeProfitSideSell CancelOcoOrderResponseTakeProfitSide = "sell"
-)
-
-func NewCancelOcoOrderResponseTakeProfitSideFromString(s string) (CancelOcoOrderResponseTakeProfitSide, error) {
-	switch s {
-	case "buy":
-		return CancelOcoOrderResponseTakeProfitSideBuy, nil
-	case "sell":
-		return CancelOcoOrderResponseTakeProfitSideSell, nil
-	}
-	var t CancelOcoOrderResponseTakeProfitSide
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (c CancelOcoOrderResponseTakeProfitSide) Ptr() *CancelOcoOrderResponseTakeProfitSide {
-	return &c
 }
 
 var (
@@ -8021,6 +8307,332 @@ func (c CreateCollateralTriggerMarketOrderResponseSide) Ptr() *CreateCollateralT
 }
 
 var (
+	getClosedPositionsPnlResponseItemFieldPositionID    = big.NewInt(1 << 0)
+	getClosedPositionsPnlResponseItemFieldMarket        = big.NewInt(1 << 1)
+	getClosedPositionsPnlResponseItemFieldGrossPnl      = big.NewInt(1 << 2)
+	getClosedPositionsPnlResponseItemFieldNetPnl        = big.NewInt(1 << 3)
+	getClosedPositionsPnlResponseItemFieldTotalTradeFee = big.NewInt(1 << 4)
+	getClosedPositionsPnlResponseItemFieldTotalFunding  = big.NewInt(1 << 5)
+	getClosedPositionsPnlResponseItemFieldAvgEntryPrice = big.NewInt(1 << 6)
+	getClosedPositionsPnlResponseItemFieldAvgExitPrice  = big.NewInt(1 << 7)
+	getClosedPositionsPnlResponseItemFieldClosedSize    = big.NewInt(1 << 8)
+	getClosedPositionsPnlResponseItemFieldAmount        = big.NewInt(1 << 9)
+	getClosedPositionsPnlResponseItemFieldSide          = big.NewInt(1 << 10)
+	getClosedPositionsPnlResponseItemFieldIsHedge       = big.NewInt(1 << 11)
+	getClosedPositionsPnlResponseItemFieldOpenDate      = big.NewInt(1 << 12)
+	getClosedPositionsPnlResponseItemFieldCloseDate     = big.NewInt(1 << 13)
+)
+
+type GetClosedPositionsPnlResponseItem struct {
+	// Unique identifier of the closed position.
+	PositionID *int `json:"positionId,omitempty" url:"positionId,omitempty"`
+	// Market of the position. Format: `BASE_QUOTE`.
+	Market *string `json:"market,omitempty" url:"market,omitempty"`
+	// Realized profit and loss of the position before funding. Trading fees are already deducted from the value; `totalTradeFee` is informational and must not be subtracted again.
+	GrossPnl *string `json:"grossPnl,omitempty" url:"grossPnl,omitempty"`
+	// Net profit and loss of the position: `grossPnl` minus `totalFunding`.
+	NetPnl *string `json:"netPnl,omitempty" url:"netPnl,omitempty"`
+	// Sum of trading fees across all fills of the position, both opening and closing. Informational — already reflected in `grossPnl` and `netPnl`.
+	TotalTradeFee *string `json:"totalTradeFee,omitempty" url:"totalTradeFee,omitempty"`
+	// Cumulative funding fee over the whole position lifetime.
+	TotalFunding *string `json:"totalFunding,omitempty" url:"totalFunding,omitempty"`
+	// Volume-weighted average price of the fills that increased the position, trimmed to the market money precision.
+	AvgEntryPrice *string `json:"avgEntryPrice,omitempty" url:"avgEntryPrice,omitempty"`
+	// Volume-weighted average price of the fills that reduced the position, trimmed to the market money precision.
+	AvgExitPrice *string `json:"avgExitPrice,omitempty" url:"avgExitPrice,omitempty"`
+	// Total closed volume in base currency — the sum of fills that reduced the position.
+	ClosedSize *string `json:"closedSize,omitempty" url:"closedSize,omitempty"`
+	// Remaining position size. Always returns `"0"` — a closed position holds no size.
+	Amount *string `json:"amount,omitempty" url:"amount,omitempty"`
+	// Position direction. Returns `BOTH` for positions opened with hedge mode disabled. See [positionSide](/glossary#position-side).
+	Side *GetClosedPositionsPnlResponseItemSide `json:"side,omitempty" url:"side,omitempty"`
+	// Whether the position was opened in [hedge mode](/glossary#hedge-mode).
+	IsHedge *bool `json:"isHedge,omitempty" url:"isHedge,omitempty"`
+	// Position open time as a Unix timestamp in seconds.
+	OpenDate *int `json:"openDate,omitempty" url:"openDate,omitempty"`
+	// Position close time as a Unix timestamp in seconds. Primary sort key, descending.
+	CloseDate *int `json:"closeDate,omitempty" url:"closeDate,omitempty"`
+
+	// Private bitmask of fields set to an explicit value and therefore not to be omitted
+	explicitFields *big.Int `json:"-" url:"-"`
+
+	extraProperties map[string]interface{}
+	rawJSON         json.RawMessage
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetPositionID() *int {
+	if g == nil {
+		return nil
+	}
+	return g.PositionID
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetMarket() *string {
+	if g == nil {
+		return nil
+	}
+	return g.Market
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetGrossPnl() *string {
+	if g == nil {
+		return nil
+	}
+	return g.GrossPnl
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetNetPnl() *string {
+	if g == nil {
+		return nil
+	}
+	return g.NetPnl
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetTotalTradeFee() *string {
+	if g == nil {
+		return nil
+	}
+	return g.TotalTradeFee
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetTotalFunding() *string {
+	if g == nil {
+		return nil
+	}
+	return g.TotalFunding
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetAvgEntryPrice() *string {
+	if g == nil {
+		return nil
+	}
+	return g.AvgEntryPrice
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetAvgExitPrice() *string {
+	if g == nil {
+		return nil
+	}
+	return g.AvgExitPrice
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetClosedSize() *string {
+	if g == nil {
+		return nil
+	}
+	return g.ClosedSize
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetAmount() *string {
+	if g == nil {
+		return nil
+	}
+	return g.Amount
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetSide() *GetClosedPositionsPnlResponseItemSide {
+	if g == nil {
+		return nil
+	}
+	return g.Side
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetIsHedge() *bool {
+	if g == nil {
+		return nil
+	}
+	return g.IsHedge
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetOpenDate() *int {
+	if g == nil {
+		return nil
+	}
+	return g.OpenDate
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetCloseDate() *int {
+	if g == nil {
+		return nil
+	}
+	return g.CloseDate
+}
+
+func (g *GetClosedPositionsPnlResponseItem) GetExtraProperties() map[string]interface{} {
+	return g.extraProperties
+}
+
+func (g *GetClosedPositionsPnlResponseItem) require(field *big.Int) {
+	if g.explicitFields == nil {
+		g.explicitFields = big.NewInt(0)
+	}
+	g.explicitFields.Or(g.explicitFields, field)
+}
+
+// SetPositionID sets the PositionID field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetPositionID(positionID *int) {
+	g.PositionID = positionID
+	g.require(getClosedPositionsPnlResponseItemFieldPositionID)
+}
+
+// SetMarket sets the Market field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetMarket(market *string) {
+	g.Market = market
+	g.require(getClosedPositionsPnlResponseItemFieldMarket)
+}
+
+// SetGrossPnl sets the GrossPnl field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetGrossPnl(grossPnl *string) {
+	g.GrossPnl = grossPnl
+	g.require(getClosedPositionsPnlResponseItemFieldGrossPnl)
+}
+
+// SetNetPnl sets the NetPnl field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetNetPnl(netPnl *string) {
+	g.NetPnl = netPnl
+	g.require(getClosedPositionsPnlResponseItemFieldNetPnl)
+}
+
+// SetTotalTradeFee sets the TotalTradeFee field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetTotalTradeFee(totalTradeFee *string) {
+	g.TotalTradeFee = totalTradeFee
+	g.require(getClosedPositionsPnlResponseItemFieldTotalTradeFee)
+}
+
+// SetTotalFunding sets the TotalFunding field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetTotalFunding(totalFunding *string) {
+	g.TotalFunding = totalFunding
+	g.require(getClosedPositionsPnlResponseItemFieldTotalFunding)
+}
+
+// SetAvgEntryPrice sets the AvgEntryPrice field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetAvgEntryPrice(avgEntryPrice *string) {
+	g.AvgEntryPrice = avgEntryPrice
+	g.require(getClosedPositionsPnlResponseItemFieldAvgEntryPrice)
+}
+
+// SetAvgExitPrice sets the AvgExitPrice field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetAvgExitPrice(avgExitPrice *string) {
+	g.AvgExitPrice = avgExitPrice
+	g.require(getClosedPositionsPnlResponseItemFieldAvgExitPrice)
+}
+
+// SetClosedSize sets the ClosedSize field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetClosedSize(closedSize *string) {
+	g.ClosedSize = closedSize
+	g.require(getClosedPositionsPnlResponseItemFieldClosedSize)
+}
+
+// SetAmount sets the Amount field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetAmount(amount *string) {
+	g.Amount = amount
+	g.require(getClosedPositionsPnlResponseItemFieldAmount)
+}
+
+// SetSide sets the Side field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetSide(side *GetClosedPositionsPnlResponseItemSide) {
+	g.Side = side
+	g.require(getClosedPositionsPnlResponseItemFieldSide)
+}
+
+// SetIsHedge sets the IsHedge field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetIsHedge(isHedge *bool) {
+	g.IsHedge = isHedge
+	g.require(getClosedPositionsPnlResponseItemFieldIsHedge)
+}
+
+// SetOpenDate sets the OpenDate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetOpenDate(openDate *int) {
+	g.OpenDate = openDate
+	g.require(getClosedPositionsPnlResponseItemFieldOpenDate)
+}
+
+// SetCloseDate sets the CloseDate field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetClosedPositionsPnlResponseItem) SetCloseDate(closeDate *int) {
+	g.CloseDate = closeDate
+	g.require(getClosedPositionsPnlResponseItemFieldCloseDate)
+}
+
+func (g *GetClosedPositionsPnlResponseItem) UnmarshalJSON(data []byte) error {
+	type unmarshaler GetClosedPositionsPnlResponseItem
+	var value unmarshaler
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*g = GetClosedPositionsPnlResponseItem(value)
+	extraProperties, err := internal.ExtractExtraProperties(data, *g)
+	if err != nil {
+		return err
+	}
+	g.extraProperties = extraProperties
+	g.rawJSON = json.RawMessage(data)
+	return nil
+}
+
+func (g *GetClosedPositionsPnlResponseItem) MarshalJSON() ([]byte, error) {
+	type embed GetClosedPositionsPnlResponseItem
+	var marshaler = struct {
+		embed
+	}{
+		embed: embed(*g),
+	}
+	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
+	return json.Marshal(explicitMarshaler)
+}
+
+func (g *GetClosedPositionsPnlResponseItem) String() string {
+	if len(g.rawJSON) > 0 {
+		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
+			return value
+		}
+	}
+	if value, err := internal.StringifyJSON(g); err == nil {
+		return value
+	}
+	return fmt.Sprintf("%#v", g)
+}
+
+// Position direction. Returns `BOTH` for positions opened with hedge mode disabled. See [positionSide](/glossary#position-side).
+type GetClosedPositionsPnlResponseItemSide string
+
+const (
+	GetClosedPositionsPnlResponseItemSideLong  GetClosedPositionsPnlResponseItemSide = "LONG"
+	GetClosedPositionsPnlResponseItemSideShort GetClosedPositionsPnlResponseItemSide = "SHORT"
+	GetClosedPositionsPnlResponseItemSideBoth  GetClosedPositionsPnlResponseItemSide = "BOTH"
+)
+
+func NewGetClosedPositionsPnlResponseItemSideFromString(s string) (GetClosedPositionsPnlResponseItemSide, error) {
+	switch s {
+	case "LONG":
+		return GetClosedPositionsPnlResponseItemSideLong, nil
+	case "SHORT":
+		return GetClosedPositionsPnlResponseItemSideShort, nil
+	case "BOTH":
+		return GetClosedPositionsPnlResponseItemSideBoth, nil
+	}
+	var t GetClosedPositionsPnlResponseItemSide
+	return "", fmt.Errorf("%s is not a valid %T", s, t)
+}
+
+func (g GetClosedPositionsPnlResponseItemSide) Ptr() *GetClosedPositionsPnlResponseItemSide {
+	return &g
+}
+
+var (
 	getCollateralAccountAdlQuantileResponseItemFieldMarket = big.NewInt(1 << 0)
 	getCollateralAccountAdlQuantileResponseItemFieldLong   = big.NewInt(1 << 1)
 	getCollateralAccountAdlQuantileResponseItemFieldShort  = big.NewInt(1 << 2)
@@ -8463,18 +9075,21 @@ func (g *GetConditionalOrdersResponseRecordsItem) validate() error {
 
 // OCO type conditional order
 var (
-	getConditionalOrdersResponseRecordsItemOcoFieldID         = big.NewInt(1 << 0)
-	getConditionalOrdersResponseRecordsItemOcoFieldReduceOnly = big.NewInt(1 << 1)
-	getConditionalOrdersResponseRecordsItemOcoFieldStopLoss   = big.NewInt(1 << 2)
-	getConditionalOrdersResponseRecordsItemOcoFieldTakeProfit = big.NewInt(1 << 3)
+	getConditionalOrdersResponseRecordsItemOcoFieldID                   = big.NewInt(1 << 0)
+	getConditionalOrdersResponseRecordsItemOcoFieldConditionalOrderType = big.NewInt(1 << 1)
+	getConditionalOrdersResponseRecordsItemOcoFieldStopLoss             = big.NewInt(1 << 2)
+	getConditionalOrdersResponseRecordsItemOcoFieldTakeProfit           = big.NewInt(1 << 3)
 )
 
 type GetConditionalOrdersResponseRecordsItemOco struct {
+	// Conditional order identifier
 	ID *int `json:"id,omitempty" url:"id,omitempty"`
-	// Reduce-only flag
-	ReduceOnly *bool                                                 `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
-	StopLoss   *GetConditionalOrdersResponseRecordsItemOcoStopLoss   `json:"stopLoss,omitempty" url:"stopLoss,omitempty"`
-	TakeProfit *GetConditionalOrdersResponseRecordsItemOcoTakeProfit `json:"takeProfit,omitempty" url:"takeProfit,omitempty"`
+	// Conditional order subtype. Omitted when not set.
+	ConditionalOrderType *string `json:"conditionalOrderType,omitempty" url:"conditionalOrderType,omitempty"`
+	// Stop-loss leg of the OCO order. The `reduceOnly` flag is returned per leg.
+	StopLoss *ConditionalOrderLeg `json:"stopLoss,omitempty" url:"stopLoss,omitempty"`
+	// Take-profit leg of the OCO order. The `reduceOnly` flag is returned per leg.
+	TakeProfit *ConditionalOrderLeg `json:"takeProfit,omitempty" url:"takeProfit,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -8490,21 +9105,21 @@ func (g *GetConditionalOrdersResponseRecordsItemOco) GetID() *int {
 	return g.ID
 }
 
-func (g *GetConditionalOrdersResponseRecordsItemOco) GetReduceOnly() *bool {
+func (g *GetConditionalOrdersResponseRecordsItemOco) GetConditionalOrderType() *string {
 	if g == nil {
 		return nil
 	}
-	return g.ReduceOnly
+	return g.ConditionalOrderType
 }
 
-func (g *GetConditionalOrdersResponseRecordsItemOco) GetStopLoss() *GetConditionalOrdersResponseRecordsItemOcoStopLoss {
+func (g *GetConditionalOrdersResponseRecordsItemOco) GetStopLoss() *ConditionalOrderLeg {
 	if g == nil {
 		return nil
 	}
 	return g.StopLoss
 }
 
-func (g *GetConditionalOrdersResponseRecordsItemOco) GetTakeProfit() *GetConditionalOrdersResponseRecordsItemOcoTakeProfit {
+func (g *GetConditionalOrdersResponseRecordsItemOco) GetTakeProfit() *ConditionalOrderLeg {
 	if g == nil {
 		return nil
 	}
@@ -8529,23 +9144,23 @@ func (g *GetConditionalOrdersResponseRecordsItemOco) SetID(id *int) {
 	g.require(getConditionalOrdersResponseRecordsItemOcoFieldID)
 }
 
-// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// SetConditionalOrderType sets the ConditionalOrderType field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOco) SetReduceOnly(reduceOnly *bool) {
-	g.ReduceOnly = reduceOnly
-	g.require(getConditionalOrdersResponseRecordsItemOcoFieldReduceOnly)
+func (g *GetConditionalOrdersResponseRecordsItemOco) SetConditionalOrderType(conditionalOrderType *string) {
+	g.ConditionalOrderType = conditionalOrderType
+	g.require(getConditionalOrdersResponseRecordsItemOcoFieldConditionalOrderType)
 }
 
 // SetStopLoss sets the StopLoss field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOco) SetStopLoss(stopLoss *GetConditionalOrdersResponseRecordsItemOcoStopLoss) {
+func (g *GetConditionalOrdersResponseRecordsItemOco) SetStopLoss(stopLoss *ConditionalOrderLeg) {
 	g.StopLoss = stopLoss
 	g.require(getConditionalOrdersResponseRecordsItemOcoFieldStopLoss)
 }
 
 // SetTakeProfit sets the TakeProfit field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOco) SetTakeProfit(takeProfit *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) {
+func (g *GetConditionalOrdersResponseRecordsItemOco) SetTakeProfit(takeProfit *ConditionalOrderLeg) {
 	g.TakeProfit = takeProfit
 	g.require(getConditionalOrdersResponseRecordsItemOcoFieldTakeProfit)
 }
@@ -8589,260 +9204,26 @@ func (g *GetConditionalOrdersResponseRecordsItemOco) String() string {
 	return fmt.Sprintf("%#v", g)
 }
 
-var (
-	getConditionalOrdersResponseRecordsItemOcoStopLossFieldOrderID      = big.NewInt(1 << 0)
-	getConditionalOrdersResponseRecordsItemOcoStopLossFieldPositionSide = big.NewInt(1 << 1)
-)
-
-type GetConditionalOrdersResponseRecordsItemOcoStopLoss struct {
-	OrderID      *int                                                            `json:"orderId,omitempty" url:"orderId,omitempty"`
-	PositionSide *GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) GetOrderID() *int {
-	if g == nil {
-		return nil
-	}
-	return g.OrderID
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) GetPositionSide() *GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide {
-	if g == nil {
-		return nil
-	}
-	return g.PositionSide
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) SetOrderID(orderID *int) {
-	g.OrderID = orderID
-	g.require(getConditionalOrdersResponseRecordsItemOcoStopLossFieldOrderID)
-}
-
-// SetPositionSide sets the PositionSide field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) SetPositionSide(positionSide *GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide) {
-	g.PositionSide = positionSide
-	g.require(getConditionalOrdersResponseRecordsItemOcoStopLossFieldPositionSide)
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetConditionalOrdersResponseRecordsItemOcoStopLoss
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetConditionalOrdersResponseRecordsItemOcoStopLoss(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) MarshalJSON() ([]byte, error) {
-	type embed GetConditionalOrdersResponseRecordsItemOcoStopLoss
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoStopLoss) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-type GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide string
-
-const (
-	GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSideLong  GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide = "LONG"
-	GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSideShort GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide = "SHORT"
-	GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSideBoth  GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide = "BOTH"
-)
-
-func NewGetConditionalOrdersResponseRecordsItemOcoStopLossPositionSideFromString(s string) (GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide, error) {
-	switch s {
-	case "LONG":
-		return GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSideLong, nil
-	case "SHORT":
-		return GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSideShort, nil
-	case "BOTH":
-		return GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSideBoth, nil
-	}
-	var t GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (g GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide) Ptr() *GetConditionalOrdersResponseRecordsItemOcoStopLossPositionSide {
-	return &g
-}
-
-var (
-	getConditionalOrdersResponseRecordsItemOcoTakeProfitFieldOrderID      = big.NewInt(1 << 0)
-	getConditionalOrdersResponseRecordsItemOcoTakeProfitFieldPositionSide = big.NewInt(1 << 1)
-)
-
-type GetConditionalOrdersResponseRecordsItemOcoTakeProfit struct {
-	OrderID      *int                                                              `json:"orderId,omitempty" url:"orderId,omitempty"`
-	PositionSide *GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) GetOrderID() *int {
-	if g == nil {
-		return nil
-	}
-	return g.OrderID
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) GetPositionSide() *GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide {
-	if g == nil {
-		return nil
-	}
-	return g.PositionSide
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) SetOrderID(orderID *int) {
-	g.OrderID = orderID
-	g.require(getConditionalOrdersResponseRecordsItemOcoTakeProfitFieldOrderID)
-}
-
-// SetPositionSide sets the PositionSide field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) SetPositionSide(positionSide *GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide) {
-	g.PositionSide = positionSide
-	g.require(getConditionalOrdersResponseRecordsItemOcoTakeProfitFieldPositionSide)
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetConditionalOrdersResponseRecordsItemOcoTakeProfit
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetConditionalOrdersResponseRecordsItemOcoTakeProfit(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) MarshalJSON() ([]byte, error) {
-	type embed GetConditionalOrdersResponseRecordsItemOcoTakeProfit
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOcoTakeProfit) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-type GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide string
-
-const (
-	GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSideLong  GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide = "LONG"
-	GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSideShort GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide = "SHORT"
-	GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSideBoth  GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide = "BOTH"
-)
-
-func NewGetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSideFromString(s string) (GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide, error) {
-	switch s {
-	case "LONG":
-		return GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSideLong, nil
-	case "SHORT":
-		return GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSideShort, nil
-	case "BOTH":
-		return GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSideBoth, nil
-	}
-	var t GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (g GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide) Ptr() *GetConditionalOrdersResponseRecordsItemOcoTakeProfitPositionSide {
-	return &g
-}
-
 // OTO type conditional order
 var (
-	getConditionalOrdersResponseRecordsItemOtoFieldID               = big.NewInt(1 << 0)
-	getConditionalOrdersResponseRecordsItemOtoFieldReduceOnly       = big.NewInt(1 << 1)
-	getConditionalOrdersResponseRecordsItemOtoFieldStopLossPrice    = big.NewInt(1 << 2)
-	getConditionalOrdersResponseRecordsItemOtoFieldTakeProfitPrice  = big.NewInt(1 << 3)
-	getConditionalOrdersResponseRecordsItemOtoFieldConditionalOrder = big.NewInt(1 << 4)
+	getConditionalOrdersResponseRecordsItemOtoFieldID                   = big.NewInt(1 << 0)
+	getConditionalOrdersResponseRecordsItemOtoFieldConditionalOrderType = big.NewInt(1 << 1)
+	getConditionalOrdersResponseRecordsItemOtoFieldStopLossPrice        = big.NewInt(1 << 2)
+	getConditionalOrdersResponseRecordsItemOtoFieldTakeProfitPrice      = big.NewInt(1 << 3)
+	getConditionalOrdersResponseRecordsItemOtoFieldConditionalOrder     = big.NewInt(1 << 4)
 )
 
 type GetConditionalOrdersResponseRecordsItemOto struct {
+	// Conditional order identifier
 	ID *int `json:"id,omitempty" url:"id,omitempty"`
-	// Reduce-only flag
-	ReduceOnly       *bool                                                       `json:"reduceOnly,omitempty" url:"reduceOnly,omitempty"`
-	StopLossPrice    *string                                                     `json:"stopLossPrice,omitempty" url:"stopLossPrice,omitempty"`
-	TakeProfitPrice  *string                                                     `json:"takeProfitPrice,omitempty" url:"takeProfitPrice,omitempty"`
-	ConditionalOrder *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder `json:"conditionalOrder,omitempty" url:"conditionalOrder,omitempty"`
+	// Conditional order subtype. Omitted when not set.
+	ConditionalOrderType *string `json:"conditionalOrderType,omitempty" url:"conditionalOrderType,omitempty"`
+	// Stop loss order price
+	StopLossPrice *string `json:"stopLossPrice,omitempty" url:"stopLossPrice,omitempty"`
+	// Take profit order price
+	TakeProfitPrice *string `json:"takeProfitPrice,omitempty" url:"takeProfitPrice,omitempty"`
+	// The linked active order. Same shape as an `/api/v4/orders` record, including its per-order `reduceOnly` flag.
+	ConditionalOrder *OrderResponse `json:"conditionalOrder,omitempty" url:"conditionalOrder,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -8858,11 +9239,11 @@ func (g *GetConditionalOrdersResponseRecordsItemOto) GetID() *int {
 	return g.ID
 }
 
-func (g *GetConditionalOrdersResponseRecordsItemOto) GetReduceOnly() *bool {
+func (g *GetConditionalOrdersResponseRecordsItemOto) GetConditionalOrderType() *string {
 	if g == nil {
 		return nil
 	}
-	return g.ReduceOnly
+	return g.ConditionalOrderType
 }
 
 func (g *GetConditionalOrdersResponseRecordsItemOto) GetStopLossPrice() *string {
@@ -8879,7 +9260,7 @@ func (g *GetConditionalOrdersResponseRecordsItemOto) GetTakeProfitPrice() *strin
 	return g.TakeProfitPrice
 }
 
-func (g *GetConditionalOrdersResponseRecordsItemOto) GetConditionalOrder() *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder {
+func (g *GetConditionalOrdersResponseRecordsItemOto) GetConditionalOrder() *OrderResponse {
 	if g == nil {
 		return nil
 	}
@@ -8904,11 +9285,11 @@ func (g *GetConditionalOrdersResponseRecordsItemOto) SetID(id *int) {
 	g.require(getConditionalOrdersResponseRecordsItemOtoFieldID)
 }
 
-// SetReduceOnly sets the ReduceOnly field and marks it as non-optional;
+// SetConditionalOrderType sets the ConditionalOrderType field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOto) SetReduceOnly(reduceOnly *bool) {
-	g.ReduceOnly = reduceOnly
-	g.require(getConditionalOrdersResponseRecordsItemOtoFieldReduceOnly)
+func (g *GetConditionalOrdersResponseRecordsItemOto) SetConditionalOrderType(conditionalOrderType *string) {
+	g.ConditionalOrderType = conditionalOrderType
+	g.require(getConditionalOrdersResponseRecordsItemOtoFieldConditionalOrderType)
 }
 
 // SetStopLossPrice sets the StopLossPrice field and marks it as non-optional;
@@ -8927,7 +9308,7 @@ func (g *GetConditionalOrdersResponseRecordsItemOto) SetTakeProfitPrice(takeProf
 
 // SetConditionalOrder sets the ConditionalOrder field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOto) SetConditionalOrder(conditionalOrder *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) {
+func (g *GetConditionalOrdersResponseRecordsItemOto) SetConditionalOrder(conditionalOrder *OrderResponse) {
 	g.ConditionalOrder = conditionalOrder
 	g.require(getConditionalOrdersResponseRecordsItemOtoFieldConditionalOrder)
 }
@@ -8969,157 +9350,6 @@ func (g *GetConditionalOrdersResponseRecordsItemOto) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", g)
-}
-
-var (
-	getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldOrderID       = big.NewInt(1 << 0)
-	getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldClientOrderID = big.NewInt(1 << 1)
-	getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldMarket        = big.NewInt(1 << 2)
-	getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldPositionSide  = big.NewInt(1 << 3)
-)
-
-type GetConditionalOrdersResponseRecordsItemOtoConditionalOrder struct {
-	OrderID       *int                                                                    `json:"orderId,omitempty" url:"orderId,omitempty"`
-	ClientOrderID *string                                                                 `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
-	Market        *string                                                                 `json:"market,omitempty" url:"market,omitempty"`
-	PositionSide  *GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide `json:"positionSide,omitempty" url:"positionSide,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) GetOrderID() *int {
-	if g == nil {
-		return nil
-	}
-	return g.OrderID
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) GetClientOrderID() *string {
-	if g == nil {
-		return nil
-	}
-	return g.ClientOrderID
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) GetMarket() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Market
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) GetPositionSide() *GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide {
-	if g == nil {
-		return nil
-	}
-	return g.PositionSide
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) SetOrderID(orderID *int) {
-	g.OrderID = orderID
-	g.require(getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldOrderID)
-}
-
-// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) SetClientOrderID(clientOrderID *string) {
-	g.ClientOrderID = clientOrderID
-	g.require(getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldClientOrderID)
-}
-
-// SetMarket sets the Market field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) SetMarket(market *string) {
-	g.Market = market
-	g.require(getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldMarket)
-}
-
-// SetPositionSide sets the PositionSide field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) SetPositionSide(positionSide *GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide) {
-	g.PositionSide = positionSide
-	g.require(getConditionalOrdersResponseRecordsItemOtoConditionalOrderFieldPositionSide)
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetConditionalOrdersResponseRecordsItemOtoConditionalOrder
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetConditionalOrdersResponseRecordsItemOtoConditionalOrder(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) MarshalJSON() ([]byte, error) {
-	type embed GetConditionalOrdersResponseRecordsItemOtoConditionalOrder
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetConditionalOrdersResponseRecordsItemOtoConditionalOrder) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-type GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide string
-
-const (
-	GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSideLong  GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide = "LONG"
-	GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSideShort GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide = "SHORT"
-	GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSideBoth  GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide = "BOTH"
-)
-
-func NewGetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSideFromString(s string) (GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide, error) {
-	switch s {
-	case "LONG":
-		return GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSideLong, nil
-	case "SHORT":
-		return GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSideShort, nil
-	case "BOTH":
-		return GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSideBoth, nil
-	}
-	var t GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (g GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide) Ptr() *GetConditionalOrdersResponseRecordsItemOtoConditionalOrderPositionSide {
-	return &g
 }
 
 var (
@@ -9425,10 +9655,10 @@ var (
 type GetOcoOrdersResponseItem struct {
 	// OCO order identifier
 	ID *int `json:"id,omitempty" url:"id,omitempty"`
-	// Stop loss order details
-	StopLoss *GetOcoOrdersResponseItemStopLoss `json:"stop_loss,omitempty" url:"stop_loss,omitempty"`
-	// Take profit order details
-	TakeProfit *GetOcoOrdersResponseItemTakeProfit `json:"take_profit,omitempty" url:"take_profit,omitempty"`
+	// Stop loss order details. Includes the `activation_price` / `activation_condition` / `activated` trigger fields.
+	StopLoss *OcoOrderLeg `json:"stop_loss,omitempty" url:"stop_loss,omitempty"`
+	// Take profit order details. The trigger fields are omitted on this leg.
+	TakeProfit *OcoOrderLeg `json:"take_profit,omitempty" url:"take_profit,omitempty"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -9444,14 +9674,14 @@ func (g *GetOcoOrdersResponseItem) GetID() *int {
 	return g.ID
 }
 
-func (g *GetOcoOrdersResponseItem) GetStopLoss() *GetOcoOrdersResponseItemStopLoss {
+func (g *GetOcoOrdersResponseItem) GetStopLoss() *OcoOrderLeg {
 	if g == nil {
 		return nil
 	}
 	return g.StopLoss
 }
 
-func (g *GetOcoOrdersResponseItem) GetTakeProfit() *GetOcoOrdersResponseItemTakeProfit {
+func (g *GetOcoOrdersResponseItem) GetTakeProfit() *OcoOrderLeg {
 	if g == nil {
 		return nil
 	}
@@ -9478,14 +9708,14 @@ func (g *GetOcoOrdersResponseItem) SetID(id *int) {
 
 // SetStopLoss sets the StopLoss field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItem) SetStopLoss(stopLoss *GetOcoOrdersResponseItemStopLoss) {
+func (g *GetOcoOrdersResponseItem) SetStopLoss(stopLoss *OcoOrderLeg) {
 	g.StopLoss = stopLoss
 	g.require(getOcoOrdersResponseItemFieldStopLoss)
 }
 
 // SetTakeProfit sets the TakeProfit field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItem) SetTakeProfit(takeProfit *GetOcoOrdersResponseItemTakeProfit) {
+func (g *GetOcoOrdersResponseItem) SetTakeProfit(takeProfit *OcoOrderLeg) {
 	g.TakeProfit = takeProfit
 	g.require(getOcoOrdersResponseItemFieldTakeProfit)
 }
@@ -9527,824 +9757,6 @@ func (g *GetOcoOrdersResponseItem) String() string {
 		return value
 	}
 	return fmt.Sprintf("%#v", g)
-}
-
-// Stop loss order details
-var (
-	getOcoOrdersResponseItemStopLossFieldOrderID             = big.NewInt(1 << 0)
-	getOcoOrdersResponseItemStopLossFieldClientOrderID       = big.NewInt(1 << 1)
-	getOcoOrdersResponseItemStopLossFieldMarket              = big.NewInt(1 << 2)
-	getOcoOrdersResponseItemStopLossFieldSide                = big.NewInt(1 << 3)
-	getOcoOrdersResponseItemStopLossFieldType                = big.NewInt(1 << 4)
-	getOcoOrdersResponseItemStopLossFieldTimestamp           = big.NewInt(1 << 5)
-	getOcoOrdersResponseItemStopLossFieldDealMoney           = big.NewInt(1 << 6)
-	getOcoOrdersResponseItemStopLossFieldDealStock           = big.NewInt(1 << 7)
-	getOcoOrdersResponseItemStopLossFieldAmount              = big.NewInt(1 << 8)
-	getOcoOrdersResponseItemStopLossFieldTakerFee            = big.NewInt(1 << 9)
-	getOcoOrdersResponseItemStopLossFieldMakerFee            = big.NewInt(1 << 10)
-	getOcoOrdersResponseItemStopLossFieldLeft                = big.NewInt(1 << 11)
-	getOcoOrdersResponseItemStopLossFieldDealFee             = big.NewInt(1 << 12)
-	getOcoOrdersResponseItemStopLossFieldPostOnly            = big.NewInt(1 << 13)
-	getOcoOrdersResponseItemStopLossFieldMtime               = big.NewInt(1 << 14)
-	getOcoOrdersResponseItemStopLossFieldPrice               = big.NewInt(1 << 15)
-	getOcoOrdersResponseItemStopLossFieldActivationPrice     = big.NewInt(1 << 16)
-	getOcoOrdersResponseItemStopLossFieldActivationCondition = big.NewInt(1 << 17)
-	getOcoOrdersResponseItemStopLossFieldActivated           = big.NewInt(1 << 18)
-	getOcoOrdersResponseItemStopLossFieldStatus              = big.NewInt(1 << 19)
-	getOcoOrdersResponseItemStopLossFieldStp                 = big.NewInt(1 << 20)
-)
-
-type GetOcoOrdersResponseItemStopLoss struct {
-	OrderID         *int                                  `json:"orderId,omitempty" url:"orderId,omitempty"`
-	ClientOrderID   *string                               `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
-	Market          *string                               `json:"market,omitempty" url:"market,omitempty"`
-	Side            *GetOcoOrdersResponseItemStopLossSide `json:"side,omitempty" url:"side,omitempty"`
-	Type            *string                               `json:"type,omitempty" url:"type,omitempty"`
-	Timestamp       *float64                              `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	DealMoney       *string                               `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
-	DealStock       *string                               `json:"dealStock,omitempty" url:"dealStock,omitempty"`
-	Amount          *string                               `json:"amount,omitempty" url:"amount,omitempty"`
-	TakerFee        *string                               `json:"takerFee,omitempty" url:"takerFee,omitempty"`
-	MakerFee        *string                               `json:"makerFee,omitempty" url:"makerFee,omitempty"`
-	Left            *string                               `json:"left,omitempty" url:"left,omitempty"`
-	DealFee         *string                               `json:"dealFee,omitempty" url:"dealFee,omitempty"`
-	PostOnly        *bool                                 `json:"post_only,omitempty" url:"post_only,omitempty"`
-	Mtime           *float64                              `json:"mtime,omitempty" url:"mtime,omitempty"`
-	Price           *string                               `json:"price,omitempty" url:"price,omitempty"`
-	ActivationPrice *string                               `json:"activation_price,omitempty" url:"activation_price,omitempty"`
-	// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
-	ActivationCondition *GetOcoOrdersResponseItemStopLossActivationCondition `json:"activation_condition,omitempty" url:"activation_condition,omitempty"`
-	Activated           *int                                                 `json:"activated,omitempty" url:"activated,omitempty"`
-	Status              *string                                              `json:"status,omitempty" url:"status,omitempty"`
-	Stp                 *string                                              `json:"stp,omitempty" url:"stp,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetOrderID() *int {
-	if g == nil {
-		return nil
-	}
-	return g.OrderID
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetClientOrderID() *string {
-	if g == nil {
-		return nil
-	}
-	return g.ClientOrderID
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetMarket() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Market
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetSide() *GetOcoOrdersResponseItemStopLossSide {
-	if g == nil {
-		return nil
-	}
-	return g.Side
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetType() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Type
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetTimestamp() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Timestamp
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetDealMoney() *string {
-	if g == nil {
-		return nil
-	}
-	return g.DealMoney
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetDealStock() *string {
-	if g == nil {
-		return nil
-	}
-	return g.DealStock
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetAmount() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Amount
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetTakerFee() *string {
-	if g == nil {
-		return nil
-	}
-	return g.TakerFee
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetMakerFee() *string {
-	if g == nil {
-		return nil
-	}
-	return g.MakerFee
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetLeft() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Left
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetDealFee() *string {
-	if g == nil {
-		return nil
-	}
-	return g.DealFee
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetPostOnly() *bool {
-	if g == nil {
-		return nil
-	}
-	return g.PostOnly
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetMtime() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Mtime
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetPrice() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Price
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetActivationPrice() *string {
-	if g == nil {
-		return nil
-	}
-	return g.ActivationPrice
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetActivationCondition() *GetOcoOrdersResponseItemStopLossActivationCondition {
-	if g == nil {
-		return nil
-	}
-	return g.ActivationCondition
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetActivated() *int {
-	if g == nil {
-		return nil
-	}
-	return g.Activated
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetStatus() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Status
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetStp() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Stp
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetOrderID(orderID *int) {
-	g.OrderID = orderID
-	g.require(getOcoOrdersResponseItemStopLossFieldOrderID)
-}
-
-// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetClientOrderID(clientOrderID *string) {
-	g.ClientOrderID = clientOrderID
-	g.require(getOcoOrdersResponseItemStopLossFieldClientOrderID)
-}
-
-// SetMarket sets the Market field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetMarket(market *string) {
-	g.Market = market
-	g.require(getOcoOrdersResponseItemStopLossFieldMarket)
-}
-
-// SetSide sets the Side field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetSide(side *GetOcoOrdersResponseItemStopLossSide) {
-	g.Side = side
-	g.require(getOcoOrdersResponseItemStopLossFieldSide)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetType(type_ *string) {
-	g.Type = type_
-	g.require(getOcoOrdersResponseItemStopLossFieldType)
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetTimestamp(timestamp *float64) {
-	g.Timestamp = timestamp
-	g.require(getOcoOrdersResponseItemStopLossFieldTimestamp)
-}
-
-// SetDealMoney sets the DealMoney field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetDealMoney(dealMoney *string) {
-	g.DealMoney = dealMoney
-	g.require(getOcoOrdersResponseItemStopLossFieldDealMoney)
-}
-
-// SetDealStock sets the DealStock field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetDealStock(dealStock *string) {
-	g.DealStock = dealStock
-	g.require(getOcoOrdersResponseItemStopLossFieldDealStock)
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetAmount(amount *string) {
-	g.Amount = amount
-	g.require(getOcoOrdersResponseItemStopLossFieldAmount)
-}
-
-// SetTakerFee sets the TakerFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetTakerFee(takerFee *string) {
-	g.TakerFee = takerFee
-	g.require(getOcoOrdersResponseItemStopLossFieldTakerFee)
-}
-
-// SetMakerFee sets the MakerFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetMakerFee(makerFee *string) {
-	g.MakerFee = makerFee
-	g.require(getOcoOrdersResponseItemStopLossFieldMakerFee)
-}
-
-// SetLeft sets the Left field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetLeft(left *string) {
-	g.Left = left
-	g.require(getOcoOrdersResponseItemStopLossFieldLeft)
-}
-
-// SetDealFee sets the DealFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetDealFee(dealFee *string) {
-	g.DealFee = dealFee
-	g.require(getOcoOrdersResponseItemStopLossFieldDealFee)
-}
-
-// SetPostOnly sets the PostOnly field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetPostOnly(postOnly *bool) {
-	g.PostOnly = postOnly
-	g.require(getOcoOrdersResponseItemStopLossFieldPostOnly)
-}
-
-// SetMtime sets the Mtime field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetMtime(mtime *float64) {
-	g.Mtime = mtime
-	g.require(getOcoOrdersResponseItemStopLossFieldMtime)
-}
-
-// SetPrice sets the Price field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetPrice(price *string) {
-	g.Price = price
-	g.require(getOcoOrdersResponseItemStopLossFieldPrice)
-}
-
-// SetActivationPrice sets the ActivationPrice field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetActivationPrice(activationPrice *string) {
-	g.ActivationPrice = activationPrice
-	g.require(getOcoOrdersResponseItemStopLossFieldActivationPrice)
-}
-
-// SetActivationCondition sets the ActivationCondition field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetActivationCondition(activationCondition *GetOcoOrdersResponseItemStopLossActivationCondition) {
-	g.ActivationCondition = activationCondition
-	g.require(getOcoOrdersResponseItemStopLossFieldActivationCondition)
-}
-
-// SetActivated sets the Activated field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetActivated(activated *int) {
-	g.Activated = activated
-	g.require(getOcoOrdersResponseItemStopLossFieldActivated)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetStatus(status *string) {
-	g.Status = status
-	g.require(getOcoOrdersResponseItemStopLossFieldStatus)
-}
-
-// SetStp sets the Stp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemStopLoss) SetStp(stp *string) {
-	g.Stp = stp
-	g.require(getOcoOrdersResponseItemStopLossFieldStp)
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetOcoOrdersResponseItemStopLoss
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetOcoOrdersResponseItemStopLoss(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) MarshalJSON() ([]byte, error) {
-	type embed GetOcoOrdersResponseItemStopLoss
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetOcoOrdersResponseItemStopLoss) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-// Trigger condition derived from `side` (response-only, cannot be overridden): `buy` → `gte`, `sell` → `lte`.
-type GetOcoOrdersResponseItemStopLossActivationCondition string
-
-const (
-	GetOcoOrdersResponseItemStopLossActivationConditionGte GetOcoOrdersResponseItemStopLossActivationCondition = "gte"
-	GetOcoOrdersResponseItemStopLossActivationConditionLte GetOcoOrdersResponseItemStopLossActivationCondition = "lte"
-)
-
-func NewGetOcoOrdersResponseItemStopLossActivationConditionFromString(s string) (GetOcoOrdersResponseItemStopLossActivationCondition, error) {
-	switch s {
-	case "gte":
-		return GetOcoOrdersResponseItemStopLossActivationConditionGte, nil
-	case "lte":
-		return GetOcoOrdersResponseItemStopLossActivationConditionLte, nil
-	}
-	var t GetOcoOrdersResponseItemStopLossActivationCondition
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (g GetOcoOrdersResponseItemStopLossActivationCondition) Ptr() *GetOcoOrdersResponseItemStopLossActivationCondition {
-	return &g
-}
-
-type GetOcoOrdersResponseItemStopLossSide string
-
-const (
-	GetOcoOrdersResponseItemStopLossSideBuy  GetOcoOrdersResponseItemStopLossSide = "buy"
-	GetOcoOrdersResponseItemStopLossSideSell GetOcoOrdersResponseItemStopLossSide = "sell"
-)
-
-func NewGetOcoOrdersResponseItemStopLossSideFromString(s string) (GetOcoOrdersResponseItemStopLossSide, error) {
-	switch s {
-	case "buy":
-		return GetOcoOrdersResponseItemStopLossSideBuy, nil
-	case "sell":
-		return GetOcoOrdersResponseItemStopLossSideSell, nil
-	}
-	var t GetOcoOrdersResponseItemStopLossSide
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (g GetOcoOrdersResponseItemStopLossSide) Ptr() *GetOcoOrdersResponseItemStopLossSide {
-	return &g
-}
-
-// Take profit order details
-var (
-	getOcoOrdersResponseItemTakeProfitFieldOrderID       = big.NewInt(1 << 0)
-	getOcoOrdersResponseItemTakeProfitFieldClientOrderID = big.NewInt(1 << 1)
-	getOcoOrdersResponseItemTakeProfitFieldMarket        = big.NewInt(1 << 2)
-	getOcoOrdersResponseItemTakeProfitFieldSide          = big.NewInt(1 << 3)
-	getOcoOrdersResponseItemTakeProfitFieldType          = big.NewInt(1 << 4)
-	getOcoOrdersResponseItemTakeProfitFieldTimestamp     = big.NewInt(1 << 5)
-	getOcoOrdersResponseItemTakeProfitFieldDealMoney     = big.NewInt(1 << 6)
-	getOcoOrdersResponseItemTakeProfitFieldDealStock     = big.NewInt(1 << 7)
-	getOcoOrdersResponseItemTakeProfitFieldAmount        = big.NewInt(1 << 8)
-	getOcoOrdersResponseItemTakeProfitFieldTakerFee      = big.NewInt(1 << 9)
-	getOcoOrdersResponseItemTakeProfitFieldMakerFee      = big.NewInt(1 << 10)
-	getOcoOrdersResponseItemTakeProfitFieldLeft          = big.NewInt(1 << 11)
-	getOcoOrdersResponseItemTakeProfitFieldDealFee       = big.NewInt(1 << 12)
-	getOcoOrdersResponseItemTakeProfitFieldPostOnly      = big.NewInt(1 << 13)
-	getOcoOrdersResponseItemTakeProfitFieldMtime         = big.NewInt(1 << 14)
-	getOcoOrdersResponseItemTakeProfitFieldPrice         = big.NewInt(1 << 15)
-	getOcoOrdersResponseItemTakeProfitFieldStatus        = big.NewInt(1 << 16)
-	getOcoOrdersResponseItemTakeProfitFieldStp           = big.NewInt(1 << 17)
-)
-
-type GetOcoOrdersResponseItemTakeProfit struct {
-	OrderID       *int                                    `json:"orderId,omitempty" url:"orderId,omitempty"`
-	ClientOrderID *string                                 `json:"clientOrderId,omitempty" url:"clientOrderId,omitempty"`
-	Market        *string                                 `json:"market,omitempty" url:"market,omitempty"`
-	Side          *GetOcoOrdersResponseItemTakeProfitSide `json:"side,omitempty" url:"side,omitempty"`
-	Type          *string                                 `json:"type,omitempty" url:"type,omitempty"`
-	Timestamp     *float64                                `json:"timestamp,omitempty" url:"timestamp,omitempty"`
-	DealMoney     *string                                 `json:"dealMoney,omitempty" url:"dealMoney,omitempty"`
-	DealStock     *string                                 `json:"dealStock,omitempty" url:"dealStock,omitempty"`
-	Amount        *string                                 `json:"amount,omitempty" url:"amount,omitempty"`
-	TakerFee      *string                                 `json:"takerFee,omitempty" url:"takerFee,omitempty"`
-	MakerFee      *string                                 `json:"makerFee,omitempty" url:"makerFee,omitempty"`
-	Left          *string                                 `json:"left,omitempty" url:"left,omitempty"`
-	DealFee       *string                                 `json:"dealFee,omitempty" url:"dealFee,omitempty"`
-	PostOnly      *bool                                   `json:"post_only,omitempty" url:"post_only,omitempty"`
-	Mtime         *float64                                `json:"mtime,omitempty" url:"mtime,omitempty"`
-	Price         *string                                 `json:"price,omitempty" url:"price,omitempty"`
-	Status        *string                                 `json:"status,omitempty" url:"status,omitempty"`
-	Stp           *string                                 `json:"stp,omitempty" url:"stp,omitempty"`
-
-	// Private bitmask of fields set to an explicit value and therefore not to be omitted
-	explicitFields *big.Int `json:"-" url:"-"`
-
-	extraProperties map[string]interface{}
-	rawJSON         json.RawMessage
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetOrderID() *int {
-	if g == nil {
-		return nil
-	}
-	return g.OrderID
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetClientOrderID() *string {
-	if g == nil {
-		return nil
-	}
-	return g.ClientOrderID
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetMarket() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Market
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetSide() *GetOcoOrdersResponseItemTakeProfitSide {
-	if g == nil {
-		return nil
-	}
-	return g.Side
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetType() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Type
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetTimestamp() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Timestamp
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetDealMoney() *string {
-	if g == nil {
-		return nil
-	}
-	return g.DealMoney
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetDealStock() *string {
-	if g == nil {
-		return nil
-	}
-	return g.DealStock
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetAmount() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Amount
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetTakerFee() *string {
-	if g == nil {
-		return nil
-	}
-	return g.TakerFee
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetMakerFee() *string {
-	if g == nil {
-		return nil
-	}
-	return g.MakerFee
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetLeft() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Left
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetDealFee() *string {
-	if g == nil {
-		return nil
-	}
-	return g.DealFee
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetPostOnly() *bool {
-	if g == nil {
-		return nil
-	}
-	return g.PostOnly
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetMtime() *float64 {
-	if g == nil {
-		return nil
-	}
-	return g.Mtime
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetPrice() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Price
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetStatus() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Status
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetStp() *string {
-	if g == nil {
-		return nil
-	}
-	return g.Stp
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) GetExtraProperties() map[string]interface{} {
-	return g.extraProperties
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) require(field *big.Int) {
-	if g.explicitFields == nil {
-		g.explicitFields = big.NewInt(0)
-	}
-	g.explicitFields.Or(g.explicitFields, field)
-}
-
-// SetOrderID sets the OrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetOrderID(orderID *int) {
-	g.OrderID = orderID
-	g.require(getOcoOrdersResponseItemTakeProfitFieldOrderID)
-}
-
-// SetClientOrderID sets the ClientOrderID field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetClientOrderID(clientOrderID *string) {
-	g.ClientOrderID = clientOrderID
-	g.require(getOcoOrdersResponseItemTakeProfitFieldClientOrderID)
-}
-
-// SetMarket sets the Market field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetMarket(market *string) {
-	g.Market = market
-	g.require(getOcoOrdersResponseItemTakeProfitFieldMarket)
-}
-
-// SetSide sets the Side field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetSide(side *GetOcoOrdersResponseItemTakeProfitSide) {
-	g.Side = side
-	g.require(getOcoOrdersResponseItemTakeProfitFieldSide)
-}
-
-// SetType sets the Type field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetType(type_ *string) {
-	g.Type = type_
-	g.require(getOcoOrdersResponseItemTakeProfitFieldType)
-}
-
-// SetTimestamp sets the Timestamp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetTimestamp(timestamp *float64) {
-	g.Timestamp = timestamp
-	g.require(getOcoOrdersResponseItemTakeProfitFieldTimestamp)
-}
-
-// SetDealMoney sets the DealMoney field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetDealMoney(dealMoney *string) {
-	g.DealMoney = dealMoney
-	g.require(getOcoOrdersResponseItemTakeProfitFieldDealMoney)
-}
-
-// SetDealStock sets the DealStock field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetDealStock(dealStock *string) {
-	g.DealStock = dealStock
-	g.require(getOcoOrdersResponseItemTakeProfitFieldDealStock)
-}
-
-// SetAmount sets the Amount field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetAmount(amount *string) {
-	g.Amount = amount
-	g.require(getOcoOrdersResponseItemTakeProfitFieldAmount)
-}
-
-// SetTakerFee sets the TakerFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetTakerFee(takerFee *string) {
-	g.TakerFee = takerFee
-	g.require(getOcoOrdersResponseItemTakeProfitFieldTakerFee)
-}
-
-// SetMakerFee sets the MakerFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetMakerFee(makerFee *string) {
-	g.MakerFee = makerFee
-	g.require(getOcoOrdersResponseItemTakeProfitFieldMakerFee)
-}
-
-// SetLeft sets the Left field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetLeft(left *string) {
-	g.Left = left
-	g.require(getOcoOrdersResponseItemTakeProfitFieldLeft)
-}
-
-// SetDealFee sets the DealFee field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetDealFee(dealFee *string) {
-	g.DealFee = dealFee
-	g.require(getOcoOrdersResponseItemTakeProfitFieldDealFee)
-}
-
-// SetPostOnly sets the PostOnly field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetPostOnly(postOnly *bool) {
-	g.PostOnly = postOnly
-	g.require(getOcoOrdersResponseItemTakeProfitFieldPostOnly)
-}
-
-// SetMtime sets the Mtime field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetMtime(mtime *float64) {
-	g.Mtime = mtime
-	g.require(getOcoOrdersResponseItemTakeProfitFieldMtime)
-}
-
-// SetPrice sets the Price field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetPrice(price *string) {
-	g.Price = price
-	g.require(getOcoOrdersResponseItemTakeProfitFieldPrice)
-}
-
-// SetStatus sets the Status field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetStatus(status *string) {
-	g.Status = status
-	g.require(getOcoOrdersResponseItemTakeProfitFieldStatus)
-}
-
-// SetStp sets the Stp field and marks it as non-optional;
-// this prevents an empty or null value for this field from being omitted during serialization.
-func (g *GetOcoOrdersResponseItemTakeProfit) SetStp(stp *string) {
-	g.Stp = stp
-	g.require(getOcoOrdersResponseItemTakeProfitFieldStp)
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) UnmarshalJSON(data []byte) error {
-	type unmarshaler GetOcoOrdersResponseItemTakeProfit
-	var value unmarshaler
-	if err := json.Unmarshal(data, &value); err != nil {
-		return err
-	}
-	*g = GetOcoOrdersResponseItemTakeProfit(value)
-	extraProperties, err := internal.ExtractExtraProperties(data, *g)
-	if err != nil {
-		return err
-	}
-	g.extraProperties = extraProperties
-	g.rawJSON = json.RawMessage(data)
-	return nil
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) MarshalJSON() ([]byte, error) {
-	type embed GetOcoOrdersResponseItemTakeProfit
-	var marshaler = struct {
-		embed
-	}{
-		embed: embed(*g),
-	}
-	explicitMarshaler := internal.HandleExplicitFields(marshaler, g.explicitFields)
-	return json.Marshal(explicitMarshaler)
-}
-
-func (g *GetOcoOrdersResponseItemTakeProfit) String() string {
-	if len(g.rawJSON) > 0 {
-		if value, err := internal.StringifyJSON(g.rawJSON); err == nil {
-			return value
-		}
-	}
-	if value, err := internal.StringifyJSON(g); err == nil {
-		return value
-	}
-	return fmt.Sprintf("%#v", g)
-}
-
-type GetOcoOrdersResponseItemTakeProfitSide string
-
-const (
-	GetOcoOrdersResponseItemTakeProfitSideBuy  GetOcoOrdersResponseItemTakeProfitSide = "buy"
-	GetOcoOrdersResponseItemTakeProfitSideSell GetOcoOrdersResponseItemTakeProfitSide = "sell"
-)
-
-func NewGetOcoOrdersResponseItemTakeProfitSideFromString(s string) (GetOcoOrdersResponseItemTakeProfitSide, error) {
-	switch s {
-	case "buy":
-		return GetOcoOrdersResponseItemTakeProfitSideBuy, nil
-	case "sell":
-		return GetOcoOrdersResponseItemTakeProfitSideSell, nil
-	}
-	var t GetOcoOrdersResponseItemTakeProfitSide
-	return "", fmt.Errorf("%s is not a valid %T", s, t)
-}
-
-func (g GetOcoOrdersResponseItemTakeProfitSide) Ptr() *GetOcoOrdersResponseItemTakeProfitSide {
-	return &g
 }
 
 var (

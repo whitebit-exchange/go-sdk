@@ -9,12 +9,15 @@ import (
 	collateraltrading "github.com/whitebit-exchange/go-sdk/collateraltrading"
 	core "github.com/whitebit-exchange/go-sdk/core"
 	creditline "github.com/whitebit-exchange/go-sdk/creditline"
+	cryptolendingfixed "github.com/whitebit-exchange/go-sdk/cryptolendingfixed"
+	cryptolendingflex "github.com/whitebit-exchange/go-sdk/cryptolendingflex"
 	deposit "github.com/whitebit-exchange/go-sdk/deposit"
 	fees "github.com/whitebit-exchange/go-sdk/fees"
 	internal "github.com/whitebit-exchange/go-sdk/internal"
 	jwt "github.com/whitebit-exchange/go-sdk/jwt"
 	mainaccount "github.com/whitebit-exchange/go-sdk/mainaccount"
 	marketfee "github.com/whitebit-exchange/go-sdk/marketfee"
+	miningpool "github.com/whitebit-exchange/go-sdk/miningpool"
 	option "github.com/whitebit-exchange/go-sdk/option"
 	publicapiv4 "github.com/whitebit-exchange/go-sdk/publicapiv4"
 	spottrading "github.com/whitebit-exchange/go-sdk/spottrading"
@@ -26,22 +29,25 @@ import (
 )
 
 type Client struct {
-	WithRawResponse   *RawClient
-	PublicAPIV4       *publicapiv4.Client
-	MainAccount       *mainaccount.Client
-	Deposit           *deposit.Client
-	Jwt               *jwt.Client
-	Withdraw          *withdraw.Client
-	Transfer          *transfer.Client
-	Codes             *codes.Client
-	Fees              *fees.Client
-	SubAccount        *subaccount.Client
-	SubAccountAPIKeys *subaccountapikeys.Client
-	CreditLine        *creditline.Client
-	TravelRule        *travelrule.Client
-	CollateralTrading *collateraltrading.Client
-	MarketFee         *marketfee.Client
-	SpotTrading       *spottrading.Client
+	WithRawResponse    *RawClient
+	PublicAPIV4        *publicapiv4.Client
+	MainAccount        *mainaccount.Client
+	Deposit            *deposit.Client
+	Jwt                *jwt.Client
+	Withdraw           *withdraw.Client
+	Transfer           *transfer.Client
+	Codes              *codes.Client
+	CryptoLendingFixed *cryptolendingfixed.Client
+	CryptoLendingFlex  *cryptolendingflex.Client
+	Fees               *fees.Client
+	SubAccount         *subaccount.Client
+	SubAccountAPIKeys  *subaccountapikeys.Client
+	MiningPool         *miningpool.Client
+	CreditLine         *creditline.Client
+	TravelRule         *travelrule.Client
+	CollateralTrading  *collateraltrading.Client
+	MarketFee          *marketfee.Client
+	SpotTrading        *spottrading.Client
 
 	options *core.RequestOptions
 	baseURL string
@@ -51,24 +57,27 @@ type Client struct {
 func NewClient(opts ...option.RequestOption) *Client {
 	options := core.NewRequestOptions(opts...)
 	return &Client{
-		PublicAPIV4:       publicapiv4.NewClient(options),
-		MainAccount:       mainaccount.NewClient(options),
-		Deposit:           deposit.NewClient(options),
-		Jwt:               jwt.NewClient(options),
-		Withdraw:          withdraw.NewClient(options),
-		Transfer:          transfer.NewClient(options),
-		Codes:             codes.NewClient(options),
-		Fees:              fees.NewClient(options),
-		SubAccount:        subaccount.NewClient(options),
-		SubAccountAPIKeys: subaccountapikeys.NewClient(options),
-		CreditLine:        creditline.NewClient(options),
-		TravelRule:        travelrule.NewClient(options),
-		CollateralTrading: collateraltrading.NewClient(options),
-		MarketFee:         marketfee.NewClient(options),
-		SpotTrading:       spottrading.NewClient(options),
-		WithRawResponse:   NewRawClient(options),
-		options:           options,
-		baseURL:           options.BaseURL,
+		PublicAPIV4:        publicapiv4.NewClient(options),
+		MainAccount:        mainaccount.NewClient(options),
+		Deposit:            deposit.NewClient(options),
+		Jwt:                jwt.NewClient(options),
+		Withdraw:           withdraw.NewClient(options),
+		Transfer:           transfer.NewClient(options),
+		Codes:              codes.NewClient(options),
+		CryptoLendingFixed: cryptolendingfixed.NewClient(options),
+		CryptoLendingFlex:  cryptolendingflex.NewClient(options),
+		Fees:               fees.NewClient(options),
+		SubAccount:         subaccount.NewClient(options),
+		SubAccountAPIKeys:  subaccountapikeys.NewClient(options),
+		MiningPool:         miningpool.NewClient(options),
+		CreditLine:         creditline.NewClient(options),
+		TravelRule:         travelrule.NewClient(options),
+		CollateralTrading:  collateraltrading.NewClient(options),
+		MarketFee:          marketfee.NewClient(options),
+		SpotTrading:        spottrading.NewClient(options),
+		WithRawResponse:    NewRawClient(options),
+		options:            options,
+		baseURL:            options.BaseURL,
 		caller: internal.NewCaller(
 			&internal.CallerParams{
 				Client:      options.HTTPClient,

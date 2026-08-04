@@ -101,7 +101,6 @@ func TestSpotTradingCreateLimitOrderWithWireMock(
 		Market:  "BTC_USDT",
 		Side:    sdk.LimitOrderRequestSideBuy,
 		Amount:  "0.001",
-		Price:   "9800",
 		Request: "{{request}}",
 		Nonce:   1594297865000,
 	}
@@ -131,16 +130,12 @@ func TestSpotTradingCreateBulkLimitOrderWithWireMock(
 	request := &sdk.CreateBulkLimitOrderRequest{
 		Orders: []*sdk.BulkOrderItem{
 			&sdk.BulkOrderItem{
-				Side: sdk.BulkOrderItemSideBuy.Ptr(),
-				Amount: sdk.String(
-					"0.02",
-				),
+				Side:   sdk.BulkOrderItemSideBuy,
+				Amount: "0.02",
 				Price: sdk.String(
 					"40000",
 				),
-				Market: sdk.String(
-					"BTC_USDT",
-				),
+				Market: "BTC_USDT",
 				PostOnly: sdk.Bool(
 					false,
 				),
@@ -158,16 +153,12 @@ func TestSpotTradingCreateBulkLimitOrderWithWireMock(
 				),
 			},
 			&sdk.BulkOrderItem{
-				Side: sdk.BulkOrderItemSideSell.Ptr(),
-				Amount: sdk.String(
-					"0.0001",
-				),
+				Side:   sdk.BulkOrderItemSideSell,
+				Amount: "0.0001",
 				Price: sdk.String(
 					"41000",
 				),
-				Market: sdk.String(
-					"BTC_USDT",
-				),
+				Market: "BTC_USDT",
 				PostOnly: sdk.Bool(
 					false,
 				),
@@ -185,16 +176,12 @@ func TestSpotTradingCreateBulkLimitOrderWithWireMock(
 				),
 			},
 			&sdk.BulkOrderItem{
-				Side: sdk.BulkOrderItemSideSell.Ptr(),
-				Amount: sdk.String(
-					"0.02",
-				),
+				Side:   sdk.BulkOrderItemSideSell,
+				Amount: "0.02",
 				Price: sdk.String(
 					"41000",
 				),
-				Market: sdk.String(
-					"BTC_USDT",
-				),
+				Market: "BTC_USDT",
 				PostOnly: sdk.Bool(
 					false,
 				),
@@ -212,6 +199,8 @@ func TestSpotTradingCreateBulkLimitOrderWithWireMock(
 				),
 			},
 		},
+		Request: "{{request}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.SpotTrading.CreateBulkLimitOrder(
 		context.TODO(),
@@ -300,7 +289,6 @@ func TestSpotTradingCreateStopLimitOrderWithWireMock(
 		Market:          "BTC_USDT",
 		Side:            sdk.StopLimitOrderRequestSideBuy,
 		Amount:          "0.001",
-		Price:           "9800",
 		ActivationPrice: "10000",
 		Request:         "{{request}}",
 		Nonce:           1594297865000,
@@ -437,8 +425,10 @@ func TestSpotTradingCancelAllOrdersWithWireMock(
 			sdk.CancelAllOrdersRequestTypeItemMargin,
 			sdk.CancelAllOrdersRequestTypeItemFutures,
 		},
+		Request: "{{request}}",
+		Nonce:   1594297865000,
 	}
-	invocationErr := client.SpotTrading.CancelAllOrders(
+	_, invocationErr := client.SpotTrading.CancelAllOrders(
 		context.TODO(),
 		request,
 		option.WithHTTPHeader(
@@ -614,8 +604,7 @@ func TestSpotTradingSetKillSwitchWithWireMock(
 		option.WithBaseURL(WireMockBaseURL),
 	)
 	request := &sdk.SetKillSwitchRequest{
-		Market:  "BTC_USDT",
-		Timeout: "60",
+		Market: "BTC_USDT",
 	}
 	_, invocationErr := client.SpotTrading.SetKillSwitch(
 		context.TODO(),

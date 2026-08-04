@@ -36,6 +36,8 @@ func NewClient(options *core.RequestOptions) *Client {
 //
 // The `maker` and `taker` fields represent default spot trading fees. The `futures_maker` and `futures_taker` fields represent default futures trading fees. The `custom_fee` object lists per-market overrides, keyed by market name.
 //
+// For accounts with the [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order mode enabled, the response returns non-null RPI maker fee premiums applied on top of the maker rates when RPI orders execute.
+//
 // The system calculates the effective futures fee as the lower value between the user-specific custom fee and the market-specific fee.
 //
 // When the market fee is lower than the assigned custom fee, the system returns the market fee.

@@ -36,12 +36,14 @@ func (g *GetMarketFeeRequest) SetMarket(market *string) {
 }
 
 var (
-	getMarketFeeResponseFieldError        = big.NewInt(1 << 0)
-	getMarketFeeResponseFieldTaker        = big.NewInt(1 << 1)
-	getMarketFeeResponseFieldMaker        = big.NewInt(1 << 2)
-	getMarketFeeResponseFieldFuturesTaker = big.NewInt(1 << 3)
-	getMarketFeeResponseFieldFuturesMaker = big.NewInt(1 << 4)
-	getMarketFeeResponseFieldCustomFee    = big.NewInt(1 << 5)
+	getMarketFeeResponseFieldError                     = big.NewInt(1 << 0)
+	getMarketFeeResponseFieldTaker                     = big.NewInt(1 << 1)
+	getMarketFeeResponseFieldMaker                     = big.NewInt(1 << 2)
+	getMarketFeeResponseFieldFuturesTaker              = big.NewInt(1 << 3)
+	getMarketFeeResponseFieldFuturesMaker              = big.NewInt(1 << 4)
+	getMarketFeeResponseFieldRpiMakerFeePremium        = big.NewInt(1 << 5)
+	getMarketFeeResponseFieldFuturesRpiMakerFeePremium = big.NewInt(1 << 6)
+	getMarketFeeResponseFieldCustomFee                 = big.NewInt(1 << 7)
 )
 
 type GetMarketFeeResponse struct {
@@ -50,10 +52,14 @@ type GetMarketFeeResponse struct {
 	Taker *string `json:"taker,omitempty" url:"taker,omitempty"`
 	// Maker fee percentage
 	Maker *string `json:"maker,omitempty" url:"maker,omitempty"`
-	// Default effective futures taker fee rate. The system returns the lower value between the custom fee (if assigned) and the default market fee.
+	// Default effective futures taker fee percentage. The system returns the lower value between the custom fee (if assigned) and the default market fee.
 	FuturesTaker *string `json:"futures_taker,omitempty" url:"futures_taker,omitempty"`
-	// Default effective futures maker fee rate. The system returns the lower value between the custom fee (if assigned) and the default market fee.
+	// Default effective futures maker fee percentage. The system returns the lower value between the custom fee (if assigned) and the default market fee.
 	FuturesMaker *string `json:"futures_maker,omitempty" url:"futures_maker,omitempty"`
+	// Additional maker fee percentage applied on top of the `maker` rate when a [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order executes on a spot or margin market. The effective RPI maker rate equals `maker` plus `rpi_maker_fee_premium`. The field returns `null` when the RPI order mode is not enabled for the account or when no premium is configured.
+	RpiMakerFeePremium *string `json:"rpi_maker_fee_premium,omitempty" url:"rpi_maker_fee_premium,omitempty"`
+	// Additional maker fee percentage applied on top of the `futures_maker` rate when a [Retail Price Improvement (RPI)](/glossary#retail-price-improvement-rpi) order executes on a futures market. The effective futures RPI maker rate equals `futures_maker` plus `futures_rpi_maker_fee_premium`. The field returns `null` when the RPI order mode is not enabled for the account or when no premium is configured.
+	FuturesRpiMakerFeePremium *string `json:"futures_rpi_maker_fee_premium,omitempty" url:"futures_rpi_maker_fee_premium,omitempty"`
 	// Per-market fee overrides, keyed by market name. Each value contains the market's custom `taker` and `maker` rates.
 	CustomFee map[string]*GetMarketFeeResponseCustomFeeValue `json:"custom_fee,omitempty" url:"custom_fee,omitempty"`
 
@@ -97,6 +103,20 @@ func (g *GetMarketFeeResponse) GetFuturesMaker() *string {
 		return nil
 	}
 	return g.FuturesMaker
+}
+
+func (g *GetMarketFeeResponse) GetRpiMakerFeePremium() *string {
+	if g == nil {
+		return nil
+	}
+	return g.RpiMakerFeePremium
+}
+
+func (g *GetMarketFeeResponse) GetFuturesRpiMakerFeePremium() *string {
+	if g == nil {
+		return nil
+	}
+	return g.FuturesRpiMakerFeePremium
 }
 
 func (g *GetMarketFeeResponse) GetCustomFee() map[string]*GetMarketFeeResponseCustomFeeValue {
@@ -150,6 +170,20 @@ func (g *GetMarketFeeResponse) SetFuturesTaker(futuresTaker *string) {
 func (g *GetMarketFeeResponse) SetFuturesMaker(futuresMaker *string) {
 	g.FuturesMaker = futuresMaker
 	g.require(getMarketFeeResponseFieldFuturesMaker)
+}
+
+// SetRpiMakerFeePremium sets the RpiMakerFeePremium field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetMarketFeeResponse) SetRpiMakerFeePremium(rpiMakerFeePremium *string) {
+	g.RpiMakerFeePremium = rpiMakerFeePremium
+	g.require(getMarketFeeResponseFieldRpiMakerFeePremium)
+}
+
+// SetFuturesRpiMakerFeePremium sets the FuturesRpiMakerFeePremium field and marks it as non-optional;
+// this prevents an empty or null value for this field from being omitted during serialization.
+func (g *GetMarketFeeResponse) SetFuturesRpiMakerFeePremium(futuresRpiMakerFeePremium *string) {
+	g.FuturesRpiMakerFeePremium = futuresRpiMakerFeePremium
+	g.require(getMarketFeeResponseFieldFuturesRpiMakerFeePremium)
 }
 
 // SetCustomFee sets the CustomFee field and marks it as non-optional;

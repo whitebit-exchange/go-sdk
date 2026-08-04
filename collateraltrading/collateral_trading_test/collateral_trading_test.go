@@ -553,6 +553,49 @@ func TestCollateralTradingGetPositionsHistoryWithWireMock(
 	VerifyRequestCount(t, "TestCollateralTradingGetPositionsHistoryWithWireMock", "POST", "/api/v4/collateral-account/positions/history", nil, 1)
 }
 
+func TestCollateralTradingGetClosedPositionsPnlWithWireMock(
+	t *testing.T,
+) {
+	wiremockPort := os.Getenv("WIREMOCK_PORT")
+	if wiremockPort == "" {
+		wiremockPort = "8080"
+	}
+	WireMockBaseURL := "http://localhost:" + wiremockPort
+	client := client.NewClient(
+		option.WithBaseURL(WireMockBaseURL),
+	)
+	request := &sdk.GetClosedPositionsPnlRequest{
+		StartDate: sdk.Int(
+			1778000000,
+		),
+		EndDate: sdk.Int(
+			1778100000,
+		),
+		Limit: sdk.Int(
+			50,
+		),
+		Offset: sdk.Int(
+			0,
+		),
+		Request: sdk.String(
+			"{{request}}",
+		),
+		Nonce: sdk.Int(
+			1594297865000,
+		),
+	}
+	_, invocationErr := client.CollateralTrading.GetClosedPositionsPnl(
+		context.TODO(),
+		request,
+		option.WithHTTPHeader(
+			http.Header{"X-Test-Id": []string{"TestCollateralTradingGetClosedPositionsPnlWithWireMock"}},
+		),
+	)
+
+	require.NoError(t, invocationErr, "Client method call should succeed")
+	VerifyRequestCount(t, "TestCollateralTradingGetClosedPositionsPnlWithWireMock", "POST", "/api/v4/collateral-account/positions/closed-pnl", nil, 1)
+}
+
 func TestCollateralTradingGetFundingHistoryWithWireMock(
 	t *testing.T,
 ) {
@@ -832,7 +875,7 @@ func TestCollateralTradingCancelConditionalOrderWithWireMock(
 		Request: "{{request}}",
 		Nonce:   1594297865000,
 	}
-	invocationErr := client.CollateralTrading.CancelConditionalOrder(
+	_, invocationErr := client.CollateralTrading.CancelConditionalOrder(
 		context.TODO(),
 		request,
 		option.WithHTTPHeader(
@@ -856,8 +899,10 @@ func TestCollateralTradingCancelOcoOrderWithWireMock(
 		option.WithBaseURL(WireMockBaseURL),
 	)
 	request := &sdk.CancelOcoOrderRequest{
-		Market:  "BTC_USDT",
-		OrderID: 117703764514,
+		Market: "BTC_USDT",
+		OrderID: sdk.Int(
+			117703764513,
+		),
 		Request: "{{request}}",
 		Nonce:   1594297865000,
 	}
@@ -890,7 +935,7 @@ func TestCollateralTradingCancelOtoOrderWithWireMock(
 		Request: "{{request}}",
 		Nonce:   1594297865000,
 	}
-	invocationErr := client.CollateralTrading.CancelOtoOrder(
+	_, invocationErr := client.CollateralTrading.CancelOtoOrder(
 		context.TODO(),
 		request,
 		option.WithHTTPHeader(

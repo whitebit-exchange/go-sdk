@@ -107,6 +107,7 @@ func (c *Client) TradeAccountBalance(
 // <Note>
 //   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
 //   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+//   - RPI orders apply post-only behavior automatically — do not also send `postOnly=true`: a request combining `rpi=true` with an explicit `postOnly=true` fails validation.
 //   - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
 //   - `retail=true` and `rpi=true` cannot be combined. The API returns error code `41` when both flags are set.
 //   - `retail=true` has no effect on a `postOnly=true` order. Post-only orders are makers and cannot be retail takers.
@@ -383,6 +384,7 @@ func (c *Client) CreateLimitOrder(
 // <Note>
 //   - RPI orders do not appear in public order book feeds (`depth`, `bookTicker`). RPI orders are visible only in private active orders and in the exchange UI order book (web/mobile).
 //   - RPI orders are post-only by design and cannot be used with the IOC flag. The API returns error code `40` when both `rpi=true` and `ioc=true` are used.
+//   - RPI orders apply post-only behavior automatically — do not also send `postOnly=true`: a request combining `rpi=true` with an explicit `postOnly=true` fails validation.
 //   - `retail=true` marks the order as a retail-source taker eligible to match RPI-maker liquidity. The Retail flag must be enabled on the account; contact the account manager to enable it.
 //   - `retail=true` and `rpi=true` cannot be combined. The API returns error code `41` when both flags are set on an item.
 //   - `retail=true` has no effect on a `postOnly=true` item. Post-only orders are makers and cannot be retail takers.
@@ -1136,9 +1138,8 @@ func (c *Client) CreateStopMarketOrder(
 // </Warning>
 //
 // <Note>
-// - Cancellation by clientOrderId takes priority over orderId.
-// - The request supports working only with orderId or only with clientOrderId.
-// - Do not pass both values at the same time.
+// - The request accepts exactly one identifier: either `orderId` or `clientOrderId`.
+// - Sending both identifiers, or neither, returns a validation error.
 // </Note>
 //
 // <Accordion title="Error Codes">
@@ -1459,16 +1460,16 @@ func (c *Client) CancelAllOrders(
 	ctx context.Context,
 	request *sdk.CancelAllOrdersRequest,
 	opts ...option.RequestOption,
-) error {
-	_, err := c.WithRawResponse.CancelAllOrders(
+) ([]any, error) {
+	response, err := c.WithRawResponse.CancelAllOrders(
 		ctx,
 		request,
 		opts...,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return response.Body, nil
 }
 
 // The endpoint retrieves [active orders](/glossary#active-orders) (orders not yet executed). The response includes limit, stop-limit, and stop-market orders that remain open on the order book. Use the `market` parameter to filter by trading pair, or omit the parameter to retrieve orders across all markets. The endpoint supports pagination with `limit` and `offset` parameters.
@@ -1729,17 +1730,16 @@ func (c *Client) GetDelistingOrderHistory(
 //
 // Supported order types: limit, stop limit, stop market.
 //
-// Request must contain one of the following parameters: amount, price, activationPrice.
+// Request must contain at least one of the following parameters: amount, total, price, activationPrice.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
 //
 // <Note>
-// - Use total parameter instead of amount for modify buy stop market order.
-// - Modification by clientOrderId takes priority.
-// - The request supports working only with orderId or only with clientOrderId.
-// - Do not pass both values at the same time.
+// - Use total parameter instead of amount for modify buy stop market order. `amount` and `total` are mutually exclusive — a request sending both is rejected.
+// - The request accepts exactly one identifier: either `orderId` or `clientOrderId`.
+// - Sending both identifiers, or neither, returns a validation error.
 // </Note>
 //
 // <Note>

@@ -319,7 +319,7 @@ func TestMiningPoolCreateMiningAccountWithWireMock(
 	request := &sdk.CreateMiningAccountRequest{
 		Name:    "my_miner_01",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.MiningPool.CreateMiningAccount(
 		context.TODO(),
@@ -346,7 +346,7 @@ func TestMiningPoolGetMiningAccountsWithWireMock(
 	)
 	request := &sdk.GetMiningAccountsRequest{
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.MiningPool.GetMiningAccounts(
 		context.TODO(),

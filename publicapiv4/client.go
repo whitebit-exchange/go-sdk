@@ -47,14 +47,18 @@ func (c *Client) MaintenanceStatus(
 	return response.Body, nil
 }
 
-// The endpoint retrieves configuration and trading rules for all available spot, futures, and TradFi futures markets. Use the response to discover tradeable pairs, check minimum order sizes, and read fee schedules. Each entry includes precision settings, fee ratios, and order-size constraints for the market.
+// The endpoint retrieves configuration and trading rules for all available spot and futures markets (TradFi futures markets are coming soon and are not yet returned). Use the response to discover tradeable pairs, check minimum order sizes, and read fee schedules. Each entry includes precision settings, fee ratios, and order-size constraints for the market.
 //
 // <Note>
 // Market configuration is reference data, re-synced from the database approximately every 10 seconds. Polling more frequently returns identical data. The cache is shared across all callers.
 // </Note>
 //
 // <Note>
-// TradFi futures markets are region-gated. Markets not available in a given region are omitted from the response entirely and do not appear under any other market type.
+// TradFi futures markets are coming soon and are not yet returned by this endpoint. Once available, they will be region-gated: markets not available in a given region are omitted from the response entirely and do not appear under any other market type.
+// </Note>
+//
+// <Note>
+// A market with an announced delisting carries the announced date in `delistedAt` and stays tradeable until the delisting runs. Once the delisting runs, the platform cancels the active orders on the market and drops the market from this response — [Query delisting orders](/api-reference/spot-trading/query-delisting-orders) is a signed request that returns the authenticated account's resulting spot order records. An announcement can be rescheduled or canceled, so treat `delistedAt` as the current plan rather than a settled fact and re-read the value on the next poll.
 // </Note>
 //
 // <Warning>
@@ -170,7 +174,7 @@ func (c *Client) Depth(
 	return response.Body, nil
 }
 
-// The endpoint retrieves the [trades](/glossary#deal-trade) that have been executed recently on the requested [market](/glossary#market).
+// The endpoint retrieves the [trades](/glossary#deal-trade) that have been executed recently on the requested [market](/glossary#market). It returns up to the 100 most recent trades; the response size is fixed and there is no `limit` parameter.
 //
 // <Note>
 // The API caches the response for 1 second
@@ -341,6 +345,27 @@ func (c *Client) FundingHistory(
 	response, err := c.WithRawResponse.FundingHistory(
 		ctx,
 		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
+// The endpoint returns overall information about the current mining pool state.
+//
+// Hash rate is expressed in H units.
+//
+// <Warning>
+// Rate limit 1000 requests/10 sec.
+// </Warning>
+func (c *Client) MiningPoolOverview(
+	ctx context.Context,
+	opts ...option.RequestOption,
+) (*sdk.GetAPIV4PublicMiningPoolResponse, error) {
+	response, err := c.WithRawResponse.MiningPoolOverview(
+		ctx,
 		opts...,
 	)
 	if err != nil {

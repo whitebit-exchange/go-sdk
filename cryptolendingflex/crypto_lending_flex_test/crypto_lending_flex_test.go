@@ -84,7 +84,7 @@ func TestCryptoLendingFlexGetFlexPlansWithWireMock(
 			"USDT",
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.GetFlexPlans(
 		context.TODO(),
@@ -129,7 +129,7 @@ func TestCryptoLendingFlexGetUserFlexInvestmentsWithWireMock(
 			1,
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.GetUserFlexInvestments(
 		context.TODO(),
@@ -182,7 +182,7 @@ func TestCryptoLendingFlexGetFlexInvestmentHistoryWithWireMock(
 			4,
 		},
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.GetFlexInvestmentHistory(
 		context.TODO(),
@@ -230,7 +230,7 @@ func TestCryptoLendingFlexGetFlexPaymentHistoryWithWireMock(
 			1641081600,
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.GetFlexPaymentHistory(
 		context.TODO(),
@@ -262,7 +262,7 @@ func TestCryptoLendingFlexCreateFlexInvestmentWithWireMock(
 			true,
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.CreateFlexInvestment(
 		context.TODO(),
@@ -291,7 +291,7 @@ func TestCryptoLendingFlexWithdrawFromFlexInvestmentWithWireMock(
 		Plan:    "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
 		Amount:  "500.250000",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.WithdrawFromFlexInvestment(
 		context.TODO(),
@@ -319,7 +319,7 @@ func TestCryptoLendingFlexCloseFlexInvestmentWithWireMock(
 	request := &sdk.CloseFlexInvestmentRequest{
 		Plan:    "8f2e9d3c-1a4b-4c2d-9e5f-6a7b8c9d0e1f",
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.CloseFlexInvestment(
 		context.TODO(),
@@ -350,7 +350,7 @@ func TestCryptoLendingFlexUpdateFlexAutoReinvestmentWithWireMock(
 			true,
 		),
 		Request: "{{request}}",
-		Nonce:   "{{nonce}}",
+		Nonce:   1594297865000,
 	}
 	_, invocationErr := client.CryptoLendingFlex.UpdateFlexAutoReinvestment(
 		context.TODO(),

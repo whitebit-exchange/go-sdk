@@ -589,6 +589,57 @@ func (r *RawClient) GetPositionsHistory(
 	}, nil
 }
 
+func (r *RawClient) GetClosedPositionsPnl(
+	ctx context.Context,
+	request *sdk.GetClosedPositionsPnlRequest,
+	opts ...option.RequestOption,
+) (*core.Response[[]*sdk.GetClosedPositionsPnlResponseItem], error) {
+	options := core.NewRequestOptions(opts...)
+	baseURL := internal.ResolveBaseURL(
+		options.BaseURL,
+		internal.ResolveEnvironmentBaseURL(
+			options.Environment,
+			"Base",
+		),
+		r.baseURL,
+		internal.ResolveEnvironmentBaseURL(
+			r.options.Environment,
+			"Base",
+		),
+		"https://whitebit.com",
+	)
+	endpointURL := baseURL + "/api/v4/collateral-account/positions/closed-pnl"
+	headers := internal.MergeHeaders(
+		r.options.ToHeader(),
+		options.ToHeader(),
+	)
+	headers.Add("Content-Type", "application/json")
+	var response []*sdk.GetClosedPositionsPnlResponseItem
+	raw, err := r.caller.Call(
+		ctx,
+		&internal.CallParams{
+			URL:             endpointURL,
+			Method:          http.MethodPost,
+			Headers:         headers,
+			MaxAttempts:     options.MaxAttempts,
+			BodyProperties:  options.BodyProperties,
+			QueryParameters: options.QueryParameters,
+			Client:          options.HTTPClient,
+			Request:         request,
+			Response:        &response,
+			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &core.Response[[]*sdk.GetClosedPositionsPnlResponseItem]{
+		StatusCode: raw.StatusCode,
+		Header:     raw.Header,
+		Body:       response,
+	}, nil
+}
+
 func (r *RawClient) GetFundingHistory(
 	ctx context.Context,
 	request *sdk.GetFundingHistoryRequest,
@@ -999,7 +1050,7 @@ func (r *RawClient) CancelConditionalOrder(
 	ctx context.Context,
 	request *sdk.CancelConditionalOrderRequest,
 	opts ...option.RequestOption,
-) (*core.Response[any], error) {
+) (*core.Response[[]any], error) {
 	options := core.NewRequestOptions(opts...)
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
@@ -1020,6 +1071,7 @@ func (r *RawClient) CancelConditionalOrder(
 		options.ToHeader(),
 	)
 	headers.Add("Content-Type", "application/json")
+	var response []any
 	raw, err := r.caller.Call(
 		ctx,
 		&internal.CallParams{
@@ -1031,16 +1083,17 @@ func (r *RawClient) CancelConditionalOrder(
 			QueryParameters: options.QueryParameters,
 			Client:          options.HTTPClient,
 			Request:         request,
+			Response:        &response,
 			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &core.Response[any]{
+	return &core.Response[[]any]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
-		Body:       nil,
+		Body:       response,
 	}, nil
 }
 
@@ -1099,7 +1152,7 @@ func (r *RawClient) CancelOtoOrder(
 	ctx context.Context,
 	request *sdk.CancelOtoOrderRequest,
 	opts ...option.RequestOption,
-) (*core.Response[any], error) {
+) (*core.Response[[]any], error) {
 	options := core.NewRequestOptions(opts...)
 	baseURL := internal.ResolveBaseURL(
 		options.BaseURL,
@@ -1120,6 +1173,7 @@ func (r *RawClient) CancelOtoOrder(
 		options.ToHeader(),
 	)
 	headers.Add("Content-Type", "application/json")
+	var response []any
 	raw, err := r.caller.Call(
 		ctx,
 		&internal.CallParams{
@@ -1131,15 +1185,16 @@ func (r *RawClient) CancelOtoOrder(
 			QueryParameters: options.QueryParameters,
 			Client:          options.HTTPClient,
 			Request:         request,
+			Response:        &response,
 			ErrorDecoder:    internal.NewErrorDecoder(sdk.ErrorCodes),
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &core.Response[any]{
+	return &core.Response[[]any]{
 		StatusCode: raw.StatusCode,
 		Header:     raw.Header,
-		Body:       nil,
+		Body:       response,
 	}, nil
 }

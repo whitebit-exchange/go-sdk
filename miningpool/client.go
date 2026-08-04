@@ -33,6 +33,22 @@ func NewClient(options *core.RequestOptions) *Client {
 }
 
 // The endpoint returns rewards received from mining.
+// Results are ordered by reward date, newest first.
+//
+// The response does not include a `total` field. Detect the last page when
+// `data.length < limit`.
+//
+// The `offset` parameter is capped at 10000. To paginate reward histories
+// beyond that, window the request by `from` and `to` (Unix timestamps).
+//
+// <Note>
+// The `account` filter is not validated at the request layer. An unknown or
+// not-owned account name is treated as an empty filter and returns HTTP `200`
+// with an empty `data` array — the same response as a valid account with no
+// rewards in the requested window. An account without mining access also
+// returns empty data, so an empty response does not distinguish "no mining
+// access" from "no rewards in range."
+// </Note>
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
@@ -58,6 +74,12 @@ func (c *Client) GetMiningRewards(
 }
 
 // The endpoint returns hashrate of mining pool account.
+//
+// <Note>
+// There is no dedicated "mining not enabled" error. An account that is
+// administratively disabled for mining returns HTTP `200` with empty data
+// rather than an error.
+// </Note>
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
@@ -146,6 +168,10 @@ func (c *Client) GetMiningMinerInfo(
 }
 
 // Returns a paginated list of online worker names for a specific mining account.
+// Results are ordered by worker name ascending (alphabetical).
+//
+// The response does not include a `total` field. Detect the last page when
+// `data.workers.length < limit`.
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
@@ -189,6 +215,12 @@ func (c *Client) GetMiningWorkerHashrate(
 
 // Creates a new watcher link for one or more mining accounts, granting specific permissions with a configurable expiration.
 //
+// <Note>
+// The number of active watcher links per mining account is capped (configurable
+// server-side; currently 3 by default). Exceeding the cap returns a `400` with
+// `Limit exceeded`.
+// </Note>
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
@@ -231,6 +263,12 @@ func (c *Client) ListMiningWatcherLinks(
 
 // Creates a new mining account for the authenticated user. The account name must be unique within the user's accounts.
 //
+// <Note>
+// The number of mining accounts per user is capped (configurable server-side).
+// Creating an account beyond the cap returns a `400` with
+// `miningPool.validation.maxAccounts`.
+// </Note>
+//
 // <Warning>
 // Rate limit: 1000 requests/10 sec.
 // </Warning>
@@ -251,6 +289,10 @@ func (c *Client) CreateMiningAccount(
 }
 
 // Returns a list of mining accounts for the authenticated user. Supports filtering by account name.
+// Results are ordered by account creation time, newest first.
+//
+// The response does not include a `total` field. Detect the last page when
+// `data.length < limit`.
 //
 // <Warning>
 // Rate limit: 1000 requests/10 sec.

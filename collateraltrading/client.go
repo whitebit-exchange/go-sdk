@@ -422,6 +422,40 @@ func (c *Client) GetPositionsHistory(
 	return response.Body, nil
 }
 
+// The endpoint returns one aggregated profit-and-loss record per closed [collateral](/glossary#balance-collateral) position for the authenticated account — the same closed-position PNL the trading terminal shows. Records are sorted by `closeDate` descending, then `positionId` descending. Use the optional `startDate` and `endDate` parameters to narrow the window; the filter applies to the position close time.
+//
+// <Note>
+// The endpoint supports pagination via `limit` (default: 50, max: 100) and `offset` (default: 0); the sum of `offset` and `limit` must not exceed 10000. A response that returns fewer than `limit` records indicates the last page.
+// </Note>
+//
+// <Note>
+// **Close-time windowing:** a position opened before the requested window but closed inside the window returns complete aggregates — fees, average prices, and closed size cover the full position lifetime, not only the requested window.
+// </Note>
+//
+// <Warning>
+// Rate limit: 12000 requests/10 sec.
+// </Warning>
+//
+// <Accordion title="Error Codes">
+//   - `30` - default validation error code (invalid pagination — `limit` outside 1–100, or `offset` + `limit` above 10000 — or a date filter that violates `startDate` ≤ `endDate` ≤ `now + 1s`)
+//
+// </Accordion>
+func (c *Client) GetClosedPositionsPnl(
+	ctx context.Context,
+	request *sdk.GetClosedPositionsPnlRequest,
+	opts ...option.RequestOption,
+) ([]*sdk.GetClosedPositionsPnlResponseItem, error) {
+	response, err := c.WithRawResponse.GetClosedPositionsPnl(
+		ctx,
+		request,
+		opts...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response.Body, nil
+}
+
 // The endpoint returns the funding rate payment history for [collateral](/glossary#balance-collateral) positions. Each record includes the funding rate, settlement price, position amount, and the resulting funding payment. Use the optional `market` parameter to filter results to a single trading pair. The response supports pagination via `limit` and `offset` parameters. Results are ordered by funding time (`fundingTime`), newest first.
 //
 // <Warning>
@@ -693,28 +727,28 @@ func (c *Client) CancelConditionalOrder(
 	ctx context.Context,
 	request *sdk.CancelConditionalOrderRequest,
 	opts ...option.RequestOption,
-) error {
-	_, err := c.WithRawResponse.CancelConditionalOrder(
+) ([]any, error) {
+	response, err := c.WithRawResponse.CancelConditionalOrder(
 		ctx,
 		request,
 		opts...,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return response.Body, nil
 }
 
-// The endpoint cancels an OCO order.
+// The endpoint cancels an OCO order. Identify the order by `orderId` or `clientOrderId` — exactly one of the two must be provided. A request specifying both identifiers, or neither, fails validation.
 //
 // <Warning>
 // Rate limit: 10000 requests/10 sec.
 // </Warning>
 //
 // <Accordion title="Error Codes">
-//   - `30` - default validation error code
+//   - `30` - default validation error code. Also returned when the request specifies both `orderId` and `clientOrderId`, or neither
 //   - `31` - market validation failed
-//   - `2` - OCO order not found. Returned whether the `orderId` does not exist, or the order was already filled or already cancelled — these cases are not distinguished
+//   - `2` - OCO order not found. Returned whether the identifier (`orderId` or `clientOrderId`) does not exist, or the order was already filled or already cancelled — these cases are not distinguished
 //
 // </Accordion>
 //
@@ -777,14 +811,14 @@ func (c *Client) CancelOtoOrder(
 	ctx context.Context,
 	request *sdk.CancelOtoOrderRequest,
 	opts ...option.RequestOption,
-) error {
-	_, err := c.WithRawResponse.CancelOtoOrder(
+) ([]any, error) {
+	response, err := c.WithRawResponse.CancelOtoOrder(
 		ctx,
 		request,
 		opts...,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return response.Body, nil
 }

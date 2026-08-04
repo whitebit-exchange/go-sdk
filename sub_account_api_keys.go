@@ -21,7 +21,7 @@ type CreateSubAccountAPIKeyRequest struct {
 	// ID of the sub-account to create the API key for
 	SubAccountID string `json:"subAccountId" url:"-"`
 	// Custom title/name for the API key
-	Title *string `json:"title,omitempty" url:"-"`
+	Title string `json:"title" url:"-"`
 
 	// Private bitmask of fields set to an explicit value and therefore not to be omitted
 	explicitFields *big.Int `json:"-" url:"-"`
@@ -50,7 +50,7 @@ func (c *CreateSubAccountAPIKeyRequest) SetSubAccountID(subAccountID string) {
 
 // SetTitle sets the Title field and marks it as non-optional;
 // this prevents an empty or null value for this field from being omitted during serialization.
-func (c *CreateSubAccountAPIKeyRequest) SetTitle(title *string) {
+func (c *CreateSubAccountAPIKeyRequest) SetTitle(title string) {
 	c.Title = title
 	c.require(createSubAccountAPIKeyRequestFieldTitle)
 }
